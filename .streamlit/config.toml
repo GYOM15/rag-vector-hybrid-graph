@@ -1,0 +1,9 @@
+# Config Streamlit du projet.
+# fileWatcherType = "none" : désactive l'auto-reload, qui parcourt sinon tous les
+# sous-modules de `transformers` et inonde la console de tracebacks `torchvision`
+# (dépendance non installée, inutile ici : on ne fait que des embeddings de texte).
+[server]
+fileWatcherType = "none"
+
+[browser]
+gatherUsageStats = false
