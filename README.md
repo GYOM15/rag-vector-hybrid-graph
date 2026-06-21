@@ -23,7 +23,7 @@
 ![vLLM](https://img.shields.io/badge/Serving-vLLM-FDB515)
 ![Ray](https://img.shields.io/badge/Scaling-Ray-028CF0)
 ![Streamlit](https://img.shields.io/badge/App-Streamlit-FF4B4B?logo=streamlit&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![CI](https://github.com/gyom15/rag-vector-hybrid-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/gyom15/rag-vector-hybrid-graph/actions)
 
 [Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation-set) · [Scaling](#scaling)
@@ -165,3 +165,7 @@ without the heavy ML stack, keeping CI fast.
 
 [Simple English Wikipedia](https://huggingface.co/datasets/wikimedia/wikipedia)
 (`20231101.simple`), first 100 articles by default (`--articles` to change).
+
+## License
+
+[MIT](LICENSE) — see the `LICENSE` file.
