@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Les tests unitaires (chunker, RRF, NER) chargent les modules par chemin
+      # de fichier et n'ont pas besoin de la pile ML lourde — d'où une CI rapide.
+      - name: Install test tooling
+        run: pip install pytest ruff
+
+      - name: Lint (ruff)
+        run: ruff check .
+        continue-on-error: true
+
+      - name: Unit tests
+        run: pytest -q
