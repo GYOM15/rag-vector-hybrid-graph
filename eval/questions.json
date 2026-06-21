@@ -1,0 +1,202 @@
+[
+    {
+        "question": "What happened in April 1912?",
+        "ground_truth": "The RMS Titanic sank near Newfoundland after hitting an iceberg",
+        "type": "keyword"
+    },
+    {
+        "question": "Which science studies plants?",
+        "ground_truth": "Botany is the science that studies plants",
+        "type": "factoid"
+    },
+    {
+        "question": "What are the branches of botany?",
+        "ground_truth": "Branches of botany include agronomy, bryology, forestry, horticulture, mycology, paleobotany, phycology, phytochemistry, phytopathology, plant anatomy, plant ecology, and plant genetics",
+        "type": "multi"
+    },
+    {
+        "question": "When did the Wright brothers make their first flight?",
+        "ground_truth": "The Wright brothers made their first flight on December 17, 1903, in Kitty Hawk, North Carolina",
+        "type": "keyword"
+    },
+    {
+        "question": "What is the study of fungi called?",
+        "ground_truth": "Mycology is the branch of botany that studies fungi",
+        "type": "factoid"
+    },
+    {
+        "question": "Name several important events that happened in April.",
+        "ground_truth": "Notable April events include the sinking of the Titanic (1912), the San Francisco earthquake (1906), the death of Albert Einstein (1955), and Zimbabwe's independence (1980)",
+        "type": "multi"
+    },
+    {
+        "question": "What did Albert Hofmann discover on April 16, 1943?",
+        "ground_truth": "Albert Hofmann discovered the effects of LSD",
+        "type": "keyword"
+    },
+    {
+        "question": "On which continent is Afghanistan located?",
+        "ground_truth": "Afghanistan is located in Asia",
+        "type": "factoid"
+    },
+    {
+        "question": "Name several important events that happened in December.",
+        "ground_truth": "Notable December events include the Wright brothers' first flight (1903), the introduction of basketball (1891), the start of the Arab Spring (2010), and Kazakhstan's independence (1991)",
+        "type": "multi"
+    },
+    {
+        "question": "When did Zimbabwe gain independence?",
+        "ground_truth": "Zimbabwe gained full independence on April 18, 1980",
+        "type": "keyword"
+    },
+    {
+        "question": "What is the study of algae called?",
+        "ground_truth": "The study of algae is called phycology",
+        "type": "factoid"
+    },
+    {
+        "question": "Which countries gained independence or became a republic in April, and when?",
+        "ground_truth": "Zimbabwe gained independence on April 18, 1980, and Sierra Leone became a republic on April 19, 1971",
+        "type": "multi"
+    },
+    {
+        "question": "Who introduced basketball, and when?",
+        "ground_truth": "James Naismith introduced basketball on December 15, 1891",
+        "type": "keyword"
+    },
+    {
+        "question": "What is a botanical garden?",
+        "ground_truth": "A botanical garden is a garden where plants are grown for scientific study and public display",
+        "type": "factoid"
+    },
+    {
+        "question": "Which branches of botany study specific groups of organisms?",
+        "ground_truth": "Mycology studies fungi and phycology studies algae",
+        "type": "multi"
+    },
+    {
+        "question": "When did Sierra Leone become a republic?",
+        "ground_truth": "Sierra Leone became a republic on April 19, 1971",
+        "type": "keyword"
+    },
+    {
+        "question": "What field of botany studies plant diseases?",
+        "ground_truth": "Phytopathology is the study of plant diseases",
+        "type": "factoid"
+    },
+    {
+        "question": "Which April events were disasters or accidents?",
+        "ground_truth": "The sinking of the Titanic (1912) and the San Francisco earthquake (1906)",
+        "type": "multi"
+    },
+    {
+        "question": "When did the Arab Spring begin?",
+        "ground_truth": "The Arab Spring started on December 17, 2010, with uprisings across North Africa",
+        "type": "keyword"
+    },
+    {
+        "question": "What is the capital of Afghanistan?",
+        "ground_truth": "Kabul is the capital of Afghanistan",
+        "type": "factoid"
+    },
+    {
+        "question": "Which December events relate to science or invention?",
+        "ground_truth": "The Wright brothers' first flight (1903) and the introduction of basketball (1891)",
+        "type": "multi"
+    },
+    {
+        "question": "When did Albert Einstein die?",
+        "ground_truth": "Albert Einstein died on April 17, 1955",
+        "type": "keyword"
+    },
+    {
+        "question": "Which famous ship sank after hitting an iceberg?",
+        "ground_truth": "The RMS Titanic sank after hitting an iceberg",
+        "type": "factoid"
+    },
+    {
+        "question": "What are some sub-fields of botany concerned with plant health or chemistry?",
+        "ground_truth": "Phytopathology studies plant diseases and phytochemistry studies plant chemistry",
+        "type": "multi"
+    },
+    {
+        "question": "When was the first Boston Marathon held?",
+        "ground_truth": "The first Boston Marathon was held on April 19, 1897",
+        "type": "keyword"
+    },
+    {
+        "question": "What is the month of April named after?",
+        "ground_truth": "April may be named after the Greek goddess Aphrodite or from the Latin word aperire, meaning to open",
+        "type": "factoid"
+    },
+    {
+        "question": "What kinds of events does the article about April describe?",
+        "ground_truth": "It describes notable historical events such as the Titanic sinking (1912), the San Francisco earthquake (1906), and several countries' independence days",
+        "type": "multi"
+    },
+    {
+        "question": "When did Kazakhstan declare independence from the Soviet Union?",
+        "ground_truth": "Kazakhstan declared independence from the Soviet Union on December 16, 1991",
+        "type": "keyword"
+    },
+    {
+        "question": "Which scientist is famous for the theory of relativity?",
+        "ground_truth": "Albert Einstein is famous for the theory of relativity",
+        "type": "factoid"
+    },
+    {
+        "question": "Besides plants, what other organisms do branches of botany study?",
+        "ground_truth": "Some branches study fungi (mycology) and algae (phycology)",
+        "type": "multi"
+    },
+    {
+        "question": "What happened on April 18, 1906?",
+        "ground_truth": "A large earthquake struck San Francisco, causing fires that destroyed much of the city",
+        "type": "keyword"
+    },
+    {
+        "question": "What natural disaster destroyed much of San Francisco in 1906?",
+        "ground_truth": "An earthquake, and the fires it caused, destroyed large parts of San Francisco",
+        "type": "factoid"
+    },
+    {
+        "question": "What are the official languages of Afghanistan?",
+        "ground_truth": "The official languages of Afghanistan are Pashto and Dari",
+        "type": "keyword"
+    },
+    {
+        "question": "What does the field of botany study?",
+        "ground_truth": "Botany studies plants",
+        "type": "factoid"
+    },
+    {
+        "question": "What happened in April 1955?",
+        "ground_truth": "Albert Einstein died on April 17, 1955",
+        "type": "keyword"
+    },
+    {
+        "question": "What does mycology study?",
+        "ground_truth": "Mycology studies fungi",
+        "type": "factoid"
+    },
+    {
+        "question": "When did the RMS Titanic sink?",
+        "ground_truth": "The RMS Titanic sank on April 15, 1912",
+        "type": "keyword"
+    },
+    {
+        "question": "What is studied in phycology?",
+        "ground_truth": "Phycology is the study of algae",
+        "type": "factoid"
+    },
+    {
+        "question": "What does phytopathology study?",
+        "ground_truth": "Phytopathology studies plant diseases",
+        "type": "factoid"
+    },
+    {
+        "question": "In what year did the Wright brothers first fly?",
+        "ground_truth": "The Wright brothers first flew in 1903",
+        "type": "keyword"
+    }
+]
