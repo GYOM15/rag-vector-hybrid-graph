@@ -108,9 +108,15 @@ def render_chat_tab() -> None:
                     st.write(msg["content"])
                     result = msg["result"]
                     if result is not None:
-                        sources = ", ".join(
-                            c["metadata"].get("title", "") for c in result["contexts"][:3])
-                        st.caption(f"⏱️ {result['latency_ms']} ms · sources : {sources}")
+                        st.caption(f"⏱️ {result['latency_ms']} ms · {len(result['contexts'])} chunks")
+                        with st.expander("Chunks récupérés"):
+                            for i, ctx in enumerate(result["contexts"], 1):
+                                meta = ctx["metadata"]
+                                st.markdown(f"**[{i}]** *{meta.get('title', '')}* — score {ctx['score']:.4f}")
+                                if meta.get("shared_entities"):
+                                    st.caption("entités partagées : " + ", ".join(meta["shared_entities"]))
+                                text = ctx["text"]
+                                st.write(text[:400] + ("…" if len(text) > 400 else ""))
 
 
 def run_benchmark(n_questions: int, k: int) -> None:
