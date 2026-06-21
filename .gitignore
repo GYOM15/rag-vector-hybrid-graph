@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Environnements / secrets
+.venv/
+venv/
+.env
+
+# Artefacts de données (régénérés)
+data/corpus/*
+!data/corpus/.gitkeep
+*.faiss
+*.chunks.json
+*.meta.json
+
+# macOS
+.DS_Store
+
+# Sorties générées (régénérées par le benchmark)
+eval/results.json
+
+# Fichiers perso (non versionnés)
+slides_prompts.md
+youtube_metadata.md
