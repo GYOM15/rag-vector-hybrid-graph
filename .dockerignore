@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.git/
+.github/
+notebooks/
+data/corpus/*
+*.faiss
+*.chunks.json
+*.meta.json
+.venv/
+venv/
+.env
+.DS_Store
+slides_prompts.md
+youtube_metadata.md
