@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" width="720" height="520" role="img" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <title>RAG = Récupération × Génération</title>
+  <desc>Matrice 2x2 : le Vectoriel répond correctement seulement si le bon chunk est récupéré (k=8) ET le modèle est capable (3b). À k=5 le chunk est absent (échec récupération) ; avec le 1b à k=8 le chunk est présent mais mal lu (échec génération).</desc>
+
+  <rect x="0.5" y="0.5" width="719" height="519" rx="16" fill="#ffffff" stroke="#e5e7eb"/>
+
+  <text x="360" y="42" text-anchor="middle" font-size="17" font-weight="600" fill="#1f2937">Vectoriel (FAISS) — « What happened in April 1912? »</text>
+  <text x="360" y="66" text-anchor="middle" font-size="12.5" fill="#6b7280">Réponse juste seulement si le chunk est récupéré (k) ET le modèle sait le lire.</text>
+
+  <text x="288" y="104" text-anchor="middle" font-size="14" font-weight="600" fill="#374151">k = 5</text>
+  <text x="288" y="120" text-anchor="middle" font-size="10.5" fill="#9ca3af">chunk souvent absent</text>
+  <text x="543" y="104" text-anchor="middle" font-size="14" font-weight="600" fill="#374151">k = 8</text>
+  <text x="543" y="120" text-anchor="middle" font-size="10.5" fill="#9ca3af">chunk dans le contexte</text>
+
+  <g transform="translate(26,280) rotate(-90)">
+    <text text-anchor="middle" font-size="12.5" font-weight="600" fill="#6b7280">GÉNÉRATION — capacité du modèle</text>
+  </g>
+
+  <text x="150" y="198" text-anchor="end" font-size="15" font-weight="700" fill="#374151">3b</text>
+  <text x="150" y="214" text-anchor="end" font-size="10.5" fill="#9ca3af">lecteur capable</text>
+  <text x="150" y="354" text-anchor="end" font-size="15" font-weight="700" fill="#374151">1b</text>
+  <text x="150" y="370" text-anchor="end" font-size="10.5" fill="#9ca3af">lecteur faible</text>
+
+  <g>
+    <rect x="165" y="132" width="245" height="140" rx="12" fill="#fef3c7" stroke="#fcd34d"/>
+    <path d="M197 150 L211 176 L183 176 Z" fill="none" stroke="#b45309" stroke-width="2.5" stroke-linejoin="round"/>
+    <line x1="197" y1="158" x2="197" y2="168" stroke="#b45309" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="197" cy="172.5" r="1.6" fill="#b45309"/>
+    <text x="185" y="224" font-size="14.5" font-weight="600" fill="#92400e">« pas assez d'info »</text>
+    <text x="185" y="252" font-size="11.5" fill="#6b7280">Échec RÉCUPÉRATION (rien à lire)</text>
+  </g>
+
+  <g>
+    <rect x="420" y="132" width="245" height="140" rx="12" fill="#dcfce7" stroke="#86efac"/>
+    <polyline points="440,162 448,170 466,150" fill="none" stroke="#15803d" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="440" y="224" font-size="14.5" font-weight="600" fill="#166534">Titanic, 15 avril 1912</text>
+    <text x="440" y="252" font-size="11.5" fill="#6b7280">Les 2 étages OK</text>
+  </g>
+
+  <g>
+    <rect x="165" y="288" width="245" height="140" rx="12" fill="#fef3c7" stroke="#fcd34d"/>
+    <path d="M197 306 L211 332 L183 332 Z" fill="none" stroke="#b45309" stroke-width="2.5" stroke-linejoin="round"/>
+    <line x1="197" y1="314" x2="197" y2="324" stroke="#b45309" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="197" cy="328.5" r="1.6" fill="#b45309"/>
+    <text x="185" y="380" font-size="14.5" font-weight="600" fill="#92400e">« pas assez d'info »</text>
+    <text x="185" y="408" font-size="11.5" fill="#6b7280">Échec RÉCUPÉRATION (rien à lire)</text>
+  </g>
+
+  <g>
+    <rect x="420" y="288" width="245" height="140" rx="12" fill="#fee2e2" stroke="#fca5a5"/>
+    <line x1="440" y1="306" x2="460" y2="326" stroke="#b91c1c" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="460" y1="306" x2="440" y2="326" stroke="#b91c1c" stroke-width="3.5" stroke-linecap="round"/>
+    <text x="440" y="380" font-size="14.5" font-weight="600" fill="#991b1b">« LSD, 1943 » (faux)</text>
+    <text x="440" y="408" font-size="11.5" fill="#6b7280">Échec GÉNÉRATION (mal lu)</text>
+  </g>
+
+  <text x="415" y="452" text-anchor="middle" font-size="12.5" font-weight="600" fill="#6b7280">RÉCUPÉRATION — nombre de chunks (k →)</text>
+
+  <rect x="95" y="486" width="12" height="12" rx="2" fill="#16a34a"/>
+  <text x="113" y="496" font-size="11.5" fill="#6b7280">OK (les 2 étages)</text>
+  <rect x="235" y="486" width="12" height="12" rx="2" fill="#d97706"/>
+  <text x="253" y="496" font-size="11.5" fill="#6b7280">Échec récupération (chunk absent)</text>
+  <rect x="470" y="486" width="12" height="12" rx="2" fill="#dc2626"/>
+  <text x="488" y="496" font-size="11.5" fill="#6b7280">Échec génération (mal lu)</text>
+</svg>
