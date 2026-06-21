@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 600" width="720" height="600" role="img" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <title>Architecture du pipeline RAG</title>
+  <desc>Corpus Wikipédia, chunking, embeddings et index FAISS (étapes partagées), puis trois retrievers (vectoriel, hybride, graphe) qui sont la seule variable, convergeant vers le squelette partagé BaseRAG (récupère, assemble le prompt, appelle le LLM) et les backends LLM Ollama, vLLM/OpenAI, HuggingFace.</desc>
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#9ca3af"/>
+    </marker>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="719" height="599" rx="16" fill="#ffffff" stroke="#e5e7eb"/>
+
+  <text x="360" y="34" text-anchor="middle" font-size="17" font-weight="600" fill="#1f2937">Architecture — une seule variable change</text>
+  <text x="360" y="56" text-anchor="middle" font-size="12" fill="#6b7280">Même corpus, chunking, embeddings, index, prompt et LLM ; seul le retriever diffère.</text>
+
+  <rect x="235" y="78" width="250" height="42" rx="9" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="360" y="104" text-anchor="middle" font-size="13.5" fill="#374151">Wikipédia (Simple English)</text>
+  <line x1="360" y1="120" x2="360" y2="138" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="235" y="140" width="250" height="42" rx="9" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="360" y="166" text-anchor="middle" font-size="13.5" fill="#374151">Chunking (récursif + overlap)</text>
+  <line x1="360" y1="182" x2="360" y2="200" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="235" y="202" width="250" height="42" rx="9" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="360" y="228" text-anchor="middle" font-size="13.5" fill="#374151">Embeddings (all-MiniLM-L6-v2)</text>
+  <line x1="360" y1="244" x2="360" y2="262" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="235" y="264" width="250" height="42" rx="9" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="360" y="290" text-anchor="middle" font-size="13.5" fill="#374151">Index FAISS (partagé)</text>
+
+  <line x1="360" y1="306" x2="360" y2="326" stroke="#9ca3af" stroke-width="1.5"/>
+  <line x1="145" y1="326" x2="575" y2="326" stroke="#9ca3af" stroke-width="1.5"/>
+  <line x1="145" y1="326" x2="145" y2="347" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="360" y1="326" x2="360" y2="347" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="575" y1="326" x2="575" y2="347" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="45" y="348" width="200" height="58" rx="10" fill="#eff6ff" stroke="#3b82f6"/>
+  <text x="145" y="374" text-anchor="middle" font-size="14" font-weight="600" fill="#1d4ed8">Vectoriel</text>
+  <text x="145" y="393" text-anchor="middle" font-size="11.5" fill="#6b7280">FAISS — dense</text>
+
+  <rect x="260" y="348" width="200" height="58" rx="10" fill="#f0fdf4" stroke="#22c55e"/>
+  <text x="360" y="374" text-anchor="middle" font-size="14" font-weight="600" fill="#15803d">Hybride</text>
+  <text x="360" y="393" text-anchor="middle" font-size="11.5" fill="#6b7280">BM25 + RRF</text>
+
+  <rect x="475" y="348" width="200" height="58" rx="10" fill="#faf5ff" stroke="#a855f7"/>
+  <text x="575" y="374" text-anchor="middle" font-size="14" font-weight="600" fill="#7e22ce">Graphe</text>
+  <text x="575" y="393" text-anchor="middle" font-size="11.5" fill="#6b7280">networkx + traversée</text>
+
+  <line x1="145" y1="406" x2="145" y2="426" stroke="#9ca3af" stroke-width="1.5"/>
+  <line x1="360" y1="406" x2="360" y2="426" stroke="#9ca3af" stroke-width="1.5"/>
+  <line x1="575" y1="406" x2="575" y2="426" stroke="#9ca3af" stroke-width="1.5"/>
+  <line x1="145" y1="426" x2="575" y2="426" stroke="#9ca3af" stroke-width="1.5"/>
+  <line x1="360" y1="426" x2="360" y2="447" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="180" y="448" width="360" height="54" rx="10" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="360" y="470" text-anchor="middle" font-size="13.5" font-weight="600" fill="#374151">BaseRAG — squelette partagé</text>
+  <text x="360" y="490" text-anchor="middle" font-size="12" fill="#6b7280">récupère → assemble le prompt → LLM</text>
+  <line x1="360" y1="502" x2="360" y2="517" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#ah)"/>
+
+  <rect x="180" y="518" width="360" height="42" rx="9" fill="#f3f4f6" stroke="#d1d5db"/>
+  <text x="360" y="544" text-anchor="middle" font-size="13" fill="#374151">LLM : Ollama · vLLM/OpenAI · HuggingFace</text>
+
+  <rect x="108" y="575" width="11" height="11" rx="2" fill="#9ca3af"/>
+  <text x="124" y="584" font-size="11.5" fill="#6b7280">Partagé (constant)</text>
+  <rect x="300" y="575" width="11" height="11" rx="2" fill="#3b82f6"/>
+  <text x="316" y="584" font-size="11.5" fill="#6b7280">Vectoriel</text>
+  <rect x="410" y="575" width="11" height="11" rx="2" fill="#22c55e"/>
+  <text x="426" y="584" font-size="11.5" fill="#6b7280">Hybride</text>
+  <rect x="510" y="575" width="11" height="11" rx="2" fill="#a855f7"/>
+  <text x="526" y="584" font-size="11.5" fill="#6b7280">Graphe</text>
+</svg>

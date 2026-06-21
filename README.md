@@ -44,25 +44,7 @@ so the comparison is fair (controlled variables).
 
 ## Architecture
 
-```
-                 Wikipedia (Simple English)
-                          │
-              Chunking (recursive + overlap)     ┐
-                          │                       │ shared
-              Embeddings (all-MiniLM-L6-v2)       │
-                          │                       │
-              FAISS index (shared)                ┘
-                          │
-        ┌─────────────────┼──────────────────┐
-        ▼                 ▼                  ▼
-   Vector (FAISS)   Hybrid (BM25+RRF)   Graph (networkx)
-        └─────────────────┼──────────────────┘
-                          │
-            Shared RAG skeleton (BaseRAG):
-            retrieve → build prompt → LLM
-                          │
-              LLM  (Ollama · vLLM/OpenAI · HuggingFace)
-```
+![Architecture](docs/architecture.svg)
 
 Only the **retriever** differs between stacks; chunking, embeddings, FAISS index,
 prompt and LLM are shared. `pipeline.build_stacks()` is the single source of truth
