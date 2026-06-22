@@ -14,10 +14,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Les tests unitaires (chunker, RRF, NER) chargent les modules par chemin
-      # de fichier et n'ont pas besoin de la pile ML lourde — d'où une CI rapide.
-      - name: Install test tooling
-        run: pip install pytest ruff
+      # Les tests chargent les modules par chemin de fichier : seules des libs
+      # légères suffisent (snowballstemmer, spaCy + petit modèle), pas
+      # torch/faiss/sentence-transformers — d'où une CI qui reste rapide.
+      - name: Install test dependencies
+        run: |
+          pip install pytest ruff snowballstemmer "spacy>=3.8,<3.9" click
+          pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 
       - name: Lint (ruff)
         run: ruff check .
