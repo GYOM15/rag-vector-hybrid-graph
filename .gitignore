@@ -20,10 +20,9 @@ data/corpus/*
 # macOS
 .DS_Store
 
-# Sorties générées (régénérées par le benchmark)
-eval/results.json
-eval/retrieval_results.json
-eval/beir*.json
+# Sorties générées (régénérées par les évals) ; on garde le jeu de questions
+eval/*.json
+!eval/questions.json
 
 # Fichiers perso (non versionnés)
 slides_prompts.md
