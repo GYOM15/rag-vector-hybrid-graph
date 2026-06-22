@@ -19,6 +19,7 @@ def _load(relpath: str, name: str):
 
 reciprocal_rank_fusion = _load("stack2_hybrid/fusion.py", "fusion").reciprocal_rank_fusion
 extract_entities = _load("stack3_graphrag/entity_extractor.py", "entity_extractor").extract_entities
+tokenize = _load("stack2_hybrid/tokenizer.py", "hybrid_tokenizer").tokenize
 
 
 # ---------------------------------------------------------------------------
@@ -70,3 +71,22 @@ def test_extract_skips_pure_stopwords():
     ents = extract_entities("The dog ran. This is fine.")
     assert "The" not in ents
     assert "This" not in ents
+
+
+# ---------------------------------------------------------------------------
+# Tokenisation BM25 (hybride)
+# ---------------------------------------------------------------------------
+
+def test_tokenize_strips_punctuation_and_case():
+    assert tokenize("April 15, 1912.") == tokenize("april 15 1912")
+
+
+def test_tokenize_removes_stopwords():
+    toks = tokenize("the plant and the fungus")
+    assert "the" not in toks and "and" not in toks
+    assert len(toks) == 2
+
+
+def test_tokenize_stems_plurals():
+    assert tokenize("plants") == tokenize("plant")
+    assert tokenize("diseases") == tokenize("disease")
