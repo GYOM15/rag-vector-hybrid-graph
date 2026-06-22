@@ -46,6 +46,7 @@ def build_stacks(
     max_size: int = 500,
     overlap: int = 50,
     llm_fn=call_llm,
+    embedder: str = "all-MiniLM-L6-v2",
 ) -> dict:
     
     """Construit les 3 RAG sur le corpus (mêmes chunking/index/prompt ; seule la
@@ -55,7 +56,7 @@ def build_stacks(
     texts = [c.text for c in chunks]
     metadata = [c.metadata for c in chunks]
 
-    embeddings = EmbeddingModel("all-MiniLM-L6-v2")
+    embeddings = EmbeddingModel(embedder)
     indexer = FaissIndexer(dimension=embeddings.dimension)
     indexer.add(embeddings.encode(texts), texts, metadata)
     graph = build_graph(texts, metadata)
