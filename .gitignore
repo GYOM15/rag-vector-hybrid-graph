@@ -23,6 +23,7 @@ data/corpus/*
 # Sorties générées (régénérées par le benchmark)
 eval/results.json
 eval/retrieval_results.json
+eval/beir_results.json
 
 # Fichiers perso (non versionnés)
 slides_prompts.md
