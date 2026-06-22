@@ -17,7 +17,7 @@ import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 COLORS = {"vector": "#3b82f6", "hybrid": "#22c55e", "graph": "#a855f7"}
-SHORT = {"vector": "Vectoriel", "hybrid": "Hybride", "graph": "Graphe"}
+SHORT = {"vector": "Vector", "hybrid": "Hybrid", "graph": "Graph"}
 SOURCES = [("SciFact\n(single-hop)", "beir_results.json"),
            ("HotpotQA\n(multi-hop)", "beir_hotpot.json")]
 
@@ -43,9 +43,9 @@ def main() -> None:
         ax.bar_label(bars, fmt="%.3f", fontsize=8, padding=2)
     ax.set_xticks(x)
     ax.set_xticklabels(corpora)
-    ax.set_ylabel("nDCG@10 (plus haut = mieux)")
+    ax.set_ylabel("nDCG@10 (higher = better)")
     ax.set_ylim(0, 1)
-    ax.set_title("Récupération : nDCG@10 par corpus et architecture\n(benchmarks BEIR, jugements humains)")
+    ax.set_title("Retrieval: nDCG@10 by corpus and architecture\n(BEIR benchmarks, human relevance judgments)")
     ax.legend(fontsize=9)
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
