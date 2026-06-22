@@ -47,30 +47,24 @@ def test_rrf_k_parameter():
 
 
 # ---------------------------------------------------------------------------
-# Extraction d'entités heuristique
+# Extraction d'entités (spaCy NER)
 # ---------------------------------------------------------------------------
 
-def test_extract_finds_proper_nouns():
-    ents = extract_entities("The Titanic sank near Newfoundland in April.")
-    assert "Titanic" in ents
-    assert "Newfoundland" in ents
-
-
-def test_extract_strips_leading_stopword():
-    # « The » en tête est retiré -> on garde « Titanic », pas « The Titanic ».
-    assert "Titanic" in extract_entities("The Titanic was a ship.")
-    assert "The Titanic" not in extract_entities("The Titanic was a ship.")
+def test_extract_finds_person_and_place():
+    ents = extract_entities("Albert Einstein was born in Germany.")
+    assert any("Einstein" in e for e in ents)
+    assert "Germany" in ents
 
 
 def test_extract_dedups_case_insensitive():
-    ents = extract_entities("Paris is great. Paris again, Paris once more.")
-    assert ents.count("Paris") == 1
+    ents = extract_entities("Paris is nice. Paris is big.")
+    assert sum(e.lower() == "paris" for e in ents) == 1
 
 
-def test_extract_skips_pure_stopwords():
-    ents = extract_entities("The dog ran. This is fine.")
-    assert "The" not in ents
-    assert "This" not in ents
+def test_extract_excludes_dates_and_numbers():
+    ents = extract_entities("There were 500 people in April 1912.")
+    assert not any(any(c.isdigit() for c in e) for e in ents)
+    assert "April" not in ents
 
 
 # ---------------------------------------------------------------------------
