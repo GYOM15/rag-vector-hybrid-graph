@@ -13,11 +13,7 @@ from shared.embeddings import EmbeddingModel
 from shared.vector_index import FaissIndexer
 
 from .fusion import reciprocal_rank_fusion
-
-
-def _tokenize(text: str) -> list[str]:
-    """Tokenisation minimale pour BM25 : minuscules + découpage sur les espaces."""
-    return text.lower().split()
+from .tokenizer import tokenize
 
 
 class HybridRetriever:
@@ -27,7 +23,7 @@ class HybridRetriever:
         self.indexer = indexer
         self.embedding_model = embedding_model
         self.candidates = candidates
-        self._bm25 = BM25Okapi([_tokenize(text) for text in indexer.chunks])
+        self._bm25 = BM25Okapi([tokenize(text) for text in indexer.chunks])
 
     def search(self, query: str, k: int = 5) -> list[dict]:
         """Renvoie les k chunks les plus pertinents (score = score RRF combiné)."""
@@ -48,7 +44,7 @@ class HybridRetriever:
 
     def _bm25_ranking(self, query: str, n: int) -> list[int]:
         """Ids des n chunks les mieux notés par BM25 (recherche lexicale)."""
-        scores = self._bm25.get_scores(_tokenize(query))
+        scores = self._bm25.get_scores(tokenize(query))
         return [int(i) for i in np.argsort(scores)[::-1][:n]]
 
     def _build_result(self, idx: int, score: float) -> dict:
