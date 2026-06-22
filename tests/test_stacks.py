@@ -20,6 +20,8 @@ def _load(relpath: str, name: str):
 reciprocal_rank_fusion = _load("stack2_hybrid/fusion.py", "fusion").reciprocal_rank_fusion
 extract_entities = _load("stack3_graphrag/entity_extractor.py", "entity_extractor").extract_entities
 tokenize = _load("stack2_hybrid/tokenizer.py", "hybrid_tokenizer").tokenize
+_ir = _load("shared/ir_metrics.py", "ir_metrics")
+recall_at_k, ndcg_at_k, reciprocal_rank = _ir.recall_at_k, _ir.ndcg_at_k, _ir.reciprocal_rank
 
 
 # ---------------------------------------------------------------------------
@@ -84,3 +86,31 @@ def test_tokenize_removes_stopwords():
 def test_tokenize_stems_plurals():
     assert tokenize("plants") == tokenize("plant")
     assert tokenize("diseases") == tokenize("disease")
+
+
+# ---------------------------------------------------------------------------
+# Métriques IR (recall@k, nDCG@k, MRR)
+# ---------------------------------------------------------------------------
+
+def test_recall_at_k():
+    rel = {"a": 1, "b": 1}
+    assert recall_at_k(["a", "x", "b"], rel, 1) == 0.5
+    assert recall_at_k(["a", "x", "b"], rel, 3) == 1.0
+    assert recall_at_k(["x", "y"], rel, 2) == 0.0
+
+
+def test_reciprocal_rank():
+    rel = {"b": 1}
+    assert reciprocal_rank(["a", "b", "c"], rel) == 0.5
+    assert reciprocal_rank(["x"], rel) == 0.0
+
+
+def test_ndcg_perfect_and_zero():
+    rel = {"a": 1}
+    assert ndcg_at_k(["a", "b"], rel, 10) == 1.0
+    assert ndcg_at_k(["b", "c"], rel, 10) == 0.0
+
+
+def test_ndcg_rewards_higher_rank():
+    rel = {"a": 1}
+    assert ndcg_at_k(["x", "a"], rel, 10) < ndcg_at_k(["a", "x"], rel, 10)
