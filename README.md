@@ -166,6 +166,26 @@ and showing it *honestly* on standard benchmarks is the point.
 
 Reproduce with [Quickstart §4](#4-reproduce-the-evaluation).
 
+### By query type — where each architecture shines
+
+On a tagged set (factoid = paraphrased semantic, keyword = exact token), each
+architecture shows a distinct character (toy corpus, MRR):
+
+![Per-query-type MRR](docs/per-category.svg)
+
+| MRR | factoid (semantic) | keyword (exact token) |
+|---|---|---|
+| **Vector** | **0.885** | 0.602 |
+| **Hybrid** | 0.875 | **0.845** |
+| **Graph** | 0.854 | 0.830 |
+
+- **Vector** — *semantic specialist*: best on factoid, but collapses on keyword (no lexical matching).
+- **Hybrid** — *robust generalist*: wins keyword, near-best on factoid (why it tops the aggregate).
+- **Graph** — *entity-robust*: spaCy NER recovers named-entity keyword queries (0.830) far better than pure Vector (0.602), without BM25.
+
+> Small/easy corpus → indicative of *character*, not a ranking; the rigorous
+> ranking is the BEIR table above.
+
 ### Generation quality (optional)
 
 `eval/questions.json` (40 questions tagged factoid / keyword / multi) drives a RAGAS
