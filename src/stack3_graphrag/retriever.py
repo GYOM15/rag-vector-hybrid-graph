@@ -1,73 +1,108 @@
-"""Récupération sensible au graphe : amorçage vectoriel + expansion par le graphe.
+"""Récupération graphe par local-search sur les entités.
 
-1. Recherche vectorielle (FAISS) pour trouver les chunks-graines.
-2. Expansion : pour chaque graine, on suit les arêtes MENTIONS afin de trouver
-   les chunks voisins partageant des entités. Le score combine la similarité
-   vectorielle et un bonus proportionnel au nombre d'entités partagées.
+1. Graines vectorielles (FAISS) — base sémantique et repli.
+2. Entités de la *requête* (spaCy) → nœuds du graphe correspondants.
+3. Chunks reliés : mentionnant ces entités (MENTIONS) ou des entités voisines
+   (RELATED_TO, 1 hop, pondéré plus faiblement).
+Score = similarité vectorielle + recouvrement d'entités pondéré par **IDF**
+(les entités rares comptent plus → neutralise « Plant », « Role », etc.).
+Repli sur le pur vectoriel si la requête n'a aucune entité connue.
 """
 
-import numpy as np
+import math
+
 import faiss
+import numpy as np
 
 from shared.embeddings import EmbeddingModel
 from shared.vector_index import FaissIndexer
 
-_GRAPH_BONUS = 0.1  # bonus de score par entité partagée avec une graine
+from .entity_extractor import extract_entities
+
+_VEC_SEEDS = 20          # graines vectorielles (base sémantique + repli)
+_RELATED_DISCOUNT = 0.5  # poids des entités atteintes via RELATED_TO (1 hop)
+_GRAPH_WEIGHT = 0.3      # poids du signal graphe vs similarité vectorielle
 
 
 class GraphRetriever:
-    """Récupérateur combinant index vectoriel FAISS et graphe networkx (graines + voisins)."""
+    """Local-search par entités : graines vectorielles + chunks liés par entités,
+    scorés par similarité vectorielle + recouvrement d'entités pondéré IDF."""
 
     def __init__(self, indexer: FaissIndexer, embedding_model: EmbeddingModel, graph):
         self.indexer = indexer
         self.embedding_model = embedding_model
         self.graph = graph
+        self._idf = self._compute_idf()
 
     def search(self, query: str, k: int = 5) -> list[dict]:
-        """Renvoie les k chunks les plus pertinents (vectoriel + voisins de graphe)."""
         if self.indexer.size == 0:
             return []
 
-        seeds = self._vector_seeds(query, k)
-        scored = {idx: score for idx, score in seeds}
+        scored = dict(self._vector_seeds(query, max(_VEC_SEEDS, k)))  # base vectorielle
         shared: dict[int, set] = {}
 
-        for idx, _ in seeds:
-            for neighbor_idx, entities in self._graph_neighbors(idx):
-                scored[neighbor_idx] = scored.get(neighbor_idx, 0.0) + _GRAPH_BONUS * len(entities)
-                shared.setdefault(neighbor_idx, set()).update(entities)
+        for chunk_idx, entities, boost in self._entity_candidates(query):
+            scored[chunk_idx] = scored.get(chunk_idx, 0.0) + _GRAPH_WEIGHT * boost
+            shared.setdefault(chunk_idx, set()).update(entities)
 
         top = sorted(scored.items(), key=lambda kv: kv[1], reverse=True)[:k]
         return [self._build_result(idx, score, shared.get(idx)) for idx, score in top]
 
-    def _vector_seeds(self, query: str, k: int) -> list[tuple[int, float]]:
-        """(idx, score) des k chunks les plus proches par similarité vectorielle."""
-        query_emb = np.array([self.embedding_model.encode_query(query)], dtype=np.float32)
-        faiss.normalize_L2(query_emb)
-        scores, indices = self.indexer.index.search(query_emb, k)
-        return [(int(i), float(s)) for s, i in zip(scores[0], indices[0]) if i != -1]
+    def _compute_idf(self) -> dict[str, float]:
+        """IDF normalisé par entité : log(1 + N/df) / log(1 + N), dans (0, 1]."""
+        n_chunks = sum(1 for _, d in self.graph.nodes(data=True) if d.get("type") == "chunk") or 1
+        denom = math.log(1 + n_chunks)
+        idf: dict[str, float] = {}
+        for node, data in self.graph.nodes(data=True):
+            if data.get("type") != "entity":
+                continue
+            df = sum(1 for nb in self.graph.neighbors(node)
+                     if self.graph.nodes[nb].get("type") == "chunk")
+            if df:
+                idf[node] = math.log(1 + n_chunks / df) / denom
+        return idf
 
-    def _graph_neighbors(self, chunk_index: int) -> list[tuple[int, set]]:
-        """Chunks voisins partageant des entités avec le chunk `chunk_index`.
+    def _entity_candidates(self, query: str) -> list[tuple[int, set, float]]:
+        """Chunks reliés aux entités de la requête (direct + RELATED_TO), avec boost IDF.
 
-        Suit le motif (chunk)-[:MENTIONS]->(entité)<-[:MENTIONS]-(voisin) et
-        renvoie des tuples (index_voisin, {entités partagées}).
+        Renvoie (index_chunk, {entités}, boost), boost = somme des IDF des entités
+        de requête mentionnées (poids 1) et de leurs voisines RELATED_TO (poids réduit).
         """
-        chunk_id = f"chunk:{chunk_index}"
-        if chunk_id not in self.graph:
+        query_ids = [f"entity:{name.lower()}" for name in extract_entities(query)]
+        query_ids = [eid for eid in query_ids if eid in self.graph]
+        if not query_ids:
             return []
 
-        neighbors: dict[int, set] = {}
-        for entity_id in self.graph.neighbors(chunk_id):
-            if self.graph.nodes[entity_id].get("type") != "entity":
+        # Poids par entité atteinte : 1.0 pour les entités de la requête, réduit pour leurs voisines.
+        weight: dict[str, float] = {}
+        for eid in query_ids:
+            weight[eid] = 1.0
+            for nb in self.graph.neighbors(eid):
+                if self.graph.nodes[nb].get("type") == "entity":
+                    weight[nb] = max(weight.get(nb, 0.0), _RELATED_DISCOUNT)
+
+        contributions: dict[int, list] = {}
+        for eid, w in weight.items():
+            idf = self._idf.get(eid, 0.0)
+            if not idf:
                 continue
-            entity_name = self.graph.nodes[entity_id]["name"]
-            for other_id in self.graph.neighbors(entity_id):
-                node = self.graph.nodes[other_id]
-                if node.get("type") != "chunk" or other_id == chunk_id:
+            name = self.graph.nodes[eid].get("name", eid)
+            for nb in self.graph.neighbors(eid):
+                node = self.graph.nodes[nb]
+                if node.get("type") != "chunk":
                     continue
-                neighbors.setdefault(node["index"], set()).add(entity_name)
-        return list(neighbors.items())
+                entry = contributions.setdefault(node["index"], [0.0, set()])
+                entry[0] += w * idf
+                entry[1].add(name)
+        return [(idx, ents, boost) for idx, (boost, ents) in contributions.items()]
+
+    def _vector_seeds(self, query: str, n: int) -> list[tuple[int, float]]:
+        """(idx, similarité cosinus) des n chunks les plus proches."""
+        query_emb = np.array([self.embedding_model.encode_query(query)], dtype=np.float32)
+        faiss.normalize_L2(query_emb)
+        n = min(n, self.indexer.size)
+        scores, indices = self.indexer.index.search(query_emb, n)
+        return [(int(i), float(s)) for s, i in zip(scores[0], indices[0]) if i != -1]
 
     def _build_result(self, idx: int, score: float, shared_entities: set | None) -> dict:
         metadata = dict(self.indexer.metadata[idx])
