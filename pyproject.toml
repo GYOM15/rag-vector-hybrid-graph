@@ -14,6 +14,7 @@ dependencies = [
     "rank-bm25>=0.2",
     "snowballstemmer>=2.2",
     "networkx>=3.0",
+    "spacy>=3.7",
     "ollama>=0.3",
     "streamlit>=1.34",
     "numpy>=1.24",

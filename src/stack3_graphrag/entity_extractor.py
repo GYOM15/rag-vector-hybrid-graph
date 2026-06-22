@@ -1,48 +1,53 @@
-"""Extraction d'entités légère, sans dépendance lourde.
+"""Extraction d'entités nommées via spaCy (NER local, en_core_web_sm).
 
-Heuristique : on repère les suites de mots capitalisés (noms propres probables)
-comme entités, en retirant les mots vides capitalisés en début de phrase.
-Suffisant pour démontrer le graphe ; un vrai NER (spaCy) ou un LLM donnerait de
-meilleurs résultats — c'est un remplacement facile derrière la même interface.
+Remplace l'ancienne heuristique de capitalisation par un vrai NER statistique :
+on ne garde que les types d'entités utiles à un graphe de connaissances
+(personnes, lieux, organisations, événements…), en excluant dates et nombres.
+Le modèle est chargé paresseusement et mis en cache.
+
+Installation du modèle : python -m spacy download en_core_web_sm
 """
 
 import re
+from functools import lru_cache
 
-# Mots capitalisés courants (souvent en début de phrase) à ne pas prendre pour des entités.
-_STOPWORDS = {
-    "The", "A", "An", "This", "That", "These", "Those", "It", "He", "She",
-    "They", "We", "You", "In", "On", "At", "Of", "For", "And", "But", "Or",
-    "If", "When", "While", "After", "Before", "However", "There", "Here", "As",
+# Types spaCy conservés (on écarte DATE, CARDINAL, ORDINAL… = bruit pour le graphe).
+_KEEP = {
+    "PERSON", "NORP", "FAC", "ORG", "GPE", "LOC",
+    "PRODUCT", "EVENT", "WORK_OF_ART", "LAW", "LANGUAGE",
 }
+# Article de tête parfois inclus par spaCy (« The RMS Titanic ») — retiré pour des nœuds cohérents.
+_LEADING_ARTICLE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 
-_CAPITALIZED_SEQUENCE = re.compile(r"\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\b")
+
+@lru_cache(maxsize=1)
+def _nlp():
+    """Charge en_core_web_sm une seule fois (NER seul : tagger/parser désactivés)."""
+    import spacy
+
+    try:
+        return spacy.load(
+            "en_core_web_sm",
+            disable=["tagger", "parser", "attribute_ruler", "lemmatizer"],
+        )
+    except OSError as exc:
+        raise OSError(
+            "Modèle spaCy 'en_core_web_sm' introuvable. Installe-le avec :\n"
+            "    python -m spacy download en_core_web_sm"
+        ) from exc
 
 
-def extract_entities(text: str, min_length: int = 3) -> list[str]:
-    """Renvoie la liste dédupliquée des entités détectées dans `text`.
-
-    Une entité est une suite de mots capitalisés ; on retire d'éventuels mots
-    vides en tête (ex. « The » dans « The Titanic ») et on ignore les entités
-    plus courtes que `min_length`. La déduplication est insensible à la casse.
-    """
-    found: list[str] = []
+def extract_entities(text: str, min_length: int = 2) -> list[str]:
+    """Entités nommées de `text` (types utiles au graphe), dédupliquées (casse ignorée)."""
     seen: set[str] = set()
-
-    for match in _CAPITALIZED_SEQUENCE.finditer(text):
-        words = match.group(1).split()
-        while words and words[0] in _STOPWORDS:
-            words = words[1:]
-        if not words:
+    found: list[str] = []
+    for ent in _nlp()(text).ents:
+        if ent.label_ not in _KEEP:
             continue
-
-        entity = " ".join(words)
-        if len(entity) < min_length:
-            continue
-
-        key = entity.lower()
-        if key in seen:
+        name = _LEADING_ARTICLE.sub("", ent.text.strip())
+        key = name.lower()
+        if len(name) < min_length or key in seen:
             continue
         seen.add(key)
-        found.append(entity)
-
+        found.append(name)
     return found
