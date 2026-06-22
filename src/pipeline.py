@@ -41,6 +41,23 @@ def load_chunks(n_articles: int = 100, max_size: int = 500, overlap: int = 50):
     return chunks
 
 
+def assemble_stacks(texts, metadata, embedder: str = "all-MiniLM-L6-v2", llm_fn=call_llm) -> dict:
+    """Construit les 3 RAG à partir d'unités prêtes (chunks ou documents) + métadonnées.
+
+    Index FAISS et graphe partagés ; seule la récupération diffère. Permet de
+    brancher n'importe quel corpus (Wikipédia, BEIR…). Renvoie {nom affiché: RAG}.
+    """
+    embeddings = EmbeddingModel(embedder)
+    indexer = FaissIndexer(dimension=embeddings.dimension)
+    indexer.add(embeddings.encode(texts), texts, metadata)
+    graph = build_graph(texts, metadata)
+    return {
+        STACK_NAMES["vector"]: TraditionalRAG(VectorRetriever(indexer, embeddings), llm_fn),
+        STACK_NAMES["hybrid"]: HybridRAG(HybridRetriever(indexer, embeddings), llm_fn),
+        STACK_NAMES["graph"]: GraphRAG(GraphRetriever(indexer, embeddings, graph), llm_fn),
+    }
+
+
 def build_stacks(
     n_articles: int = 100,
     max_size: int = 500,
@@ -53,16 +70,6 @@ def build_stacks(
     récupération diffère). Renvoie {nom affiché: RAG}."""
     
     chunks = load_chunks(n_articles, max_size, overlap)
-    texts = [c.text for c in chunks]
-    metadata = [c.metadata for c in chunks]
-
-    embeddings = EmbeddingModel(embedder)
-    indexer = FaissIndexer(dimension=embeddings.dimension)
-    indexer.add(embeddings.encode(texts), texts, metadata)
-    graph = build_graph(texts, metadata)
-
-    return {
-        STACK_NAMES["vector"]: TraditionalRAG(VectorRetriever(indexer, embeddings), llm_fn),
-        STACK_NAMES["hybrid"]: HybridRAG(HybridRetriever(indexer, embeddings), llm_fn),
-        STACK_NAMES["graph"]: GraphRAG(GraphRetriever(indexer, embeddings, graph), llm_fn),
-    }
+    return assemble_stacks(
+        [c.text for c in chunks], [c.metadata for c in chunks], embedder, llm_fn
+    )
