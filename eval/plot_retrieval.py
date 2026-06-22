@@ -18,7 +18,7 @@ import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 COLORS = {"vector": "#3b82f6", "hybrid": "#22c55e", "graph": "#a855f7"}
-SHORT = {"vector": "Vectoriel", "hybrid": "Hybride", "graph": "Graphe"}
+SHORT = {"vector": "Vector", "hybrid": "Hybrid", "graph": "Graph"}
 
 
 def _kind(name: str) -> str:
@@ -49,9 +49,9 @@ def main() -> None:
         ax1.bar_label(bars, fmt="%.2f", fontsize=8, padding=2)
     ax1.set_xticks(x)
     ax1.set_xticklabels(labels, fontsize=9)
-    ax1.set_ylabel("MRR global")
+    ax1.set_ylabel("MRR (overall)")
     ax1.set_ylim(0, 1)
-    ax1.set_title("MRR par embedder et architecture")
+    ax1.set_title("MRR by embedder and architecture")
     ax1.legend(fontsize=8)
     ax1.grid(axis="y", alpha=0.3)
 
@@ -64,13 +64,13 @@ def main() -> None:
     ax2.set_ylabel("hit@k")
     ax2.set_ylim(0, 1.02)
     ax2.set_xticks(ks)
-    ax2.set_title("Vectoriel : hit@k selon l'embedder")
+    ax2.set_title("Vector: hit@k by embedder")
     ax2.legend(fontsize=8)
     ax2.grid(alpha=0.3)
 
     n_q = data["config"].get("n_questions", "?")
     n_art = data["config"].get("n_articles", "?")
-    fig.suptitle(f"Le modèle d'embeddings change la récupération ({n_q} questions, {n_art} articles)",
+    fig.suptitle(f"The embedding model changes retrieval ({n_q} questions, {n_art} articles)",
                  fontsize=12)
     fig.tight_layout()
     out = ROOT / "docs" / "retrieval-embedders.svg"
