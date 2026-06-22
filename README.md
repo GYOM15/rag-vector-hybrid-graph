@@ -18,6 +18,7 @@
 ![Embeddings](https://img.shields.io/badge/Embeddings-MiniLM-FFD21E?logo=huggingface&logoColor=black)
 ![BM25](https://img.shields.io/badge/Lexical-BM25%20%2B%20RRF-1D9E75)
 ![networkx](https://img.shields.io/badge/Graph-networkx-2C5BB4)
+![spaCy](https://img.shields.io/badge/NER-spaCy-09A3D5?logo=spacy&logoColor=white)
 ![RAGAS](https://img.shields.io/badge/Eval-RAGAS-E8543F)
 ![Ollama](https://img.shields.io/badge/LLM-Ollama-000000?logo=ollama&logoColor=white)
 ![vLLM](https://img.shields.io/badge/Serving-vLLM-FDB515)
@@ -26,7 +27,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![CI](https://github.com/gyom15/rag-vector-hybrid-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/gyom15/rag-vector-hybrid-graph/actions)
 
-[Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation-set) · [Scaling](#scaling)
+[Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation) · [Scaling](#scaling)
 
 </div>
 
@@ -40,7 +41,7 @@ so the comparison is fair (controlled variables).
 |------|-----------|--------------|
 | **Vector** | dense similarity (FAISS) | semantic meaning |
 | **Hybrid** | vector + BM25, fused by **RRF** | exact keywords (dates, names, codes) |
-| **Graph** | entity graph (networkx) + vector seed + traversal | broader recall / relational |
+| **Graph** | spaCy NER → entity graph (networkx) + **local-search** (query entities via MENTIONS/RELATED_TO, IDF-weighted) | relational / multi-hop |
 
 ## Architecture
 
@@ -87,6 +88,7 @@ python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e .                 # core: library + Streamlit app
 pip install -e ".[eval]"         # + RAGAS benchmark
 pip install -e ".[dev]"          # + pytest / ruff
+python -m spacy download en_core_web_sm   # NER model used by the graph stack
 ```
 
 ### 2. Pick an LLM backend
@@ -117,28 +119,59 @@ streamlit run app/streamlit_app.py
   the last `eval/results.json`. Grouped charts compare quality and latency, overall
   and per question category.
 
-### 4. Run the benchmark (CLI)
+### 4. Reproduce the evaluation
+
+Retrieval quality on standard IR benchmarks — **no LLM**, human relevance judgments:
 
 ```bash
-python -m eval.benchmark                 # all questions
-python -m eval.benchmark --questions 15  # quick run
+python -m eval.beir_eval --dataset scifact                               # single-hop
+python -m eval.beir_eval --dataset hotpotqa-distractor --max-queries 500  # multi-hop
+python -m eval.retrieval_eval                                            # toy corpus + embedder comparison
 ```
-Writes `eval/results.json`. The app and the CLI share the same
-`shared.evaluator.evaluate_stacks`.
 
-## Evaluation set
+Generation quality (RAGAS) — needs `OPENAI_API_KEY` as the judge:
 
-`eval/questions.json` holds 40 hand-written questions, each tagged by **type** so the
-benchmark shows *which architecture wins on which kind of question*:
+```bash
+python -m eval.benchmark --questions 15
+```
 
-| Type | Probes | Favours |
+## Evaluation
+
+**Retrieval is evaluated without an LLM** — we measure whether each architecture
+*retrieves the relevant documents*, using human relevance judgments (qrels) from
+standard IR benchmarks. This isolates the retriever (immune to the LLM's memory),
+is deterministic, and needs no API key. Metrics are pure, unit-tested functions
+(`shared/ir_metrics.py`):
+
+- **recall@k** — fraction of relevant docs found in the top-k.
+- **nDCG@10** — top-10 ranking quality (rewards relevant docs ranked higher); the standard BEIR metric.
+- **MRR** — 1 / rank of the first relevant doc.
+
+### Results — nDCG@10 (human qrels)
+
+![Benchmark results](docs/benchmark-results.svg)
+
+| nDCG@10 | SciFact (single-hop) | HotpotQA (multi-hop) |
 |---|---|---|
-| `factoid` | paraphrased semantic fact | Vector |
-| `keyword` | exact token (date, name, number) | Hybrid (BM25) |
-| `multi` | aggregate several facts / broad recall | Graph / higher `k` |
+| **Hybrid** (BM25 + dense + RRF) | **0.711** | **0.778** |
+| Vector (FAISS, MiniLM) | 0.648 | 0.749 |
+| Graph (spaCy + local-search) | 0.591 | 0.484 |
 
-> Small and corpus-bound → illustrative, not a production benchmark. RAGAS quality
-> needs `OPENAI_API_KEY`; without it the benchmark still reports latencies.
+**Takeaway:** the **hybrid** retriever is the robust winner on *both* corpora —
+consistent with the BEIR literature (MiniLM ≈ 0.64, BM25 ≈ 0.665; RRF fusion lifts
+to 0.711). The lightweight entity-graph underperforms on standard IR (its additive
+entity boost adds noise on large corpora); the real GraphRAG advantage needs
+LLM-extracted relations + community summaries, out of scope here. No free lunch —
+and showing it *honestly* on standard benchmarks is the point.
+
+Reproduce with [Quickstart §4](#4-reproduce-the-evaluation).
+
+### Generation quality (optional)
+
+`eval/questions.json` (40 questions tagged factoid / keyword / multi) drives a RAGAS
+benchmark of answer quality (faithfulness, relevancy, context precision/recall) —
+in the app's Benchmark tab or via `python -m eval.benchmark`. RAGAS uses an OpenAI
+judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 
 ## Scaling
 
@@ -158,8 +191,8 @@ Path: prototype on **Ollama** (dev) → serve the same model class on **vLLM + R
 ```bash
 pytest -q
 ```
-Cover the pure logic (recursive chunking, RRF fusion, entity extraction) and run
-without the heavy ML stack, keeping CI fast.
+Cover the pure logic (chunking, RRF fusion, BM25 tokenizer, IR metrics) with only
+light deps (snowballstemmer, spaCy) — no torch/faiss — keeping CI fast.
 
 ## Data
 
