@@ -195,11 +195,15 @@ architecture shows a distinct character (toy corpus, MRR):
 
 ### Seen live in the app
 
-End-to-end, the same effect appears. Asked live (Simple Wikipedia, small local LLM),
-all three retrieve the answer chunk — but on the keyword question only Hybrid answers:
-its context is clean (all April), while Vector and Graph also pull December/August
-events, and the noise tips the small model into *"not enough info"*. Retrieval
-**precision** drives the final answer (and motivates measuring generation — see [Roadmap](#roadmap)).
+End-to-end, the same effect appears. Asked in the app (Simple Wikipedia, 500 articles,
+small local LLM), retrieval — which is deterministic — decides the answer. On the
+**keyword** query (*"April 1912"*) only **Hybrid** keeps a clean context (3/5 chunks on
+the right month) and answers *Titanic*; Vector and Graph grab a noisier April and misread
+it as *"LSD, 1943"*. On the **entity** query (*"capital of Afghanistan"*) Vector and Hybrid
+retrieve 5/5 on-topic, but the **entity-graph pulls unrelated entities** (June, China,
+Islamic world) — only 2/5 on-topic — and fails. The live demo mirrors the BEIR table:
+**Hybrid robust, the entity boost adds noise on the larger corpus** (and it motivates
+measuring generation directly — see [Roadmap](#roadmap)).
 
 ![Live results across three questions](docs/live-questions.svg)
 
