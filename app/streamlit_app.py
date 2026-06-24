@@ -133,7 +133,7 @@ def run_benchmark(n_questions: int, k: int) -> None:
             metrics = evaluate_stacks(get_stacks(), questions, ground_truths, k=k, types=types)
         payload = {
             "config": {
-                "n_articles": 100, "k": k, "n_questions": len(questions),
+                "n_articles": 500, "k": k, "n_questions": len(questions),
                 "generated_at": datetime.now().isoformat(timespec="seconds"),
             },
             "stacks": metrics,
