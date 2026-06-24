@@ -27,7 +27,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![CI](https://github.com/gyom15/rag-vector-hybrid-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/gyom15/rag-vector-hybrid-graph/actions)
 
-[Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation) · [Scaling](#scaling)
+[Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation) · [Roadmap](#roadmap)
 
 </div>
 
@@ -147,6 +147,13 @@ is deterministic, and needs no API key. Metrics are pure, unit-tested functions
 - **nDCG@10** — top-10 ranking quality (rewards relevant docs ranked higher); the standard BEIR metric.
 - **MRR** — 1 / rank of the first relevant doc.
 
+**Datasets** (loaded from HuggingFace, each with its own human qrels):
+
+- **BEIR** — a standard suite of information-retrieval benchmarks (each = a corpus + queries + relevance judgments).
+- **SciFact** — scientific *claim verification*: ~5k abstracts, 300 queries; **single-hop** (the answer lives in one document).
+- **HotpotQA** (distractor) — **multi-hop** QA: each question needs **≥2 documents combined**; we rank the supporting paragraphs among distractors.
+- **qrels** — the human *relevance judgments*: for each query, which documents count as relevant. Metrics score the retrieved ranking against them.
+
 ### Results — nDCG@10 (human qrels)
 
 ![Benchmark results](docs/benchmark-results.svg)
@@ -186,6 +193,16 @@ architecture shows a distinct character (toy corpus, MRR):
 > Small/easy corpus → indicative of *character*, not a ranking; the rigorous
 > ranking is the BEIR table above.
 
+### Seen live in the app
+
+End-to-end, the same effect appears. Asked live (Simple Wikipedia, small local LLM),
+all three retrieve the answer chunk — but on the keyword question only Hybrid answers:
+its context is clean (all April), while Vector and Graph also pull December/August
+events, and the noise tips the small model into *"not enough info"*. Retrieval
+**precision** drives the final answer (and motivates measuring generation — see [Roadmap](#roadmap)).
+
+![Live results across three questions](docs/live-questions.svg)
+
 ### Generation quality (optional)
 
 `eval/questions.json` (40 questions tagged factoid / keyword / multi) drives a RAGAS
@@ -193,18 +210,14 @@ benchmark of answer quality (faithfulness, relevancy, context precision/recall) 
 in the app's Benchmark tab or via `python -m eval.benchmark`. RAGAS uses an OpenAI
 judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 
-## Scaling
+## Roadmap
 
-> Work in progress — this section grows as the Ray + vLLM serving path lands.
+Planned, not yet implemented:
 
-- **vLLM** — high-throughput inference engine (PagedAttention, continuous batching)
-  behind an **OpenAI-compatible API**, reachable through the `openai` provider with
-  no code change.
-- **Ray** — distributed orchestration: autoscaled replicas (Ray Serve LLM),
-  multi-node parallelism, batch inference (Ray Data).
-
-Path: prototype on **Ollama** (dev) → serve the same model class on **vLLM + Ray**
-(prod), both via the `openai` provider.
+- **Generation quality** — measure end-to-end answers (exact-match / F1 on HotpotQA gold answers, via the local LLM) to confirm whether *better retrieval → better answers*.
+- **Serving at scale** — **vLLM** (PagedAttention, continuous batching) behind an OpenAI-compatible API, orchestrated by **Ray** (autoscaled replicas, Ray Data batch inference). Reachable through the existing `openai` provider with no code change — and it doubles as the remote LLM for a hosted demo.
+- **Hosted demo** — a retrieval-first Streamlit demo on HF Spaces (generation wired to the vLLM endpoint above).
+- **Breadth** — stronger embedders (bge/e5) on the BEIR datasets, plus more datasets (NFCorpus, FiQA).
 
 ## Tests
 
