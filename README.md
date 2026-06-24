@@ -124,9 +124,12 @@ streamlit run app/streamlit_app.py
 Retrieval quality on standard IR benchmarks — **no LLM**, human relevance judgments:
 
 ```bash
-python -m eval.beir_eval --dataset scifact                               # single-hop
-python -m eval.beir_eval --dataset hotpotqa-distractor --max-queries 500  # multi-hop
-python -m eval.retrieval_eval                                            # toy corpus + embedder comparison
+python -m eval.beir_eval --dataset scifact --output eval/beir_results.json                                 # single-hop
+python -m eval.beir_eval --dataset hotpotqa-distractor --max-queries 500 --output eval/beir_hotpot.json     # multi-hop
+python -m eval.beir_eval --dataset nfcorpus --output eval/beir_nfcorpus.json                               # medical IR (hard)
+python -m eval.beir_eval --dataset scifact --embedder BAAI/bge-small-en-v1.5 --output eval/beir_scifact_bge.json  # embedder swap
+python -m eval.retrieval_eval                                                                              # toy corpus + per-type
+python -m eval.plot_benchmark                                                                              # → docs/benchmark-results.svg
 ```
 
 Generation quality (RAGAS) — needs `OPENAI_API_KEY` as the judge:
@@ -152,26 +155,43 @@ is deterministic, and needs no API key. Metrics are pure, unit-tested functions
 - **BEIR** — a standard suite of information-retrieval benchmarks (each = a corpus + queries + relevance judgments).
 - **SciFact** — scientific *claim verification*: ~5k abstracts, 300 queries; **single-hop** (the answer lives in one document).
 - **HotpotQA** (distractor) — **multi-hop** QA: each question needs **≥2 documents combined**; we rank the supporting paragraphs among distractors.
+- **NFCorpus** — a **medical/nutrition** IR benchmark (~3.6k docs) with many graded-relevant docs per query; a known-*hard* dataset where absolute scores are low for every retriever.
 - **qrels** — the human *relevance judgments*: for each query, which documents count as relevant. Metrics score the retrieved ranking against them.
 
 ### Results — nDCG@10 (human qrels)
 
 ![Benchmark results](docs/benchmark-results.svg)
 
-| nDCG@10 | SciFact (single-hop) | HotpotQA (multi-hop) |
-|---|---|---|
-| **Hybrid** (BM25 + dense + RRF) | **0.711** | **0.778** |
-| Vector (FAISS, MiniLM) | 0.648 | 0.749 |
-| Graph (spaCy + local-search) | 0.591 | 0.484 |
+| nDCG@10 (MiniLM) | SciFact (single-hop) | HotpotQA (multi-hop) | NFCorpus (medical IR) |
+|---|---|---|---|
+| **Hybrid** (BM25 + dense + RRF) | **0.711** | **0.778** | **0.343** |
+| Vector (FAISS, MiniLM) | 0.648 | 0.749 | 0.318 |
+| Graph (spaCy + local-search) | 0.591 | 0.484 | 0.310 |
 
-**Takeaway:** the **hybrid** retriever is the robust winner on *both* corpora —
+**Takeaway:** the **hybrid** retriever is the robust winner on *all three* corpora —
 consistent with the BEIR literature (MiniLM ≈ 0.64, BM25 ≈ 0.665; RRF fusion lifts
-to 0.711). The lightweight entity-graph underperforms on standard IR (its additive
-entity boost adds noise on large corpora); the real GraphRAG advantage needs
-LLM-extracted relations + community summaries, out of scope here. No free lunch —
-and showing it *honestly* on standard benchmarks is the point.
+to 0.711). NFCorpus is a deliberately hard benchmark (many graded-relevant docs per
+query → low absolute nDCG for everyone), yet the ranking holds. The lightweight
+entity-graph underperforms on standard IR (its additive entity boost adds noise on
+large corpora); the real GraphRAG advantage needs LLM-extracted relations + community
+summaries, out of scope here. No free lunch — and showing it *honestly* on standard
+benchmarks is the point.
 
 Reproduce with [Quickstart §4](#4-reproduce-the-evaluation).
+
+### Embedder sensitivity
+
+The retriever isn't tied to one embedder. Swapping MiniLM → **bge-small-en-v1.5** on SciFact:
+
+| nDCG@10 (SciFact) | MiniLM | bge-small | Δ |
+|---|---|---|---|
+| **Hybrid** | **0.711** | **0.726** | +0.015 |
+| Vector | 0.648 | 0.706 | +0.058 |
+| Graph | 0.591 | 0.646 | +0.055 |
+
+A stronger dense model lifts everyone, but the **dense-only** stacks (Vector, Graph) gain
+most (~+0.06) while Hybrid barely moves (+0.015) — BM25 already supplied the lexical signal
+the better embedder adds. Hybrid still wins: the embedder is a knob, not the verdict.
 
 ### By query type — where each architecture shines
 
