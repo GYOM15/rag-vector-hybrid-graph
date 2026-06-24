@@ -19,7 +19,8 @@ ROOT = Path(__file__).resolve().parent.parent
 COLORS = {"vector": "#3b82f6", "hybrid": "#22c55e", "graph": "#a855f7"}
 SHORT = {"vector": "Vector", "hybrid": "Hybrid", "graph": "Graph"}
 SOURCES = [("SciFact\n(single-hop)", "beir_results.json"),
-           ("HotpotQA\n(multi-hop)", "beir_hotpot.json")]
+           ("HotpotQA\n(multi-hop)", "beir_hotpot.json"),
+           ("NFCorpus\n(medical IR)", "beir_nfcorpus.json")]
 
 
 def _kind(name: str) -> str:
