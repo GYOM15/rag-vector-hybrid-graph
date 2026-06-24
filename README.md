@@ -230,7 +230,7 @@ light deps (snowballstemmer, spaCy) — no torch/faiss — keeping CI fast.
 ## Data
 
 [Simple English Wikipedia](https://huggingface.co/datasets/wikimedia/wikipedia)
-(`20231101.simple`), first 100 articles by default (`--articles` to change).
+(`20231101.simple`), first 500 articles by default (`--articles` to change).
 
 ## License
 

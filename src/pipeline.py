@@ -25,7 +25,7 @@ _DATASET = "wikimedia/wikipedia"
 _CONFIG = "20231101.simple"
 
 
-def load_chunks(n_articles: int = 100, max_size: int = 500, overlap: int = 50):
+def load_chunks(n_articles: int = 500, max_size: int = 500, overlap: int = 50):
     
     """Charge le corpus Wikipédia et le découpe en chunks (liste de `Chunk`)."""
     
@@ -59,7 +59,7 @@ def assemble_stacks(texts, metadata, embedder: str = "all-MiniLM-L6-v2", llm_fn=
 
 
 def build_stacks(
-    n_articles: int = 100,
+    n_articles: int = 500,
     max_size: int = 500,
     overlap: int = 50,
     llm_fn=call_llm,
