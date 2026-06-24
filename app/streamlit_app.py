@@ -59,7 +59,7 @@ def select_backend() -> None:
     os.environ["LLM_PROVIDER"] = provider
     if provider == "ollama":
         os.environ["OLLAMA_MODEL"] = st.sidebar.text_input(
-            "Modèle Ollama", os.getenv("OLLAMA_MODEL", "llama3.1"))
+            "Modèle Ollama", os.getenv("OLLAMA_MODEL", "llama3.2:3b"))
     elif provider == "openai":
         os.environ["OPENAI_BASE_URL"] = st.sidebar.text_input(
             "Base URL (vLLM / OpenAI)", os.getenv("OPENAI_BASE_URL", "http://localhost:8000/v1"))

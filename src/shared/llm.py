@@ -36,7 +36,7 @@ def call_llm(
 
 # Variable d'environnement et défaut du modèle, par backend.
 _MODEL_ENV = {"ollama": "OLLAMA_MODEL", "openai": "OPENAI_MODEL", "huggingface": "HF_MODEL"}
-_MODEL_DEFAULT = {"ollama": "llama3.1", "openai": "default", "huggingface": "google/flan-t5-base"}
+_MODEL_DEFAULT = {"ollama": "llama3.2:3b", "openai": "default", "huggingface": "google/flan-t5-base"}
 
 
 def active_config() -> dict:
@@ -53,7 +53,7 @@ def _call_ollama(prompt: str, model: str | None, max_length: int) -> str:
     """Inférence locale via Ollama (serveur défini par OLLAMA_URL)."""
     import ollama
 
-    model = model or os.getenv("OLLAMA_MODEL", "llama3.1")
+    model = model or os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     client = ollama.Client(host=os.getenv("OLLAMA_URL", "http://localhost:11434"))
     response = client.chat(model=model, messages=[{"role": "user", "content": prompt}])
     return response["message"]["content"]
