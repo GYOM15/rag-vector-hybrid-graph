@@ -5,7 +5,12 @@
 3. Chunks reliés : mentionnant ces entités (MENTIONS) ou des entités voisines
    (RELATED_TO, 1 hop, pondéré plus faiblement).
 Score = similarité vectorielle + recouvrement d'entités pondéré par **IDF**
-(les entités rares comptent plus → neutralise « Plant », « Role », etc.).
+(les entités rares comptent plus → neutralise « Plant », « Role », etc.),
+**normalisé par la richesse en entités du chunk** : sans cela, un document « hub »
+(p. ex. la page « June » qui cite des dizaines de pays) accumule un boost additif
+énorme et déloge les vrais chunks à mesure que le corpus grandit. La normalisation
+√(nb d'entités) — analogue à la normalisation par longueur de BM25 — favorise les
+chunks *focalisés* et laisse la similarité vectorielle trancher.
 Repli sur le pur vectoriel si la requête n'a aucune entité connue.
 """
 
@@ -33,6 +38,7 @@ class GraphRetriever:
         self.embedding_model = embedding_model
         self.graph = graph
         self._idf = self._compute_idf()
+        self._chunk_n_entities = self._count_chunk_entities()
 
     def search(self, query: str, k: int = 5) -> list[dict]:
         if self.indexer.size == 0:
@@ -61,6 +67,18 @@ class GraphRetriever:
             if df:
                 idf[node] = math.log(1 + n_chunks / df) / denom
         return idf
+
+    def _count_chunk_entities(self) -> dict[int, int]:
+        """Nb d'entités distinctes par chunk (sert à normaliser le boost : pénalise les hubs)."""
+        counts: dict[int, int] = {}
+        for node, data in self.graph.nodes(data=True):
+            if data.get("type") != "chunk":
+                continue
+            counts[data["index"]] = sum(
+                1 for nb in self.graph.neighbors(node)
+                if self.graph.nodes[nb].get("type") == "entity"
+            )
+        return counts
 
     def _entity_candidates(self, query: str) -> list[tuple[int, set, float]]:
         """Chunks reliés aux entités de la requête (direct + RELATED_TO), avec boost IDF.
@@ -94,7 +112,10 @@ class GraphRetriever:
                 entry = contributions.setdefault(node["index"], [0.0, set()])
                 entry[0] += w * idf
                 entry[1].add(name)
-        return [(idx, ents, boost) for idx, (boost, ents) in contributions.items()]
+        # Normalisation par √(richesse en entités) : sans elle, un chunk « hub »
+        # (beaucoup d'entités) accumule un boost démesuré et déloge les chunks focalisés.
+        return [(idx, ents, boost / math.sqrt(self._chunk_n_entities.get(idx, 1) or 1))
+                for idx, (boost, ents) in contributions.items()]
 
     def _vector_seeds(self, query: str, n: int) -> list[tuple[int, float]]:
         """(idx, similarité cosinus) des n chunks les plus proches."""
