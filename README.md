@@ -129,6 +129,7 @@ python -m eval.beir_eval --dataset hotpotqa-distractor --max-queries 500 --outpu
 python -m eval.beir_eval --dataset nfcorpus --output eval/beir_nfcorpus.json                               # medical IR (hard)
 python -m eval.beir_eval --dataset scifact --embedder BAAI/bge-small-en-v1.5 --output eval/beir_scifact_bge.json  # embedder swap
 python -m eval.retrieval_eval                                                                              # toy corpus + per-type
+python -m eval.sweep_entity_norm                                                                           # held-out tuning of the graph normalization
 python -m eval.plot_benchmark                                                                              # → docs/benchmark-results.svg
 ```
 
@@ -166,18 +167,54 @@ is deterministic, and needs no API key. Metrics are pure, unit-tested functions
 |---|---|---|---|
 | **Hybrid** (BM25 + dense + RRF) | **0.711** | **0.778** | **0.343** |
 | Vector (FAISS, MiniLM) | 0.648 | 0.749 | 0.318 |
-| Graph (spaCy + local-search) | 0.591 | 0.484 | 0.310 |
+| Graph (spaCy + local-search) | 0.643 | 0.748 | 0.323 |
 
 **Takeaway:** the **hybrid** retriever is the robust winner on *all three* corpora —
 consistent with the BEIR literature (MiniLM ≈ 0.64, BM25 ≈ 0.665; RRF fusion lifts
 to 0.711). NFCorpus is a deliberately hard benchmark (many graded-relevant docs per
-query → low absolute nDCG for everyone), yet the ranking holds. The lightweight
-entity-graph underperforms on standard IR (its additive entity boost adds noise on
-large corpora); the real GraphRAG advantage needs LLM-extracted relations + community
-summaries, out of scope here. No free lunch — and showing it *honestly* on standard
-benchmarks is the point.
+query → low absolute nDCG for everyone), yet the ranking holds. The entity-graph
+trails — but *why* it trailed turned out to be a fixable bug, not a fundamental
+limit (next section).
 
 Reproduce with [Quickstart §4](#4-reproduce-the-evaluation).
+
+### Diagnosing and fixing the graph's failure at scale
+
+The entity-graph first scored **0.484 on HotpotQA** — far below the others. Instead of
+leaving it a strawman, I traced *why*: the score added an **unnormalized** sum of
+entity-overlap IDF, so **hub documents** accumulated a huge boost and displaced focused
+on-topic chunks. Concretely, on *"capital of Afghanistan?"* (500-article corpus) the
+top result was the *"June"* calendar page — **53 entities, zero semantic similarity** —
+because it cites dozens of countries that all sit in Afghanistan's entity neighborhood.
+The noise grows with the corpus, exactly where GraphRAG should help.
+
+The fix is one principled idea — **normalize the entity boost by the chunk's entity
+richness** (BM25-style length normalization, [retriever.py](src/stack3_graphrag/retriever.py)):
+a focused chunk beats a promiscuous hub, and vector similarity breaks ties. After the fix,
+the *"Afghanistan"* query retrieves **5/5 on-topic** documents (was 2/5).
+
+**Choosing the exact formula — without cheating.** Dividing by `n^p` (entities per chunk)
+leaves one knob, `p`. I swept it (`none, log, 0.25, 0.5, 0.75, 1.0`) on a **held-out
+validation split** (SciFact-train + NFCorpus-validation) and report on the **untouched
+test split** — the test set never selects the formula
+([sweep_entity_norm.py](eval/sweep_entity_norm.py)). My intuition (a *softer* penalty) was
+**wrong**: a *stronger* one, `p=0.75`, won validation (mean nDCG 0.486, vs 0.481 for √,
+0.479 for log, 0.453 for the unnormalized bug). That's the point of measuring instead of guessing.
+
+| nDCG@10 (Graph), test split | before (bug) | **after (p=0.75)** | Δ |
+|---|---|---|---|
+| SciFact | 0.591 | **0.643** | +0.052 |
+| HotpotQA (multi-hop) | 0.484 | **0.748** | **+0.264** |
+| NFCorpus | 0.310 | **0.323** | +0.013 |
+
+Vector and Hybrid are **byte-for-byte unchanged** (only the graph retriever was touched — a
+clean regression check). The graph is now competitive, with the biggest gain on multi-hop
+where hub noise hurt most. **Honest caveat:** at 0.748 the graph nearly *matches* the plain
+vector retriever (0.749) — the strong normalization mostly stops it harming itself rather
+than making it cleverer; its own edge stays on exact named-entity queries. A true GraphRAG
+advantage would need LLM-extracted typed relations + community summaries (out of scope). For
+fairness: the graph's other constants (`_VEC_SEEDS`, `_GRAPH_WEIGHT`, `_RELATED_DISCOUNT`)
+were **not** tuned — only `p`, and only on held-out data.
 
 ### Embedder sensitivity
 
@@ -185,13 +222,14 @@ The retriever isn't tied to one embedder. Swapping MiniLM → **bge-small-en-v1.
 
 | nDCG@10 (SciFact) | MiniLM | bge-small | Δ |
 |---|---|---|---|
-| **Hybrid** | **0.711** | **0.726** | +0.015 |
 | Vector | 0.648 | 0.706 | +0.058 |
-| Graph | 0.591 | 0.646 | +0.055 |
+| **Hybrid** | **0.711** | **0.726** | +0.015 |
+| Graph | 0.643 | 0.646 | +0.003 |
 
-A stronger dense model lifts everyone, but the **dense-only** stacks (Vector, Graph) gain
-most (~+0.06) while Hybrid barely moves (+0.015) — BM25 already supplied the lexical signal
-the better embedder adds. Hybrid still wins: the embedder is a knob, not the verdict.
+A stronger dense model helps — but unevenly. Pure **Vector** gains most (+0.058); **Hybrid**
+moves little (+0.015, BM25 already carried the lexical signal the better embedder adds); the
+**Graph** barely budges (+0.003) — its heavy entity-normalization makes the ranking less
+sensitive to the embedder. Hybrid still wins: the embedder is a knob, not the verdict.
 
 ### By query type — where each architecture shines
 
@@ -204,28 +242,14 @@ architecture shows a distinct character (toy corpus, MRR):
 |---|---|---|
 | **Vector** | **0.885** | 0.602 |
 | **Hybrid** | 0.875 | **0.845** |
-| **Graph** | 0.854 | 0.830 |
+| **Graph** (after fix) | **0.885** | 0.739 |
 
 - **Vector** — *semantic specialist*: best on factoid, but collapses on keyword (no lexical matching).
 - **Hybrid** — *robust generalist*: wins keyword, near-best on factoid (why it tops the aggregate).
-- **Graph** — *entity-robust*: spaCy NER recovers named-entity keyword queries (0.830) far better than pure Vector (0.602), without BM25.
+- **Graph** — after the hub fix: now ties Vector on factoid (0.885) and still beats it on exact tokens via spaCy NER (0.739 vs 0.602). The entity-richness normalization trimmed its keyword edge (was 0.830) — an honest cost of the same fix that lifts the rigorous benchmarks.
 
 > Small/easy corpus → indicative of *character*, not a ranking; the rigorous
 > ranking is the BEIR table above.
-
-### Seen live in the app
-
-End-to-end, the same effect appears. Asked in the app (Simple Wikipedia, 500 articles,
-small local LLM), retrieval — which is deterministic — decides the answer. On the
-**keyword** query (*"April 1912"*) only **Hybrid** keeps a clean context (3/5 chunks on
-the right month) and answers *Titanic*; Vector and Graph grab a noisier April and misread
-it as *"LSD, 1943"*. On the **entity** query (*"capital of Afghanistan"*) Vector and Hybrid
-retrieve 5/5 on-topic, but the **entity-graph pulls unrelated entities** (June, China,
-Islamic world) — only 2/5 on-topic — and fails. The live demo mirrors the BEIR table:
-**Hybrid robust, the entity boost adds noise on the larger corpus** (and it motivates
-measuring generation directly — see [Roadmap](#roadmap)).
-
-![Live results across three questions](docs/live-questions.svg)
 
 ### Generation quality (optional)
 
