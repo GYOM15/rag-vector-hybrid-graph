@@ -27,3 +27,10 @@ eval/*.json
 # Fichiers perso (non versionnés)
 slides_prompts.md
 youtube_metadata.md
+
+# Terraform (état + secrets + cache provider ; on garde les .tf et l'exemple)
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/terraform.tfvars
+*.tfstate
+*.tfstate.*
