@@ -133,6 +133,13 @@ python -m eval.sweep_entity_norm                                                
 python -m eval.plot_benchmark                                                                              # → docs/benchmark-results.svg
 ```
 
+Answer quality end-to-end (EM/F1 on HotpotQA gold) — needs Ollama, deterministic (temperature 0):
+
+```bash
+python -m eval.answer_eval --max-queries 50 --model llama3.2:1b
+python -m eval.answer_eval --max-queries 50 --model llama3.2:3b
+```
+
 Generation quality (RAGAS) — needs `OPENAI_API_KEY` as the judge:
 
 ```bash
@@ -251,6 +258,26 @@ architecture shows a distinct character (toy corpus, MRR):
 > Small/easy corpus → indicative of *character*, not a ranking; the rigorous
 > ranking is the BEIR table above.
 
+### Retrieval → answer (end-to-end)
+
+Does *better retrieval* yield *better answers*? Running the full pipeline (retrieve + generate)
+and scoring the output against HotpotQA's gold answers with **Exact-Match / F1** (SQuAD-style,
+deterministic at temperature 0, **no judge**) — 50 questions, `llama3.2` 1b vs 3b:
+
+| | nDCG@10 | F1 (1b) | F1 (3b) |
+|---|---|---|---|
+| Vector | 0.803 | 0.079 | 0.158 |
+| **Hybrid** | **0.812** | 0.059 | 0.165 |
+| Graph | 0.779 | 0.067 | **0.209** |
+
+Honest reading:
+- **Model capability dominates** — the 3b roughly **2.5× the F1** of the 1b. That's the clear signal.
+- **The per-architecture answer gaps are within noise** at n=50 (Graph's higher 3b-F1 despite the lowest nDCG is ~2 questions out of 50 — not a real win).
+- So *better retrieval → better answer* **doesn't surface cleanly here**: with small local models on hard multi-hop QA, the **generator is the bottleneck** — good retrieval is necessary but not sufficient without a capable enough reader.
+- Absolute EM/F1 are low by construction (small models; verbose answers vs 1–3-word gold, harsh on Exact-Match; multi-hop needs combining two documents).
+
+**Scope note — deliberately local at this stage.** This ran ~300 generations (~20 min) on a laptop with **no batched serving**: fine for a one-off baseline, not for scale. The next stage — **vLLM + Ray** ([Roadmap](#roadmap)) — batches on GPU, making this eval fast *and* unlocking a larger, more capable reader (the setting where the retrieval→answer link should sharpen). Read the table as a current-stage baseline, not the last word.
+
 ### Generation quality (optional)
 
 `eval/questions.json` (40 questions tagged factoid / keyword / multi) drives a RAGAS
@@ -262,8 +289,8 @@ judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 
 Planned, not yet implemented:
 
-- **Generation quality** — measure end-to-end answers (exact-match / F1 on HotpotQA gold answers, via the local LLM) to confirm whether *better retrieval → better answers*.
-- **Serving at scale** — **vLLM** (PagedAttention, continuous batching) behind an OpenAI-compatible API, orchestrated by **Ray** (autoscaled replicas, Ray Data batch inference). Reachable through the existing `openai` provider with no code change — and it doubles as the remote LLM for a hosted demo.
+- **Performance & systems metrics** — isolated retrieval latency (warmup + repeats, median/IQR), a concurrency sweep (throughput, p50/p95/p99), separated index-build cost, and a quality × latency × cost Pareto. The differentiating axis — and the reason the slow local generation above matters.
+- **Serving at scale** — **vLLM** (PagedAttention, continuous batching) behind an OpenAI-compatible API, orchestrated by **Ray** (autoscaled replicas, Ray Data batch inference). Reachable through the existing `openai` provider with no code change — it doubles as the remote LLM for a hosted demo *and* the larger, faster reader for the answer eval above.
 - **Hosted demo** — a retrieval-first Streamlit demo on HF Spaces (generation wired to the vLLM endpoint above).
 - **Breadth** — stronger embedders (bge/e5) on the BEIR datasets, plus more datasets (NFCorpus, FiQA).
 
