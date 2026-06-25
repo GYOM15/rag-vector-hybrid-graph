@@ -1,0 +1,15 @@
+# Prometheus targets for the Ray variant: Ray/Serve metrics + GPU metrics.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Ray + Ray Serve metrics: replica count, ongoing requests, request rate.
+  # (Exposed by `ray start --metrics-export-port=8080`.)
+  - job_name: ray
+    static_configs:
+      - targets: ["ray-llm:8080"]
+
+  # GPU hardware metrics — watch GPUs activate as replicas scale out.
+  - job_name: gpu
+    static_configs:
+      - targets: ["dcgm-exporter:9400"]
