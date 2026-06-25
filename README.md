@@ -130,7 +130,9 @@ python -m eval.beir_eval --dataset nfcorpus --output eval/beir_nfcorpus.json    
 python -m eval.beir_eval --dataset scifact --embedder BAAI/bge-small-en-v1.5 --output eval/beir_scifact_bge.json  # embedder swap
 python -m eval.retrieval_eval                                                                              # toy corpus + per-type
 python -m eval.sweep_entity_norm                                                                           # held-out tuning of the graph normalization
+python -m eval.perf_bench --dataset scifact --n-queries 200                                                # systems: build cost, latency, throughput
 python -m eval.plot_benchmark                                                                              # → docs/benchmark-results.svg
+python -m eval.plot_perf                                                                                   # → docs/perf-pareto.svg
 ```
 
 Answer quality end-to-end (EM/F1 on HotpotQA gold) — needs Ollama, deterministic (temperature 0):
@@ -278,6 +280,26 @@ Honest reading:
 
 **Scope note — deliberately local at this stage.** This ran ~300 generations (~20 min) on a laptop with **no batched serving**: fine for a one-off baseline, not for scale. The next stage — **vLLM + Ray** ([Roadmap](#roadmap)) — batches on GPU, making this eval fast *and* unlocking a larger, more capable reader (the setting where the retrieval→answer link should sharpen). Read the table as a current-stage baseline, not the last word.
 
+### Performance & systems
+
+Retrieval is a *systems* question too, not only a quality one. Measured **without any LLM**
+(deterministic, fast) on SciFact (5,183 docs, 200 queries, k=10) — [perf_bench.py](eval/perf_bench.py):
+
+![Quality × latency Pareto and throughput](docs/perf-pareto.svg)
+
+| | nDCG@10 | build (s) | latency med / p95 / p99 (ms) | throughput @8 (q/s) |
+|---|---|---|---|---|
+| **Vector** | 0.648 | 45 | **8.4** / 11 / 13 | **140** |
+| **Hybrid** | **0.711** | 63 | 15.7 / 22 / 24 | 65 |
+| **Graph** | 0.643 | **219** | 12.4 / 17 / 18 | 76 |
+
+- **Build cost** — the entity-graph is **~3.5× costlier to build**: its spaCy NER pass alone is **174 s** vs FAISS's near-zero. The quality tables never showed this half.
+- **Latency** — Vector is fastest (8.4 ms median); Hybrid slowest (BM25 + dense + RRF fusion); Graph between.
+- **Scaling** — only **Vector scales with concurrency** (102 → 140 q/s, 1 → 8 threads): FAISS releases the GIL, while Hybrid (`rank_bm25`) and Graph (`networkx`) are Python-bound and plateau.
+- **Pareto verdict** — **Vector** (efficiency) and **Hybrid** (quality) sit on the frontier; pick by your latency budget. **Graph is dominated** on standard IR — lower nDCG than Vector, higher latency, far costlier to build. Its niche is elsewhere (named-entity robustness, interpretable `shared_entities`), not this trade-off.
+
+Single-machine, in-process numbers; batched/GPU **serving** throughput is the [Roadmap](#roadmap)'s vLLM + Ray stage.
+
 ### Generation quality (optional)
 
 `eval/questions.json` (40 questions tagged factoid / keyword / multi) drives a RAGAS
@@ -289,8 +311,7 @@ judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 
 Planned, not yet implemented:
 
-- **Performance & systems metrics** — isolated retrieval latency (warmup + repeats, median/IQR), a concurrency sweep (throughput, p50/p95/p99), separated index-build cost, and a quality × latency × cost Pareto. The differentiating axis — and the reason the slow local generation above matters.
-- **Serving at scale** — **vLLM** (PagedAttention, continuous batching) behind an OpenAI-compatible API, orchestrated by **Ray** (autoscaled replicas, Ray Data batch inference). Reachable through the existing `openai` provider with no code change — it doubles as the remote LLM for a hosted demo *and* the larger, faster reader for the answer eval above.
+- **Serving at scale** — **vLLM** (PagedAttention, continuous batching) behind an OpenAI-compatible API, orchestrated by **Ray** (autoscaled replicas, Ray Data batch inference). Reachable through the existing `openai` provider with no code change — it doubles as the remote LLM for a hosted demo *and* the larger, faster reader for the answer eval above. Extends the single-machine *Performance & systems* numbers above to **batched, GPU serving throughput**.
 - **Hosted demo** — a retrieval-first Streamlit demo on HF Spaces (generation wired to the vLLM endpoint above).
 - **Breadth** — stronger embedders (bge/e5) on the BEIR datasets, plus more datasets (NFCorpus, FiQA).
 
