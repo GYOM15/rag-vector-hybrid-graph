@@ -1,0 +1,55 @@
+# Ray Serve (autoscaling vLLM) + observability, for a MULTI-GPU node.
+# vs docker-compose.yml (single-GPU vLLM): here Ray Serve manages N replicas across
+# the GPUs and scales them with load. MODEL/MAX_REPLICAS come from .env.
+services:
+  # Ray head + Serve app: OpenAI API (:8000), Ray metrics (:8080), Ray dashboard (:8265).
+  ray-llm:
+    build: ./ray
+    environment:
+      - MODEL=${MODEL}
+      - MAX_REPLICAS=${MAX_REPLICAS:-4}
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+      - "8265:8265"
+    shm_size: "8gb"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  dcgm-exporter:
+    image: nvidia/dcgm-exporter:latest
+    ports:
+      - "9400:9400"
+    cap_add: [SYS_ADMIN]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.ray.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

@@ -8,3 +8,7 @@ repo_url     = "https://github.com/GYOM15/rag-vector-hybrid-graph.git"
 # region        = "us-east-1"
 # instance_type = "g5.xlarge"
 # model         = "Qwen/Qwen2.5-7B-Instruct"
+
+# Ray Serve autoscaling variant (needs a multi-GPU instance):
+# serving_mode  = "ray"
+# instance_type = "g5.12xlarge"   # 4x A10G -> up to 4 autoscaled replicas

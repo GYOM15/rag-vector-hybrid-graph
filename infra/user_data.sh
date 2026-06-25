@@ -7,6 +7,9 @@ cd /home/ubuntu
 git clone ${repo_url} app
 cd app/infra
 
-# MODEL is consumed by docker-compose.yml's $${MODEL} interpolation.
+# MODEL is consumed by the compose file's $${MODEL} interpolation.
 echo "MODEL=${model}" > .env
-docker compose up -d
+
+# Pick the stack: single-GPU vLLM, or Ray Serve autoscaling (multi-GPU).
+COMPOSE_FILE=$([ "${serving_mode}" = "ray" ] && echo docker-compose.ray.yml || echo docker-compose.yml)
+docker compose -f "$COMPOSE_FILE" up -d --build

@@ -32,3 +32,9 @@ variable "repo_url" {
   description = "Public git URL of this repo; the instance clones it for the compose stack."
   type        = string
 }
+
+variable "serving_mode" {
+  description = "vllm = single-GPU vLLM; ray = Ray Serve autoscaling (needs a multi-GPU instance_type)."
+  type        = string
+  default     = "vllm"
+}
