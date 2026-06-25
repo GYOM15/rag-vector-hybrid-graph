@@ -50,12 +50,18 @@ def active_config() -> dict:
 
 
 def _call_ollama(prompt: str, model: str | None, max_length: int) -> str:
-    """Inférence locale via Ollama (serveur défini par OLLAMA_URL)."""
+    """Inférence locale via Ollama (serveur défini par OLLAMA_URL).
+
+    Température 0 (décodage glouton) → génération **déterministe** : à contexte
+    identique, même réponse à chaque exécution. Indispensable pour des verdicts
+    reproductibles (sinon les réponses d'un petit modèle flottent d'un run à l'autre).
+    """
     import ollama
 
     model = model or os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     client = ollama.Client(host=os.getenv("OLLAMA_URL", "http://localhost:11434"))
-    response = client.chat(model=model, messages=[{"role": "user", "content": prompt}])
+    response = client.chat(model=model, messages=[{"role": "user", "content": prompt}],
+                           options={"temperature": 0})
     return response["message"]["content"]
 
 
