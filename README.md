@@ -311,7 +311,7 @@ judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 
 Planned, not yet implemented:
 
-- **Serving at scale** — **vLLM** (PagedAttention, continuous batching) behind an OpenAI-compatible API, orchestrated by **Ray** (autoscaled replicas, Ray Data batch inference). Reachable through the existing `openai` provider with no code change — it doubles as the remote LLM for a hosted demo *and* the larger, faster reader for the answer eval above. Extends the single-machine *Performance & systems* numbers above to **batched, GPU serving throughput**.
+- **Serving at scale** *(scaffolded — runs on a GPU)* — a backend-agnostic serving benchmark ([`eval/serving_bench.py`](eval/serving_bench.py): req/s, tokens/s, p50/p95/p99 under a concurrency sweep) and a turnkey **Colab notebook** ([`notebooks/vllm_serving_colab.ipynb`](notebooks/vllm_serving_colab.ipynb)) that serves a larger model with **vLLM** (PagedAttention, continuous batching) and re-runs the answer eval through it — via the existing `openai` provider, **no pipeline code change**. Remaining: the GPU run, **Ray** Serve autoscaling, and the serving-throughput Pareto. Doubles as the remote reader for a hosted demo.
 - **Hosted demo** — a retrieval-first Streamlit demo on HF Spaces (generation wired to the vLLM endpoint above).
 - **Breadth** — stronger embedders (bge/e5) on the BEIR datasets, plus more datasets (NFCorpus, FiQA).
 
