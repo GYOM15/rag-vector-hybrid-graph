@@ -28,17 +28,34 @@ _VEC_SEEDS = 20          # graines vectorielles (base sémantique + repli)
 _RELATED_DISCOUNT = 0.5  # poids des entités atteintes via RELATED_TO (1 hop)
 _GRAPH_WEIGHT = 0.3      # poids du signal graphe vs similarité vectorielle
 
+# Normalisation du boost entité par la richesse du chunk : on divise par f(nb d'entités).
+# « none » = version naïve (les documents « hub » riches en entités raflent le boost et
+# délogent les chunks focalisés). √ (défaut) = analogue à la normalisation par longueur de
+# BM25. Bouton unique, balayé sur un split *held-out* (cf. eval/sweep_entity_norm.py) — pas
+# réglé sur le test. Toutes les formes valent >= 1 pour n >= 1 (jamais d'amplification).
+_ENTITY_NORMS = {
+    "none": lambda n: 1.0,
+    "log": lambda n: 1.0 + math.log(n),
+    "p25": lambda n: n ** 0.25,
+    "sqrt": lambda n: math.sqrt(n),
+    "p75": lambda n: n ** 0.75,
+    "linear": lambda n: float(n),
+}
+_DEFAULT_ENTITY_NORM = "p75"  # choisi par balayage held-out (eval/sweep_entity_norm.py)
+
 
 class GraphRetriever:
     """Local-search par entités : graines vectorielles + chunks liés par entités,
     scorés par similarité vectorielle + recouvrement d'entités pondéré IDF."""
 
-    def __init__(self, indexer: FaissIndexer, embedding_model: EmbeddingModel, graph):
+    def __init__(self, indexer: FaissIndexer, embedding_model: EmbeddingModel, graph,
+                 entity_norm: str = _DEFAULT_ENTITY_NORM):
         self.indexer = indexer
         self.embedding_model = embedding_model
         self.graph = graph
         self._idf = self._compute_idf()
         self._chunk_n_entities = self._count_chunk_entities()
+        self._norm = _ENTITY_NORMS.get(entity_norm, _ENTITY_NORMS[_DEFAULT_ENTITY_NORM])
 
     def search(self, query: str, k: int = 5) -> list[dict]:
         if self.indexer.size == 0:
@@ -112,9 +129,9 @@ class GraphRetriever:
                 entry = contributions.setdefault(node["index"], [0.0, set()])
                 entry[0] += w * idf
                 entry[1].add(name)
-        # Normalisation par √(richesse en entités) : sans elle, un chunk « hub »
-        # (beaucoup d'entités) accumule un boost démesuré et déloge les chunks focalisés.
-        return [(idx, ents, boost / math.sqrt(self._chunk_n_entities.get(idx, 1) or 1))
+        # Normalisation par la richesse en entités : sans elle, un chunk « hub » (beaucoup
+        # d'entités) accumule un boost démesuré et déloge les chunks focalisés.
+        return [(idx, ents, boost / self._norm(self._chunk_n_entities.get(idx, 1) or 1))
                 for idx, (boost, ents) in contributions.items()]
 
     def _vector_seeds(self, query: str, n: int) -> list[tuple[int, float]]:
