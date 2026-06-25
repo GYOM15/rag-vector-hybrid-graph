@@ -312,6 +312,7 @@ judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 Planned, not yet implemented:
 
 - **Serving at scale** *(scaffolded — runs on a GPU)* — a backend-agnostic serving benchmark ([`eval/serving_bench.py`](eval/serving_bench.py): req/s, tokens/s, p50/p95/p99 under a concurrency sweep) and a turnkey **Colab notebook** ([`notebooks/vllm_serving_colab.ipynb`](notebooks/vllm_serving_colab.ipynb)) that serves a larger model with **vLLM** (PagedAttention, continuous batching) and re-runs the answer eval through it — via the existing `openai` provider, **no pipeline code change**. Remaining: the GPU run, **Ray** Serve autoscaling, and the serving-throughput Pareto. Doubles as the remote reader for a hosted demo.
+- **Production deploy + observability** *(scaffolded — Terraform)* — [`infra/`](infra/): Terraform for a GPU EC2 instance running vLLM + **Prometheus** + **Grafana** (dashboards-as-code), locked to your IP. `terraform apply` → live latency / throughput / GPU dashboards under load → `terraform destroy`. Remaining: the run on a real AWS account (GPU quota + cost).
 - **Hosted demo** — a retrieval-first Streamlit demo on HF Spaces (generation wired to the vLLM endpoint above).
 - **Breadth** — stronger embedders (bge/e5) on the BEIR datasets, plus more datasets (NFCorpus, FiQA).
 
