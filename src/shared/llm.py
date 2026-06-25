@@ -14,6 +14,7 @@ import os
 from typing import Callable
 
 _HF_CACHE: dict[str, tuple] = {}
+_OLLAMA_CLIENTS: dict[str, object] = {}
 
 
 def call_llm(
@@ -49,6 +50,17 @@ def active_config() -> dict:
     return {"provider": provider, "model": model}
 
 
+def _ollama_client(host: str):
+    """Client Ollama mis en cache par hôte : sa création (dont le contexte SSL) se fait
+    une seule fois, pas à chaque appel — plus rapide, et plus robuste sur les longues
+    boucles d'évaluation (évite de répéter une I/O fragile des centaines de fois)."""
+    if host not in _OLLAMA_CLIENTS:
+        import ollama
+
+        _OLLAMA_CLIENTS[host] = ollama.Client(host=host)
+    return _OLLAMA_CLIENTS[host]
+
+
 def _call_ollama(prompt: str, model: str | None, max_length: int) -> str:
     """Inférence locale via Ollama (serveur défini par OLLAMA_URL).
 
@@ -56,10 +68,8 @@ def _call_ollama(prompt: str, model: str | None, max_length: int) -> str:
     identique, même réponse à chaque exécution. Indispensable pour des verdicts
     reproductibles (sinon les réponses d'un petit modèle flottent d'un run à l'autre).
     """
-    import ollama
-
     model = model or os.getenv("OLLAMA_MODEL", "llama3.2:3b")
-    client = ollama.Client(host=os.getenv("OLLAMA_URL", "http://localhost:11434"))
+    client = _ollama_client(os.getenv("OLLAMA_URL", "http://localhost:11434"))
     response = client.chat(model=model, messages=[{"role": "user", "content": prompt}],
                            options={"temperature": 0})
     return response["message"]["content"]
