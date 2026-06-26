@@ -4,7 +4,7 @@
 set -euxo pipefail
 
 cd /home/ubuntu
-git clone ${repo_url} app
+git clone -b ${repo_branch} ${repo_url} app
 cd app/infra
 
 # MODEL is consumed by docker-compose.yml's $${MODEL} interpolation.

@@ -32,3 +32,9 @@ variable "repo_url" {
   description = "Public git URL of this repo; the instance clones it for the compose stack."
   type        = string
 }
+
+variable "repo_branch" {
+  description = "Branch the instance clones — use a feature branch to test before merging to main."
+  type        = string
+  default     = "main"
+}

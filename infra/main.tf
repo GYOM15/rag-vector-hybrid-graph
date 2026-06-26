@@ -72,8 +72,9 @@ resource "aws_instance" "serving" {
   }
 
   user_data = templatefile("${path.module}/user_data.sh", {
-    repo_url = var.repo_url
-    model    = var.model
+    repo_url    = var.repo_url
+    repo_branch = var.repo_branch
+    model       = var.model
   })
 
   tags = { Name = "rag-serving" }
