@@ -1,0 +1,34 @@
+{
+  "config": {
+    "dataset": "scifact",
+    "embedder": "BAAI/bge-small-en-v1.5",
+    "n_docs": 5183,
+    "n_queries": 300
+  },
+  "stacks": {
+    "Stack 1 — Vectoriel (FAISS)": {
+      "recall@1": 0.5632,
+      "recall@5": 0.764,
+      "recall@10": 0.8296,
+      "ndcg@10": 0.7057,
+      "mrr": 0.6725,
+      "n_queries": 300
+    },
+    "Stack 2 — Hybride (BM25 + RRF)": {
+      "recall@1": 0.574,
+      "recall@5": 0.7772,
+      "recall@10": 0.8579,
+      "ndcg@10": 0.7258,
+      "mrr": 0.6897,
+      "n_queries": 300
+    },
+    "Stack 3 — Graphe (networkx)": {
+      "recall@1": 0.4898,
+      "recall@5": 0.709,
+      "recall@10": 0.7998,
+      "ndcg@10": 0.6463,
+      "mrr": 0.6054,
+      "n_queries": 300
+    }
+  }
+}

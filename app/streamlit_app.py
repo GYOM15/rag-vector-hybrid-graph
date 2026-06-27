@@ -27,6 +27,10 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 from pipeline import STACK_NAMES, build_stacks  # noqa: E402
 
+from eval_dashboard import (  # noqa: E402
+    _grouped_bar, render_answer, render_beir, render_reranking, render_systems,
+)
+
 RESULTS_PATH = PROJECT_ROOT / "eval" / "results.json"
 QUESTIONS_PATH = PROJECT_ROOT / "eval" / "questions.json"
 # Icônes Material (natives Streamlit) colorées par architecture — cohérentes
@@ -156,52 +160,6 @@ _LATENCY_LABELS = {
     "avg_generation_ms": "Génération",
     "avg_latency_ms": "Total",
 }
-_STACK_COLORS = ["#3b82f6", "#22c55e", "#a855f7"]  # bleu, vert, violet
-
-
-def _grouped_bar(matrix, x_title: str, y_title: str, title: str, value_format: str = ".2f") -> None:
-    """Barres groupées explicites (Altair) à partir d'un DataFrame.
-
-    `matrix` : index = catégories (axe X), colonnes = architectures (séries).
-    Affiche titre, axes nommés, légende en bas, valeurs au-dessus des barres et
-    tooltips. Couleurs fixées par architecture (ordre des colonnes).
-    """
-    import altair as alt
-
-    stacks_order = list(matrix.columns)
-    frame = matrix.copy()
-    frame.index = frame.index.astype(str)
-    frame.index.name = x_title
-    long = (
-        frame.reset_index()
-        .melt(id_vars=x_title, var_name="Architecture", value_name=y_title)
-        .dropna(subset=[y_title])
-    )
-    if long.empty:
-        return
-
-    base = alt.Chart(long).encode(
-        x=alt.X(f"{x_title}:N", title=x_title, axis=alt.Axis(labelAngle=0)),
-        xOffset=alt.XOffset("Architecture:N", sort=stacks_order),
-        y=alt.Y(f"{y_title}:Q", title=y_title),
-        color=alt.Color(
-            "Architecture:N",
-            scale=alt.Scale(domain=stacks_order, range=_STACK_COLORS[: len(stacks_order)]),
-            legend=alt.Legend(orient="bottom", title=None, labelLimit=400, columns=1),
-        ),
-        tooltip=[
-            alt.Tooltip(f"{x_title}:N"),
-            alt.Tooltip("Architecture:N"),
-            alt.Tooltip(f"{y_title}:Q", format=value_format),
-        ],
-    )
-    bars = base.mark_bar()
-    labels = base.mark_text(dy=-4, fontSize=10, color="#555").encode(
-        text=alt.Text(f"{y_title}:Q", format=value_format)
-    )
-    st.altair_chart((bars + labels).properties(title=title, height=340), use_container_width=True)
-
-
 def render_benchmark_results() -> None:
     """Affiche le dernier results.json : tableau + graphiques de comparaison."""
     if not RESULTS_PATH.exists():
@@ -274,29 +232,40 @@ st.caption("Vectoriel · Hybride · Graphe — même corpus, même chunking, mê
 
 select_backend()
 
-tab_chat, tab_bench = st.tabs(["💬 Chat en direct", "📊 Benchmark"])
+tab_chat, tab_eval = st.tabs(["💬 Chat en direct", "🧪 Évaluation"])
 
 with tab_chat:
     render_chat_tab()
 
-with tab_bench:
-    st.markdown("#### Lancer un benchmark (RAGAS + latences)")
-    with st.form("bench_form"):
-        c1, c2 = st.columns(2)
-        n_q = c1.number_input("Nombre de questions", 1, 50, 5)
-        k_b = c2.number_input("k (chunks récupérés)", 1, 10, 5)
-        key = st.text_input(
-            "Clé OpenAI pour RAGAS (sinon prise depuis .env)",
-            os.getenv("OPENAI_API_KEY", ""), type="password",
-        )
-        go = st.form_submit_button("▶️ Lancer le benchmark", type="primary")
-
-    if go:
-        if key.strip():
-            os.environ["OPENAI_API_KEY"] = key.strip()
-        if not os.getenv("OPENAI_API_KEY"):
-            st.warning("Pas de clé OpenAI → seules les latences seront calculées (RAGAS sauté).")
-        run_benchmark(int(n_q), int(k_b))
-
-    st.divider()
-    render_benchmark_results()
+with tab_eval:
+    st.caption("Résultats des évaluations (instantanés de référence `eval/reference/`) + le "
+               "benchmark RAGAS en direct. Les évals lourdes se relancent en ligne de commande (README §4).")
+    sub = st.tabs(["📈 Récupération (BEIR)", "🔀 Reranking", "⚙️ Systèmes",
+                   "💬 Qualité réponse", "🧪 RAGAS (live)"])
+    with sub[0]:
+        render_beir()
+    with sub[1]:
+        render_reranking()
+    with sub[2]:
+        render_systems()
+    with sub[3]:
+        render_answer()
+    with sub[4]:
+        st.markdown("#### Lancer un benchmark RAGAS (génération + jugement)")
+        with st.form("bench_form"):
+            c1, c2 = st.columns(2)
+            n_q = c1.number_input("Nombre de questions", 1, 50, 5)
+            k_b = c2.number_input("k (chunks récupérés)", 1, 10, 5)
+            key = st.text_input(
+                "Clé OpenAI pour RAGAS (sinon prise depuis .env)",
+                os.getenv("OPENAI_API_KEY", ""), type="password",
+            )
+            go = st.form_submit_button("▶️ Lancer le benchmark", type="primary")
+        if go:
+            if key.strip():
+                os.environ["OPENAI_API_KEY"] = key.strip()
+            if not os.getenv("OPENAI_API_KEY"):
+                st.warning("Pas de clé OpenAI → seules les latences seront calculées (RAGAS sauté).")
+            run_benchmark(int(n_q), int(k_b))
+        st.divider()
+        render_benchmark_results()

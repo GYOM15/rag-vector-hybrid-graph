@@ -1,0 +1,35 @@
+{
+  "config": {
+    "dataset": "nfcorpus",
+    "candidates": 30,
+    "embedder": "all-MiniLM-L6-v2",
+    "n_queries": 100,
+    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  },
+  "stacks": {
+    "Vector": {
+      "ndcg_base": 0.3514,
+      "ndcg_replace": 0.3781,
+      "ndcg_fusion": 0.3745,
+      "delta_replace": 0.0267,
+      "delta_fusion": 0.0231,
+      "rerank_ms_per_query": 755.9
+    },
+    "Hybrid": {
+      "ndcg_base": 0.3816,
+      "ndcg_replace": 0.413,
+      "ndcg_fusion": 0.4046,
+      "delta_replace": 0.0314,
+      "delta_fusion": 0.023,
+      "rerank_ms_per_query": 692.1
+    },
+    "Graph": {
+      "ndcg_base": 0.3569,
+      "ndcg_replace": 0.3824,
+      "ndcg_fusion": 0.3785,
+      "delta_replace": 0.0255,
+      "delta_fusion": 0.0215,
+      "rerank_ms_per_query": 710.8
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "config": {
+    "dataset": "hotpotqa-distractor",
+    "candidates": 30,
+    "embedder": "all-MiniLM-L6-v2",
+    "n_queries": 100,
+    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  },
+  "stacks": {
+    "Vector": {
+      "ndcg_base": 0.7893,
+      "ndcg_replace": 0.8539,
+      "ndcg_fusion": 0.8227,
+      "delta_replace": 0.0646,
+      "delta_fusion": 0.0334,
+      "rerank_ms_per_query": 1702.2
+    },
+    "Hybrid": {
+      "ndcg_base": 0.8063,
+      "ndcg_replace": 0.86,
+      "ndcg_fusion": 0.8269,
+      "delta_replace": 0.0537,
+      "delta_fusion": 0.0206,
+      "rerank_ms_per_query": 677.7
+    },
+    "Graph": {
+      "ndcg_base": 0.7687,
+      "ndcg_replace": 0.8555,
+      "ndcg_fusion": 0.8151,
+      "delta_replace": 0.0868,
+      "delta_fusion": 0.0464,
+      "rerank_ms_per_query": 1122.3
+    }
+  }
+}

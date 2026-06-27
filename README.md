@@ -131,9 +131,10 @@ streamlit run app/streamlit_app.py
 ```
 - **💬 Chat** — one question to the 3 architectures side by side, each with its own
   thread, latency and sources.
-- **📊 Benchmark** — run the evaluation in-app (questions / `k` / OpenAI key) or view
-  the last `eval/results.json`. Grouped charts compare quality and latency, overall
-  and per question category.
+- **🧪 Évaluation** — an in-app dashboard: retrieval (BEIR), reranking, systems and
+  answer-quality results as tables + charts, from committed snapshots in
+  [`eval/reference/`](eval/reference); plus the live RAGAS benchmark. Heavy evals run
+  from the CLI (§4) and the dashboard *visualises* their output — like MLflow / W&B.
 
 ### 4. Reproduce the evaluation
 

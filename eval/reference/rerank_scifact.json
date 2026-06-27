@@ -1,0 +1,35 @@
+{
+  "config": {
+    "dataset": "scifact",
+    "candidates": 30,
+    "embedder": "all-MiniLM-L6-v2",
+    "n_queries": 100,
+    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  },
+  "stacks": {
+    "Vector": {
+      "ndcg_base": 0.7009,
+      "ndcg_replace": 0.7297,
+      "ndcg_fusion": 0.74,
+      "delta_replace": 0.0288,
+      "delta_fusion": 0.0391,
+      "rerank_ms_per_query": 775.2
+    },
+    "Hybrid": {
+      "ndcg_base": 0.7766,
+      "ndcg_replace": 0.7254,
+      "ndcg_fusion": 0.767,
+      "delta_replace": -0.0512,
+      "delta_fusion": -0.0097,
+      "rerank_ms_per_query": 725.8
+    },
+    "Graph": {
+      "ndcg_base": 0.7024,
+      "ndcg_replace": 0.7297,
+      "ndcg_fusion": 0.7327,
+      "delta_replace": 0.0273,
+      "delta_fusion": 0.0303,
+      "rerank_ms_per_query": 761.5
+    }
+  }
+}
