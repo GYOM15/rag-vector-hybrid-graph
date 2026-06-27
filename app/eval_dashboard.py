@@ -67,7 +67,7 @@ def _grouped_bar(matrix, x_title: str, y_title: str, title: str, value_format: s
     bars = base.mark_bar()
     labels = base.mark_text(dy=-4, fontSize=10, color="#555").encode(
         text=alt.Text(f"{y_title}:Q", format=value_format))
-    st.altair_chart((bars + labels).properties(title=title, height=320), use_container_width=True)
+    st.altair_chart((bars + labels).properties(title=title, height=320), width="stretch")
 
 
 # --- Récupération (BEIR) ------------------------------------------------------
@@ -100,7 +100,7 @@ def render_beir() -> None:
                f"embedder {c.get('embedder', '?')}")
     metrics = ["recall@1", "recall@5", "recall@10", "ndcg@10", "mrr"]
     table = {_short(k): {m: v.get(m) for m in metrics} for k, v in d["stacks"].items()}
-    st.dataframe(_rows(pd.DataFrame(table).T)[metrics], use_container_width=True)
+    st.dataframe(_rows(pd.DataFrame(table).T)[metrics], width="stretch")
 
 
 # --- Reranking ----------------------------------------------------------------
@@ -136,7 +136,7 @@ def render_reranking() -> None:
              for k, v in loaded[ds]["stacks"].items()}
     df = _cols(pd.DataFrame(table)).reindex(["sans", "replace", "fuse"])
     _grouped_bar(df, "Variante", "nDCG@10", f"{ds} — sans / replace / fuse par architecture", ".3f")
-    st.dataframe(df, use_container_width=True)
+    st.dataframe(df, width="stretch")
 
 
 # --- Systèmes -----------------------------------------------------------------
@@ -209,7 +209,7 @@ def _ensure_root_on_path() -> None:
 def render_regression_guard() -> None:
     st.markdown("**Garde-fou anti-régression** — nDCG@5 des 3 archis sur le corpus *doré* fixe, "
                 "le même check qu'en CI. Échoue si une archi chute sous `baseline − tolérance`.")
-    if not st.button("▶️ Lancer le garde-fou", type="primary", key="run_guard"):
+    if not st.button("Lancer le garde-fou", type="primary", icon=":material/play_arrow:", key="run_guard"):
         return
     _ensure_root_on_path()
     import pandas as pd
@@ -225,18 +225,18 @@ def render_regression_guard() -> None:
     table = {arch: {"baseline": want, "actuel": scores.get(arch, 0.0),
                     "Δ": round(scores.get(arch, 0.0) - want, 4)}
              for arch, want in baseline["scores"].items()}
-    st.dataframe(_rows(pd.DataFrame(table).T)[["baseline", "actuel", "Δ"]], use_container_width=True)
+    st.dataframe(_rows(pd.DataFrame(table).T)[["baseline", "actuel", "Δ"]], width="stretch")
     if failures:
         detail = ", ".join(f"{a} {g:.3f} < {w}−{tol}" for a, w, g in failures)
-        st.error(f"❌ {len(failures)} régression(s) → la CI échouerait : {detail}")
+        st.error(f"{len(failures)} régression(s) → la CI échouerait : {detail}")
     else:
-        st.success(f"✅ Aucune régression (tolérance {tol}) — la CI passerait.")
+        st.success(f"Aucune régression (tolérance {tol}) — la CI passerait.")
 
 
 def render_toy_retrieval(get_stacks) -> None:
     st.markdown("**Récupération sur le corpus de démo, par *type* de question** — hit@k + MRR, "
                 "*sans LLM*. Réutilise l'index déjà en cache (rapide, pas de reconstruction).")
-    if not st.button("▶️ Évaluer la récupération", type="primary", key="run_toy"):
+    if not st.button("Évaluer la récupération", type="primary", icon=":material/play_arrow:", key="run_toy"):
         return
     _ensure_root_on_path()
     import pandas as pd
@@ -251,7 +251,7 @@ def render_toy_retrieval(get_stacks) -> None:
 
     overall = {_short(n): r["overall"] for n, r in report.items()}
     st.dataframe(_rows(pd.DataFrame(overall).T)[["hit@1", "hit@3", "hit@5", "hit@10", "mrr"]],
-                 use_container_width=True)
+                 width="stretch")
     for metric, label in (("hit@5", "hit@5"), ("mrr", "MRR")):
         mat = {t: {_short(n): r["by_type"].get(t, {}).get(metric) for n, r in report.items()} for t in cats}
         _grouped_bar(_cols(pd.DataFrame(mat).T), "Type de question", label,
