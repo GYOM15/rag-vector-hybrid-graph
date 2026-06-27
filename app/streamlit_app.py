@@ -41,6 +41,14 @@ ICONS = {
     STACK_NAMES["hybrid"]: ":green[:material/merge:]",
     STACK_NAMES["graph"]: ":violet[:material/hub:]",
 }
+# Avatars monochromes (Material) des bulles : question = personne, réponse = icône
+# de l'architecture (rappel de l'en-tête de colonne, sans la couleur).
+_ARCH_AVATAR = {
+    STACK_NAMES["vector"]: ":material/scatter_plot:",
+    STACK_NAMES["hybrid"]: ":material/merge:",
+    STACK_NAMES["graph"]: ":material/hub:",
+}
+_USER_AVATAR = ":material/person:"
 
 
 @st.cache_resource(show_spinner="Chargement du corpus, chunking et indexation…")
@@ -55,7 +63,7 @@ def select_backend() -> None:
     `call_llm` les lit à chaque appel, donc changer de backend ne reconstruit pas
     l'index (mis en cache et indépendant du LLM).
     """
-    st.sidebar.header("⚙️ Backend LLM")
+    st.sidebar.header(":material/settings: Backend LLM")
     provider = st.sidebar.selectbox(
         "Provider", ["ollama", "openai", "huggingface"],
         help="ollama = local · openai = endpoint compatible OpenAI/vLLM · "
@@ -83,9 +91,9 @@ def render_chat_tab() -> None:
     st.caption("Une même question est envoyée aux 3 architectures ; chacune garde son fil. "
                "(Pas de mémoire conversationnelle : chaque question est indépendante.)")
 
-    top = st.columns([3, 1])
+    top = st.columns([3, 1], vertical_alignment="bottom")
     k = top[0].slider("Nombre de chunks récupérés (k)", 1, 10, 5)
-    if top[1].button("🗑️ Effacer les fils"):
+    if top[1].button("Effacer les fils", icon=":material/delete:", width="stretch"):
         st.session_state.pop("chat", None)
 
     if "chat" not in st.session_state:
@@ -103,17 +111,19 @@ def render_chat_tab() -> None:
                         {"role": "assistant", "content": r["answer"], "result": r})
                 except Exception as exc:
                     st.session_state.chat[name].append(
-                        {"role": "assistant", "content": f"⚠️ {exc}", "result": None})
+                        {"role": "assistant", "content": f"Erreur : {exc}", "result": None})
 
     for column, name in zip(st.columns(len(STACK_NAMES)), st.session_state.chat):
-        with column:
-            st.markdown(f"#### {ICONS.get(name, '')} {name}")
+        with column, st.container(border=True):
+            st.markdown(f"##### {ICONS.get(name, '')} {name}")
             for msg in st.session_state.chat[name]:
-                with st.chat_message(msg["role"]):
+                avatar = _USER_AVATAR if msg["role"] == "user" else _ARCH_AVATAR.get(name)
+                with st.chat_message(msg["role"], avatar=avatar):
                     st.write(msg["content"])
                     result = msg["result"]
                     if result is not None:
-                        st.caption(f"⏱️ {result['latency_ms']} ms · {len(result['contexts'])} chunks")
+                        st.caption(f":material/schedule: {result['latency_ms']} ms · "
+                                   f":material/description: {len(result['contexts'])} chunks")
                         with st.expander("Chunks récupérés"):
                             for i, ctx in enumerate(result["contexts"], 1):
                                 meta = ctx["metadata"]
@@ -144,7 +154,7 @@ def run_benchmark(n_questions: int, k: int) -> None:
             "stacks": metrics,
         }
         RESULTS_PATH.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        st.success("Benchmark terminé ✅")
+        st.success("Benchmark terminé.")
     except Exception as exc:
         st.error(f"Échec du benchmark : {exc}")
 
@@ -177,7 +187,7 @@ def render_benchmark_results() -> None:
     )
 
     df = pd.DataFrame(data["stacks"])  # index = métriques, colonnes = stacks
-    st.dataframe(df.T, use_container_width=True)  # stacks en lignes (lisible)
+    st.dataframe(df.T, width="stretch")  # stacks en lignes (lisible)
 
     ragas = [m for m in _RAGAS_LABELS if m in df.index]
     if ragas:
@@ -228,12 +238,12 @@ def _render_by_type(stacks: dict, pd) -> None:
 
 
 st.set_page_config(page_title="Comparaison RAG", layout="wide")
-st.title("🔍 Comparaison des architectures RAG")
+st.title("Comparaison des architectures RAG")
 st.caption("Vectoriel · Hybride · Graphe — même corpus, même chunking, même prompt.")
 
 select_backend()
 
-tab_chat, tab_eval = st.tabs(["💬 Chat en direct", "🧪 Évaluation"])
+tab_chat, tab_eval = st.tabs([":material/forum: Chat en direct", ":material/analytics: Évaluation"])
 
 with tab_chat:
     render_chat_tab()
@@ -241,8 +251,10 @@ with tab_chat:
 with tab_eval:
     st.caption("Résultats des évaluations (instantanés de référence `eval/reference/`) + le "
                "benchmark RAGAS en direct. Les évals lourdes se relancent en ligne de commande (README §4).")
-    sub = st.tabs(["📈 Récupération (BEIR)", "🔀 Reranking", "⚙️ Systèmes", "💬 Qualité réponse",
-                   "🛡️ Garde-fou (live)", "🎯 Récupération jouet (live)", "🧪 RAGAS (live)"])
+    sub = st.tabs([":material/search: Récupération (BEIR)", ":material/swap_vert: Reranking",
+                   ":material/speed: Systèmes", ":material/question_answer: Qualité réponse",
+                   ":material/shield: Garde-fou (live)", ":material/science: Récupération jouet (live)",
+                   ":material/fact_check: RAGAS (live)"])
     with sub[0]:
         render_beir()
     with sub[1]:
@@ -256,7 +268,7 @@ with tab_eval:
     with sub[5]:
         render_toy_retrieval(get_stacks)
     with sub[6]:
-        st.markdown("#### Lancer un benchmark RAGAS (génération + jugement)")
+        st.subheader("Benchmark RAGAS (génération + jugement)")
         with st.form("bench_form"):
             c1, c2 = st.columns(2)
             n_q = c1.number_input("Nombre de questions", 1, 50, 5)
@@ -265,7 +277,7 @@ with tab_eval:
                 "Clé OpenAI pour RAGAS (sinon prise depuis .env)",
                 os.getenv("OPENAI_API_KEY", ""), type="password",
             )
-            go = st.form_submit_button("▶️ Lancer le benchmark", type="primary")
+            go = st.form_submit_button("Lancer le benchmark", type="primary", icon=":material/play_arrow:")
         if go:
             if key.strip():
                 os.environ["OPENAI_API_KEY"] = key.strip()
