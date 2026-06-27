@@ -20,9 +20,11 @@ data/corpus/*
 # macOS
 .DS_Store
 
-# Sorties générées (régénérées par les évals) ; on garde le jeu de questions
+# Sorties générées (régénérées par les évals) ; on garde les jeux fixes + baselines
 eval/*.json
 !eval/questions.json
+!eval/golden_corpus.json
+!eval/baselines.json
 
 # Fichiers perso (non versionnés)
 slides_prompts.md

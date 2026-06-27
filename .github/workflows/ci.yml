@@ -28,3 +28,29 @@ jobs:
 
       - name: Unit tests
         run: pytest -q
+
+  # Garde-fou anti-régression de la récupération : construit les 3 stacks
+  # (faiss + sentence-transformers + spaCy) sur le corpus doré fixe et ÉCHOUE
+  # si le nDCG@5 d'une architecture chute sous sa baseline commitée. Job séparé
+  # car plus lourd que `test` (d'où le cache du modèle d'embeddings).
+  regression-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache HuggingFace models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ runner.os }}-minilm
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          python -m spacy download en_core_web_sm
+
+      - name: Retrieval regression guard
+        run: python -m eval.check_regression

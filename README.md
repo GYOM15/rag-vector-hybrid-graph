@@ -356,6 +356,17 @@ pytest -q
 Cover the pure logic (chunking, RRF fusion, BM25 tokenizer, IR metrics) with only
 light deps (snowballstemmer, spaCy) — no torch/faiss — keeping CI fast.
 
+**Retrieval regression guard** — a second CI job builds the 3 stacks on a tiny, fixed
+*golden corpus* ([`golden_corpus.json`](eval/golden_corpus.json)) and **fails the build**
+if any architecture's nDCG@5 drops below its committed baseline
+([`baselines.json`](eval/baselines.json)). A change that silently breaks retrieval is
+caught automatically, not by eye:
+
+```bash
+python -m eval.check_regression           # compare to baseline (the CI gate)
+python -m eval.check_regression --update   # regenerate the baseline after an intended change
+```
+
 ## Data
 
 [Simple English Wikipedia](https://huggingface.co/datasets/wikimedia/wikipedia)
