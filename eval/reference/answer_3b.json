@@ -1,0 +1,28 @@
+{
+  "config": {
+    "dataset": "hotpotqa-distractor",
+    "model": "llama3.2:3b",
+    "n_docs": 491,
+    "n_queries": 50
+  },
+  "stacks": {
+    "Stack 1 — Vectoriel (FAISS)": {
+      "ndcg@10": 0.8031,
+      "em": 0.06,
+      "f1": 0.1582,
+      "n_queries": 50
+    },
+    "Stack 2 — Hybride (BM25 + RRF)": {
+      "ndcg@10": 0.8123,
+      "em": 0.06,
+      "f1": 0.1648,
+      "n_queries": 50
+    },
+    "Stack 3 — Graphe (networkx)": {
+      "ndcg@10": 0.7786,
+      "em": 0.1,
+      "f1": 0.2093,
+      "n_queries": 50
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "config": {
+    "dataset": "hotpotqa-distractor",
+    "embedder": "all-MiniLM-L6-v2",
+    "n_docs": 4937,
+    "n_queries": 500
+  },
+  "stacks": {
+    "Stack 1 — Vectoriel (FAISS)": {
+      "recall@1": 0.401,
+      "recall@5": 0.732,
+      "recall@10": 0.825,
+      "ndcg@10": 0.7491,
+      "mrr": 0.868,
+      "n_queries": 500
+    },
+    "Stack 2 — Hybride (BM25 + RRF)": {
+      "recall@1": 0.39,
+      "recall@5": 0.772,
+      "recall@10": 0.893,
+      "ndcg@10": 0.7778,
+      "mrr": 0.8581,
+      "n_queries": 500
+    },
+    "Stack 3 — Graphe (networkx)": {
+      "recall@1": 0.382,
+      "recall@5": 0.728,
+      "recall@10": 0.842,
+      "ndcg@10": 0.7481,
+      "mrr": 0.8496,
+      "n_queries": 500
+    }
+  }
+}
