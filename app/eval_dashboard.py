@@ -65,7 +65,7 @@ def _grouped_bar(matrix, x_title: str, y_title: str, title: str, value_format: s
                  alt.Tooltip(f"{y_title}:Q", format=value_format)],
     )
     bars = base.mark_bar()
-    labels = base.mark_text(dy=-4, fontSize=10, color="#555").encode(
+    labels = base.mark_text(dy=-4, fontSize=10, color="#94a3b8").encode(
         text=alt.Text(f"{y_title}:Q", format=value_format))
     st.altair_chart((bars + labels).properties(title=title, height=320), width="stretch")
 

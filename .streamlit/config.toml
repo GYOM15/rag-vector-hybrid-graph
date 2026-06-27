@@ -9,10 +9,8 @@ fileWatcherType = "none"
 gatherUsageStats = false
 
 [theme]
-# Palette pro cohérente : accent indigo (UI : boutons, sélection) distinct du
-# bleu/vert/violet des 3 architectures (séries de données). Fond clair, texte ardoise.
-primaryColor = "#4f46e5"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f1f5f9"
-textColor = "#0f172a"
+# Thème sombre pro : base « dark » de Streamlit (fond quasi noir) + accent indigo,
+# distinct du bleu/vert/violet des 3 architectures (séries de données).
+base = "dark"
+primaryColor = "#6366f1"
 font = "sans serif"
