@@ -384,6 +384,20 @@ python -m eval.check_regression --update   # regenerate the baseline after an in
 [Simple English Wikipedia](https://huggingface.co/datasets/wikimedia/wikipedia)
 (`20231101.simple`), first 500 articles by default (`--articles` to change).
 
+## Security & limitations
+
+This is a **research / demo** project, scoped accordingly — there is **no security layer**:
+no content moderation, input validation, rate limiting, or prompt-injection defence. That
+is deliberate and appropriate for a local, single-user demo over a *fixed, public* corpus
+(Simple English Wikipedia). Answers are **grounded** in the retrieved context — a
+*faithfulness* measure, not a guardrail — so an out-of-corpus question returns no answer
+rather than a hallucination.
+
+For a **public deployment** wired to a real LLM endpoint, the things worth adding:
+**rate limiting** (cost / abuse), **input validation & length limits**, **content
+moderation**, and **prompt-injection awareness** (low risk here — the corpus is fixed and
+trusted; it would matter if user-supplied documents were ingested).
+
 ## License
 
 [MIT](LICENSE) — see the `LICENSE` file.
