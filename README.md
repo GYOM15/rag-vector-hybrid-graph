@@ -301,25 +301,27 @@ Retrieval is a *systems* question too, not only a quality one. Measured **withou
 
 Single-machine, in-process numbers; batched/GPU **serving** throughput is the [Roadmap](#roadmap)'s vLLM + Ray stage.
 
-### Reranking — does a cross-encoder close the gap?
+### Reranking — does it help, and *how* should you do it?
 
 A two-stage variant: each retriever returns a wider **top-30**, then a **cross-encoder**
-(`ms-marco-MiniLM-L-6-v2`) re-scores every `(query, document)` pair jointly and keeps
-the **top-10**. On SciFact (100 queries) — [`rerank_eval.py`](eval/rerank_eval.py):
+(`ms-marco-MiniLM-L-6-v2`) re-scores every `(query, document)` pair jointly to pick the
+**top-10**. Two ways to use its scores — **replace** the base ranking, or **fuse** it with
+the base ranking (RRF). On SciFact (100 queries) — [`rerank_eval.py`](eval/rerank_eval.py):
 
-| nDCG@10 | without | with rerank | Δ | + latency / query (CPU) |
-|---|--:|--:|--:|--:|
-| Vector | 0.701 | **0.730** | **+0.029** | ~744 ms |
-| **Hybrid** | **0.777** | 0.725 | **−0.051** | ~735 ms |
-| Graph | 0.702 | **0.730** | **+0.027** | ~766 ms |
+| nDCG@10 | without | replace (cross-encoder only) | fuse (RRF) |
+|---|--:|--:|--:|
+| Vector | 0.701 | 0.730 (+0.029) | **0.740 (+0.039)** |
+| **Hybrid** | **0.777** | 0.725 (**−0.051**) | **0.767 (−0.010)** |
+| Graph | 0.702 | 0.730 (+0.027) | **0.733 (+0.030)** |
+| *spread across stacks* | *0.076* | *0.004* | *0.034* |
 
-Three honest findings:
+It is not *whether* you rerank, it is **how**:
 
-- **It equalizes the architectures.** The spread between them collapses from **0.076 → 0.004** — after reranking, all three land at ~0.73. *Once you rerank, the retriever choice barely matters.*
-- **But it is not a free win.** It lifts the weaker retrievers (Vector, Graph) yet **hurts the strong one — Hybrid drops −0.051**: the generic MS-MARCO cross-encoder is *worse* than Hybrid's own BM25 + dense + RRF fusion here, so reranking *replaces* a good ranking with a mediocre one. "Always rerank" is wrong — it depends on how strong the base retriever already is.
-- **At a real latency cost.** ~750 ms/query on **CPU** (≈ 50–100× the retrieval itself; a GPU would cut this sharply).
+- **Replace** (follow the cross-encoder alone) caps every stack at the reranker's ceiling: it lifts the weak ones but **drags the strong Hybrid down −0.051** — the generic MS-MARCO cross-encoder is *worse* than Hybrid's own BM25 + dense + RRF fusion here, so replacing a good ranking with a mediocre one loses quality. Its dramatic "equalization" (0.076 → 0.004) is partly a *symptom* of throwing a good ranking away.
+- **Fuse** (RRF of the base rank and the cross-encoder rank) *augments* the retriever instead of overwriting it: it **lifts the weak ones more** (Vector +0.039, Graph +0.030) **and spares the strong one** (Hybrid −0.010 ≈ noise, still best). For the same cost — it is the same cross-encoder pass — **fusion beats replace in every cell**.
+- **Both cost latency.** ~750 ms/query on **CPU** for the cross-encoder pass (≈ 50–100× the retrieval itself; a GPU cuts this sharply); the RRF step adds only an addition.
 
-So reranking is a **tool, not a default**: it rescues a weak retriever, is counter-productive on top of a strong one, and is never free on latency.
+Takeaway: reranking is worth it — but a reranker should **augment** the retriever's signal, not **replace** it.
 
 ### Generation quality (optional)
 
