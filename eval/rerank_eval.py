@@ -21,7 +21,7 @@ from shared.ir_metrics import ndcg_at_k  # noqa: E402
 from shared.reranker import CrossEncoderReranker  # noqa: E402
 from pipeline import assemble_stacks  # noqa: E402
 
-from eval.beir_eval import _ranked_doc_ids, load_beir  # noqa: E402
+from eval.beir_eval import _ranked_doc_ids, load_beir, load_hotpot_distractor  # noqa: E402
 
 
 def _kind(name: str) -> str:
@@ -30,9 +30,12 @@ def _kind(name: str) -> str:
 
 
 def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: Path) -> dict:
-    texts, metadata, queries_eval, qrels = load_beir(dataset)
-    if max_queries:
-        queries_eval = queries_eval[:max_queries]
+    if dataset == "hotpotqa-distractor":
+        texts, metadata, queries_eval, qrels = load_hotpot_distractor(max_queries or 500)
+    else:
+        texts, metadata, queries_eval, qrels = load_beir(dataset)
+        if max_queries:
+            queries_eval = queries_eval[:max_queries]
 
     print(f"{dataset} : {len(texts)} docs, {len(queries_eval)} requêtes — indexation…", flush=True)
     stacks = assemble_stacks(texts, metadata, embedder=embedder)
