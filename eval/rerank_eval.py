@@ -29,7 +29,8 @@ def _kind(name: str) -> str:
     return "Vector" if ("vecto" in n) else ("Hybrid" if "hybr" in n else "Graph")
 
 
-def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: Path) -> dict:
+def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: Path,
+        reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2") -> dict:
     if dataset == "hotpotqa-distractor":
         texts, metadata, queries_eval, qrels = load_hotpot_distractor(max_queries or 500)
     else:
@@ -39,7 +40,7 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
 
     print(f"{dataset} : {len(texts)} docs, {len(queries_eval)} requêtes — indexation…", flush=True)
     stacks = assemble_stacks(texts, metadata, embedder=embedder)
-    reranker = CrossEncoderReranker()
+    reranker = CrossEncoderReranker(reranker_model)
 
     report = {}
     for name, rag in stacks.items():
@@ -89,9 +90,10 @@ def main() -> None:
     ap.add_argument("--candidates", type=int, default=50, help="taille du top-N récupéré avant reranking")
     ap.add_argument("--max-queries", type=int, default=0)
     ap.add_argument("--embedder", default="all-MiniLM-L6-v2")
+    ap.add_argument("--reranker", default="cross-encoder/ms-marco-MiniLM-L-6-v2", help="modèle cross-encoder")
     ap.add_argument("--output", type=Path, default=ROOT / "eval" / "rerank_results.json")
     args = ap.parse_args()
-    run(args.dataset, args.candidates, args.max_queries, args.embedder, args.output)
+    run(args.dataset, args.candidates, args.max_queries, args.embedder, args.output, args.reranker)
 
 
 if __name__ == "__main__":
