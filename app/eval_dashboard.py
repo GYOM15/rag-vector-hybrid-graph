@@ -195,3 +195,64 @@ def render_answer() -> None:
                  "F1 par architecture et par modèle", ".3f")
     st.caption("La **taille du modèle domine** (3b ≫ 1b) ; les écarts *entre architectures* "
                "sont dans le bruit (n=50) — à ce stade local, le générateur est le goulot.")
+
+
+# --- Évals légères, lançables en direct ---------------------------------------
+
+def _ensure_root_on_path() -> None:
+    import sys
+
+    if str(_ROOT) not in sys.path:
+        sys.path.insert(0, str(_ROOT))
+
+
+def render_regression_guard() -> None:
+    st.markdown("**Garde-fou anti-régression** — nDCG@5 des 3 archis sur le corpus *doré* fixe, "
+                "le même check qu'en CI. Échoue si une archi chute sous `baseline − tolérance`.")
+    if not st.button("▶️ Lancer le garde-fou", type="primary", key="run_guard"):
+        return
+    _ensure_root_on_path()
+    import pandas as pd
+
+    from eval.check_regression import BASELINES, check, measure
+
+    with st.spinner("Construction des 3 stacks sur le corpus doré + nDCG@5… (~10 s)"):
+        scores = measure()
+    baseline = json.loads(BASELINES.read_text("utf-8"))
+    failures = check(scores, baseline)
+
+    tol = baseline["tolerance"]
+    table = {arch: {"baseline": want, "actuel": scores.get(arch, 0.0),
+                    "Δ": round(scores.get(arch, 0.0) - want, 4)}
+             for arch, want in baseline["scores"].items()}
+    st.dataframe(_rows(pd.DataFrame(table).T)[["baseline", "actuel", "Δ"]], use_container_width=True)
+    if failures:
+        detail = ", ".join(f"{a} {g:.3f} < {w}−{tol}" for a, w, g in failures)
+        st.error(f"❌ {len(failures)} régression(s) → la CI échouerait : {detail}")
+    else:
+        st.success(f"✅ Aucune régression (tolérance {tol}) — la CI passerait.")
+
+
+def render_toy_retrieval(get_stacks) -> None:
+    st.markdown("**Récupération sur le corpus de démo, par *type* de question** — hit@k + MRR, "
+                "*sans LLM*. Réutilise l'index déjà en cache (rapide, pas de reconstruction).")
+    if not st.button("▶️ Évaluer la récupération", type="primary", key="run_toy"):
+        return
+    _ensure_root_on_path()
+    import pandas as pd
+
+    from eval.retrieval_eval import _eval_one
+
+    data = [d for d in json.loads((_ROOT / "eval" / "questions.json").read_text("utf-8")) if d.get("gold")]
+    types = [d.get("type", "?") for d in data]
+    cats = sorted(set(types))
+    with st.spinner("Récupération des questions via les 3 architectures…"):
+        report, _suspects = _eval_one(get_stacks(), data, types, cats, k_max=10)
+
+    overall = {_short(n): r["overall"] for n, r in report.items()}
+    st.dataframe(_rows(pd.DataFrame(overall).T)[["hit@1", "hit@3", "hit@5", "hit@10", "mrr"]],
+                 use_container_width=True)
+    for metric, label in (("hit@5", "hit@5"), ("mrr", "MRR")):
+        mat = {t: {_short(n): r["by_type"].get(t, {}).get(metric) for n, r in report.items()} for t in cats}
+        _grouped_bar(_cols(pd.DataFrame(mat).T), "Type de question", label,
+                     f"{label} par type de question (plus haut = mieux)", ".2f")

@@ -133,8 +133,9 @@ streamlit run app/streamlit_app.py
   thread, latency and sources.
 - **🧪 Évaluation** — an in-app dashboard: retrieval (BEIR), reranking, systems and
   answer-quality results as tables + charts, from committed snapshots in
-  [`eval/reference/`](eval/reference); plus the live RAGAS benchmark. Heavy evals run
-  from the CLI (§4) and the dashboard *visualises* their output — like MLflow / W&B.
+  [`eval/reference/`](eval/reference). Heavy evals run from the CLI (§4) and the dashboard
+  *visualises* their output — like MLflow / W&B. The two **fast** evals (the regression
+  guard, the toy-corpus retrieval) and the RAGAS benchmark also **run live** in-app.
 
 ### 4. Reproduce the evaluation
 
