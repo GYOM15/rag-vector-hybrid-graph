@@ -43,6 +43,15 @@ so the comparison is fair (controlled variables).
 | **Hybrid** | vector + BM25, fused by **RRF** | exact keywords (dates, names, codes) |
 | **Graph** | spaCy NER → entity graph (networkx) + **local-search** (query entities via MENTIONS/RELATED_TO, IDF-weighted) | relational / multi-hop |
 
+## Contents
+
+- [Architecture](#architecture) — the 3 retrievers, controlled variables
+- [Quickstart](#quickstart) — install · run · reproduce the eval
+- [Evaluation](#evaluation)
+  - [Diagnosing & fixing the graph at scale](#diagnosing-and-fixing-the-graphs-failure-at-scale) — the diagnose → fix → held-out story
+  - [Performance & systems](#performance--systems) — build cost, latency p95/p99, throughput, Pareto
+- [Roadmap](#roadmap) · [Tests](#tests) · [Data](#data) · [License](#license)
+
 ## Architecture
 
 ![Architecture](docs/architecture.svg)
