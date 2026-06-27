@@ -51,3 +51,24 @@ class CrossEncoderReranker:
         else:
             order = ce_order
         return [candidates[i] for i in order[:top_k]]
+
+
+class RerankedRetriever:
+    """Décorateur : ajoute un étage de reranking à n'importe quel récupérateur.
+
+    Expose le **même** `search(query, k)` : récupère un top-N élargi via le
+    récupérateur interne, puis le cross-encoder réordonne et on renvoie le top-k.
+    Transparent pour la RAG et l'application — on enveloppe le récupérateur, rien
+    d'autre ne change (responsabilité unique). Désactivé par défaut dans le pipeline.
+    """
+
+    def __init__(self, inner, reranker: CrossEncoderReranker,
+                 mode: str = "replace", candidates: int = 30):
+        self.inner = inner
+        self.reranker = reranker
+        self.mode = mode
+        self.candidates = candidates
+
+    def search(self, query: str, k: int = 5) -> list[dict]:
+        results = self.inner.search(query, k=max(self.candidates, k))
+        return self.reranker.rerank(query, results, top_k=k, mode=self.mode)

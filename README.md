@@ -61,6 +61,12 @@ Only the **retriever** differs between stacks; chunking, embeddings, FAISS index
 prompt and LLM are shared. `pipeline.build_stacks()` is the single source of truth
 used by both the app and the benchmark.
 
+An **optional cross-encoder reranking stage** plugs in without touching the stacks:
+set `RERANK_MODE=replace` (or `fusion`) and every retriever is wrapped in a
+`RerankedRetriever` decorator (retrieve a wider top-N → rerank → top-k). It is **off
+by default** — the [reranking eval](#reranking--does-it-help-and-how-should-you-do-it)
+shows the benefit is dataset-dependent, so the *eval decides* and the *pipeline integrates*.
+
 ## A RAG answer has two stages
 
 A wrong answer can come from **retrieval** (the right chunk never reaches the
