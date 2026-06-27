@@ -28,7 +28,8 @@ load_dotenv(PROJECT_ROOT / ".env")
 from pipeline import STACK_NAMES, build_stacks  # noqa: E402
 
 from eval_dashboard import (  # noqa: E402
-    _grouped_bar, render_answer, render_beir, render_reranking, render_systems,
+    _grouped_bar, render_answer, render_beir, render_regression_guard,
+    render_reranking, render_systems, render_toy_retrieval,
 )
 
 RESULTS_PATH = PROJECT_ROOT / "eval" / "results.json"
@@ -240,8 +241,8 @@ with tab_chat:
 with tab_eval:
     st.caption("Résultats des évaluations (instantanés de référence `eval/reference/`) + le "
                "benchmark RAGAS en direct. Les évals lourdes se relancent en ligne de commande (README §4).")
-    sub = st.tabs(["📈 Récupération (BEIR)", "🔀 Reranking", "⚙️ Systèmes",
-                   "💬 Qualité réponse", "🧪 RAGAS (live)"])
+    sub = st.tabs(["📈 Récupération (BEIR)", "🔀 Reranking", "⚙️ Systèmes", "💬 Qualité réponse",
+                   "🛡️ Garde-fou (live)", "🎯 Récupération jouet (live)", "🧪 RAGAS (live)"])
     with sub[0]:
         render_beir()
     with sub[1]:
@@ -251,6 +252,10 @@ with tab_eval:
     with sub[3]:
         render_answer()
     with sub[4]:
+        render_regression_guard()
+    with sub[5]:
+        render_toy_retrieval(get_stacks)
+    with sub[6]:
         st.markdown("#### Lancer un benchmark RAGAS (génération + jugement)")
         with st.form("bench_form"):
             c1, c2 = st.columns(2)
