@@ -143,7 +143,7 @@ python -m eval.sweep_entity_norm                                                
 python -m eval.perf_bench --dataset scifact --n-queries 200                                                # systems: build cost, latency, throughput
 python -m eval.plot_benchmark                                                                              # → docs/benchmark-results.svg
 python -m eval.plot_perf                                                                                   # → docs/perf-pareto.svg
-python -m eval.rerank_eval --dataset scifact --candidates 30 --max-queries 100                             # two-stage: retrieve → cross-encoder rerank
+python -m eval.rerank_eval --dataset scifact --candidates 30 --max-queries 100                             # rerank replace vs fuse (also: nfcorpus, hotpotqa-distractor)
 ```
 
 Answer quality end-to-end (EM/F1 on HotpotQA gold) — needs Ollama, deterministic (temperature 0):
@@ -315,23 +315,25 @@ Single-machine, in-process numbers; batched/GPU **serving** throughput is the [R
 
 A two-stage variant: each retriever returns a wider **top-30**, then a **cross-encoder**
 (`ms-marco-MiniLM-L-6-v2`) re-scores every `(query, document)` pair jointly to pick the
-**top-10**. Two ways to use its scores — **replace** the base ranking, or **fuse** it with
-the base ranking (RRF). On SciFact (100 queries) — [`rerank_eval.py`](eval/rerank_eval.py):
+**top-10**. Reranking helps almost everywhere — the open question is *how* to use its scores:
+**replace** the base ranking with the cross-encoder's, or **fuse** the two rankings (RRF).
+And the answer **does not generalize** — [`rerank_eval.py`](eval/rerank_eval.py), 100 queries each:
 
-| nDCG@10 | without | replace (cross-encoder only) | fuse (RRF) |
-|---|--:|--:|--:|
-| Vector | 0.701 | 0.730 (+0.029) | **0.740 (+0.039)** |
-| **Hybrid** | **0.777** | 0.725 (**−0.051**) | **0.767 (−0.010)** |
-| Graph | 0.702 | 0.730 (+0.027) | **0.733 (+0.030)** |
-| *spread across stacks* | *0.076* | *0.004* | *0.034* |
+| mean ΔnDCG@10 | replace (cross-encoder only) | fuse (RRF) | winner |
+|---|--:|--:|:--|
+| **SciFact** (single-hop) | +0.002 | **+0.020** | **fuse** |
+| **NFCorpus** (medical, hard) | **+0.028** | +0.022 | replace |
+| **HotpotQA** (multi-hop) | **+0.069** | +0.033 | replace |
 
-It is not *whether* you rerank, it is **how**:
+The split is clean — each winner takes all three stacks — and it turns on **one thing: is the
+cross-encoder better than the retriever on this data?**
 
-- **Replace** (follow the cross-encoder alone) caps every stack at the reranker's ceiling: it lifts the weak ones but **drags the strong Hybrid down −0.051** — the generic MS-MARCO cross-encoder is *worse* than Hybrid's own BM25 + dense + RRF fusion here, so replacing a good ranking with a mediocre one loses quality. Its dramatic "equalization" (0.076 → 0.004) is partly a *symptom* of throwing a good ranking away.
-- **Fuse** (RRF of the base rank and the cross-encoder rank) *augments* the retriever instead of overwriting it: it **lifts the weak ones more** (Vector +0.039, Graph +0.030) **and spares the strong one** (Hybrid −0.010 ≈ noise, still best). For the same cost — it is the same cross-encoder pass — **fusion beats replace in every cell**.
-- **Both cost latency.** ~750 ms/query on **CPU** for the cross-encoder pass (≈ 50–100× the retrieval itself; a GPU cuts this sharply); the RRF step adds only an addition.
+- **When the cross-encoder clearly out-ranks the retriever** (NFCorpus, and especially HotpotQA where `replace` adds **+0.05 to +0.09**), following it alone (**replace**) captures the full gain — **fusing dilutes it** with a weaker base ranking.
+- **When it only ties or loses** to an already-strong retriever (SciFact, where `replace` actually *drops* the strong Hybrid by **−0.051**), **fuse** is the safety net: it keeps the good base ranking (Hybrid −0.010 ≈ noise) and avoids the loss.
 
-Takeaway: reranking is worth it — but a reranker should **augment** the retriever's signal, not **replace** it.
+So **fusion is a hedge** — it caps both ends (protects against a weak reranker, brakes the upside of a strong one); **replace is high-variance** (big wins when the reranker is strong, losses when it is weak). **There is no universal winner — you have to measure it on your data.** The library defaults to `mode="replace"` (it wins 2 of 3 here, by larger margins); `mode="fusion"` is one argument away when your retriever is already strong.
+
+Reranking is never free on latency either: ~750 ms/query on **CPU** for the cross-encoder pass (≈ 50–100× the retrieval; a GPU cuts this sharply).
 
 ### Generation quality (optional)
 
