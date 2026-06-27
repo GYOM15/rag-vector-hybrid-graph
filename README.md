@@ -50,6 +50,7 @@ so the comparison is fair (controlled variables).
 - [Evaluation](#evaluation)
   - [Diagnosing & fixing the graph at scale](#diagnosing-and-fixing-the-graphs-failure-at-scale) — the diagnose → fix → held-out story
   - [Performance & systems](#performance--systems) — build cost, latency p95/p99, throughput, Pareto
+  - [Reranking](#reranking--does-it-help-and-how-should-you-do-it) — does it help, and *how*? (replace vs fuse)
 - [Roadmap](#roadmap) · [Tests](#tests) · [Data](#data) · [License](#license)
 
 ## Architecture
