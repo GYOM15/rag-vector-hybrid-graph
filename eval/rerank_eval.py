@@ -40,19 +40,23 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
 
     report = {}
     for name, rag in stacks.items():
-        base = rerank = rerank_ms = 0.0
+        base = repl = fus_sum = rerank_ms = 0.0
         for qid, query in queries_eval:
             results = rag.retriever.search(query, k=candidates)  # top-N large
             base += ndcg_at_k(_ranked_doc_ids(results[:10]), qrels[qid], 10)  # sans reranking
             start = time.perf_counter()
-            reranked = reranker.rerank(query, results, top_k=10)
+            replaced = reranker.rerank(query, results, top_k=10, mode="replace")
             rerank_ms += (time.perf_counter() - start) * 1000
-            rerank += ndcg_at_k(_ranked_doc_ids(reranked), qrels[qid], 10)  # avec reranking
+            repl += ndcg_at_k(_ranked_doc_ids(replaced), qrels[qid], 10)  # cross-encoder seul
+            fused = reranker.rerank(query, results, top_k=10, mode="fusion")
+            fus_sum += ndcg_at_k(_ranked_doc_ids(fused), qrels[qid], 10)  # RRF base + cross-encoder
         n = len(queries_eval)
         report[_kind(name)] = {
             "ndcg_base": round(base / n, 4),
-            "ndcg_rerank": round(rerank / n, 4),
-            "delta": round((rerank - base) / n, 4),
+            "ndcg_replace": round(repl / n, 4),
+            "ndcg_fusion": round(fus_sum / n, 4),
+            "delta_replace": round((repl - base) / n, 4),
+            "delta_fusion": round((fus_sum - base) / n, 4),
             "rerank_ms_per_query": round(rerank_ms / n, 1),
         }
 
@@ -61,15 +65,17 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
                "stacks": report}
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    spreads = (max(m["ndcg_base"] for m in report.values()) - min(m["ndcg_base"] for m in report.values()),
-               max(m["ndcg_rerank"] for m in report.values()) - min(m["ndcg_rerank"] for m in report.values()))
-    print(f"\n{dataset} · top-{candidates} candidats → rerank top-10 · {len(queries_eval)} requêtes\n")
-    print(f"  {'archi':8} {'sans':>7} {'avec':>7} {'Δ':>7}  {'+latence':>10}")
+    def spread(key: str) -> float:
+        vals = [m[key] for m in report.values()]
+        return max(vals) - min(vals)
+
+    print(f"\n{dataset} · top-{candidates} → top-10 · {len(queries_eval)} requêtes (fusion = RRF k=60)\n")
+    print(f"  {'archi':8} {'sans':>7} {'remplace':>9} {'fusion':>8}")
     for k, m in report.items():
-        print(f"  {k:8} {m['ndcg_base']:7.3f} {m['ndcg_rerank']:7.3f} {m['delta']:+7.3f}  "
-              f"{m['rerank_ms_per_query']:8.1f}ms")
-    print(f"\n  écart entre archis : sans={spreads[0]:.3f} → avec={spreads[1]:.3f} "
-          f"({'égalise' if spreads[1] < spreads[0] else 'pas d''égalisation'})")
+        print(f"  {k:8} {m['ndcg_base']:7.3f} {m['ndcg_replace']:9.3f} {m['ndcg_fusion']:8.3f}")
+    print(f"\n  écart entre archis : sans={spread('ndcg_base'):.3f}  "
+          f"remplace={spread('ndcg_replace'):.3f}  fusion={spread('ndcg_fusion'):.3f}")
+    print(f"  latence reranking : ~{sum(m['rerank_ms_per_query'] for m in report.values()) / len(report):.0f} ms/req (CPU)")
     print(f"\n✅ Détails écrits dans {output}")
     return payload
 
