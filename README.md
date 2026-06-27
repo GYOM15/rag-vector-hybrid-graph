@@ -335,6 +335,8 @@ So **fusion is a hedge** — it caps both ends (protects against a weak reranker
 
 Reranking is never free on latency either: ~750 ms/query on **CPU** for the cross-encoder pass (≈ 50–100× the retrieval; a GPU cuts this sharply).
 
+> **Stress test — does a bigger reranker help?** Doubling the cross-encoder (MiniLM **L-6 → L-12**) barely moved SciFact (fuse still wins) while latency **~doubled** (754 → 1373 ms/query). The winner is set by the reranker's **domain-fit, not its size**: a *generic* MS-MARCO cross-encoder does not out-rank a tuned BM25 + dense fusion on scientific-claim verification *at any size* — a *biomedical* reranker might (untested hypothesis).
+
 ### Generation quality (optional)
 
 `eval/questions.json` (40 questions tagged factoid / keyword / multi) drives a RAGAS
