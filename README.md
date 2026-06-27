@@ -133,6 +133,7 @@ python -m eval.sweep_entity_norm                                                
 python -m eval.perf_bench --dataset scifact --n-queries 200                                                # systems: build cost, latency, throughput
 python -m eval.plot_benchmark                                                                              # → docs/benchmark-results.svg
 python -m eval.plot_perf                                                                                   # → docs/perf-pareto.svg
+python -m eval.rerank_eval --dataset scifact --candidates 30 --max-queries 100                             # two-stage: retrieve → cross-encoder rerank
 ```
 
 Answer quality end-to-end (EM/F1 on HotpotQA gold) — needs Ollama, deterministic (temperature 0):
@@ -299,6 +300,26 @@ Retrieval is a *systems* question too, not only a quality one. Measured **withou
 - **Pareto verdict** — **Vector** (efficiency) and **Hybrid** (quality) sit on the frontier; pick by your latency budget. **Graph is dominated** on standard IR — lower nDCG than Vector, higher latency, far costlier to build. Its niche is elsewhere (named-entity robustness, interpretable `shared_entities`), not this trade-off.
 
 Single-machine, in-process numbers; batched/GPU **serving** throughput is the [Roadmap](#roadmap)'s vLLM + Ray stage.
+
+### Reranking — does a cross-encoder close the gap?
+
+A two-stage variant: each retriever returns a wider **top-30**, then a **cross-encoder**
+(`ms-marco-MiniLM-L-6-v2`) re-scores every `(query, document)` pair jointly and keeps
+the **top-10**. On SciFact (100 queries) — [`rerank_eval.py`](eval/rerank_eval.py):
+
+| nDCG@10 | without | with rerank | Δ | + latency / query (CPU) |
+|---|--:|--:|--:|--:|
+| Vector | 0.701 | **0.730** | **+0.029** | ~744 ms |
+| **Hybrid** | **0.777** | 0.725 | **−0.051** | ~735 ms |
+| Graph | 0.702 | **0.730** | **+0.027** | ~766 ms |
+
+Three honest findings:
+
+- **It equalizes the architectures.** The spread between them collapses from **0.076 → 0.004** — after reranking, all three land at ~0.73. *Once you rerank, the retriever choice barely matters.*
+- **But it is not a free win.** It lifts the weaker retrievers (Vector, Graph) yet **hurts the strong one — Hybrid drops −0.051**: the generic MS-MARCO cross-encoder is *worse* than Hybrid's own BM25 + dense + RRF fusion here, so reranking *replaces* a good ranking with a mediocre one. "Always rerank" is wrong — it depends on how strong the base retriever already is.
+- **At a real latency cost.** ~750 ms/query on **CPU** (≈ 50–100× the retrieval itself; a GPU would cut this sharply).
+
+So reranking is a **tool, not a default**: it rescues a weak retriever, is counter-productive on top of a strong one, and is never free on latency.
 
 ### Generation quality (optional)
 
