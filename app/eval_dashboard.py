@@ -233,10 +233,10 @@ def render_regression_guard() -> None:
         st.success(f"No regression (tolerance {tol}) — CI would pass.")
 
 
-def render_toy_retrieval(get_stacks) -> None:
+def render_type_retrieval(get_stacks) -> None:
     st.markdown("**Retrieval on the demo corpus, by question *type*** — hit@k + MRR, "
                 "*no LLM*. Reuses the already-cached index (fast, no rebuild).")
-    if not st.button("Evaluate retrieval", type="primary", icon=":material/play_arrow:", key="run_toy"):
+    if not st.button("Evaluate retrieval", type="primary", icon=":material/play_arrow:", key="run_type"):
         return
     _ensure_root_on_path()
     import pandas as pd
