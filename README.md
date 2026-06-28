@@ -137,6 +137,9 @@ streamlit run app/streamlit_app.py
   *visualises* their output — like MLflow / W&B. The two **fast** evals (the regression
   guard, the toy-corpus retrieval) and the RAGAS benchmark also **run live** in-app.
 
+> **Hosted demo** — deploy the app (the dashboard + a flan-t5 Chat) to a free Hugging Face
+> Space: see [docs/DEPLOY-HF.md](docs/DEPLOY-HF.md).
+
 ### 4. Reproduce the evaluation
 
 Retrieval quality on standard IR benchmarks — **no LLM**, human relevance judgments:

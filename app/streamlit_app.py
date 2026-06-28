@@ -53,8 +53,12 @@ _USER_AVATAR = ":material/person:"
 
 @st.cache_resource(show_spinner="Loading corpus, chunking and indexing…")
 def get_stacks() -> dict:
-    """Builds (once) the three RAG pipelines."""
-    return build_stacks()
+    """Builds (once) the three RAG pipelines.
+
+    `DEMO_ARTICLES` (env) caps the corpus size — useful to speed up a hosted demo
+    (e.g. set 200 on Hugging Face Spaces); defaults to 500.
+    """
+    return build_stacks(n_articles=int(os.getenv("DEMO_ARTICLES", "500")))
 
 
 def select_backend() -> None:
@@ -64,8 +68,11 @@ def select_backend() -> None:
     the index (cached and independent of the LLM).
     """
     st.sidebar.header(":material/settings: LLM backend")
+    providers = ["ollama", "openai", "huggingface"]
+    default = os.getenv("LLM_PROVIDER", "ollama")  # a hosted demo sets huggingface (flan-t5)
     provider = st.sidebar.selectbox(
-        "Provider", ["ollama", "openai", "huggingface"],
+        "Provider", providers,
+        index=providers.index(default) if default in providers else 0,
         help="ollama = local · openai = OpenAI/vLLM-compatible endpoint · "
              "huggingface = local flan-t5",
     )
@@ -136,7 +143,11 @@ def render_chat_tab() -> None:
 
 def run_benchmark(n_questions: int, k: int) -> None:
     """Evaluates the 3 stacks (generation + RAGAS + latencies) and writes results.json."""
-    from shared.evaluator import evaluate_stacks  # lazy import (ragas)
+    try:
+        from shared.evaluator import evaluate_stacks  # lazy import (ragas)
+    except ImportError:
+        st.error("RAGAS isn't installed in this deployment — run the benchmark locally (see README §4).")
+        return
 
     data = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))[:n_questions]
     questions = [d["question"] for d in data]
