@@ -29,7 +29,7 @@ from pipeline import STACK_NAMES, build_stacks  # noqa: E402
 
 from eval_dashboard import (  # noqa: E402
     _grouped_bar, render_answer, render_beir, render_regression_guard,
-    render_reranking, render_systems, render_toy_retrieval,
+    render_reranking, render_systems, render_type_retrieval,
 )
 
 RESULTS_PATH = PROJECT_ROOT / "eval" / "results.json"
@@ -264,7 +264,7 @@ with tab_eval:
                "RAGAS benchmark. Heavy evals are re-run from the command line (README §4).")
     sub = st.tabs([":material/search: Retrieval (BEIR)", ":material/swap_vert: Reranking",
                    ":material/speed: Systems", ":material/question_answer: Answer quality",
-                   ":material/shield: Guard (live)", ":material/science: Toy retrieval (live)",
+                   ":material/shield: Guard (live)", ":material/category: Retrieval by type (live)",
                    ":material/fact_check: RAGAS (live)"])
     with sub[0]:
         render_beir()
@@ -277,7 +277,7 @@ with tab_eval:
     with sub[4]:
         render_regression_guard()
     with sub[5]:
-        render_toy_retrieval(get_stacks)
+        render_type_retrieval(get_stacks)
     with sub[6]:
         st.subheader("RAGAS benchmark (generation + judging)")
         with st.form("bench_form"):
