@@ -1,8 +1,8 @@
-"""Découpage récursif de texte avec chevauchement pour les systèmes RAG.
+"""Recursive text splitting with overlap for RAG systems.
 
-Découpe un texte selon une hiérarchie de séparateurs (paragraphe, ligne,
-phrase, puis mot) et applique un chevauchement de caractères configurable afin
-de préserver le contexte aux frontières des chunks.
+Splits a text along a hierarchy of separators (paragraph, line,
+sentence, then word) and applies a configurable character overlap in order
+to preserve context at chunk boundaries.
 """
 
 from dataclasses import dataclass, field
@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Chunk:
-    """Un morceau de texte avec ses métadonnées et son index de position."""
+    """A piece of text with its metadata and position index."""
 
     text: str
     metadata: dict = field(default_factory=dict)
@@ -25,21 +25,21 @@ _DEFAULT_SEPARATORS = ["\n\n", "\n", ". ", " "]
 # ---------------------------------------------------------------------------
 
 def _make_chunk(text: str, index: int, metadata: dict | None) -> Chunk:
-    """Construit un Chunk avec une copie des métadonnées et la stratégie."""
+    """Build a Chunk with a copy of the metadata and the strategy."""
     meta = dict(metadata) if metadata else {}
     meta["chunk_strategy"] = "recursive"
     return Chunk(text=text, metadata=meta, index=index)
 
 
 def _split_by_separator(text: str, separator: str) -> list[str]:
-    """Découpe `text` sur `separator`, en ignorant les fragments vides."""
+    """Split `text` on `separator`, ignoring empty fragments."""
     if separator == "":
-        return list(text)  # dernier recours : caractère par caractère
+        return list(text)  # last resort: character by character
     return [part for part in text.split(separator) if part.strip()]
 
 
 def _split_into_windows(text: str, size: int, step: int) -> list[str]:
-    """Découpe `text` en fenêtres de `size` caractères avançant de `step`."""
+    """Split `text` into windows of `size` characters advancing by `step`."""
     return [
         window
         for start in range(0, len(text), step)
@@ -48,7 +48,7 @@ def _split_into_windows(text: str, size: int, step: int) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Étapes du découpage récursif
+# Steps of the recursive splitting
 # ---------------------------------------------------------------------------
 
 def _normalize_segments(
@@ -56,11 +56,11 @@ def _normalize_segments(
     size: int, 
     remaining_separators: list[str],
 ) -> list[str]:
-    """Garantit que chaque segment tient dans `size`.
+    """Guarantee that each segment fits within `size`.
 
-    Un segment trop grand est redécoupé avec les séparateurs restants, ou à
-    défaut en fenêtres de caractères. Le chevauchement n'est pas appliqué ici :
-    il l'est à l'assemblage, sur la liste finale des segments.
+    A segment that is too large is re-split using the remaining separators, or
+    failing that into character windows. Overlap is not applied here:
+    it is applied at assembly time, on the final list of segments.
     """
     result: list[str] = []
     for seg in segments:
@@ -81,10 +81,10 @@ def _build_chunks_with_overlap(
     join_sep: str,
     metadata: dict | None,
 ) -> list[Chunk]:
-    """Regroupe les segments en chunks d'au plus `size` caractères.
+    """Group the segments into chunks of at most `size` characters.
 
-    Les `overlap` derniers caractères d'un chunk sont répétés au début du
-    suivant pour préserver le contexte.
+    The last `overlap` characters of a chunk are repeated at the start of the
+    next one to preserve context.
     """
     chunks: list[Chunk] = []
     current: list[str] = []
@@ -93,8 +93,8 @@ def _build_chunks_with_overlap(
     for seg in segments:
         added = (len(join_sep) if current else 0) + len(seg)
         if current and current_len + added > size:
-            # Le segment déborde : on clôt le chunk courant, puis on amorce le
-            # suivant avec la fin du précédent (le chevauchement).
+            # The segment overflows: we close the current chunk, then start the
+            # next one with the end of the previous one (the overlap).
             text = join_sep.join(current)
             chunks.append(_make_chunk(text, len(chunks), metadata))
             tail = text[-overlap:] if overlap else ""
@@ -116,7 +116,7 @@ def _recursive_split(
     separators: list[str],
     metadata: dict | None,
 ) -> list[Chunk]:
-    """Choisit le premier séparateur qui découpe, normalise, puis assemble."""
+    """Pick the first separator that splits, normalize, then assemble."""
     if len(text) <= size:
         stripped = text.strip()
         return [_make_chunk(stripped, 0, metadata)] if stripped else []
@@ -124,18 +124,18 @@ def _recursive_split(
     for i, sep in enumerate(separators):
         segments = _split_by_separator(text, sep)
         if len(segments) <= 1:
-            continue  # ce séparateur ne découpe rien : on passe au suivant
+            continue  # this separator splits nothing: move on to the next one
         fine = _normalize_segments(segments, size, separators[i + 1:])
         return _build_chunks_with_overlap(fine, size, overlap, sep, metadata)
 
-    # Aucun séparateur n'a fonctionné : fenêtres de caractères chevauchantes.
-    # `step` est borné à 1 pour ne jamais boucler indéfiniment ni perdre de texte.
+    # No separator worked: overlapping character windows.
+    # `step` is clamped to 1 to never loop indefinitely or lose text.
     windows = _split_into_windows(text, size, max(size - overlap, 1))
     return [_make_chunk(window, idx, metadata) for idx, window in enumerate(windows)]
 
 
 # ---------------------------------------------------------------------------
-# API publique
+# Public API
 # ---------------------------------------------------------------------------
 
 def recursive_chunk(
@@ -145,19 +145,19 @@ def recursive_chunk(
     separators: list[str] | None = None,
     metadata: dict | None = None,
 ) -> list[Chunk]:
-    """Découpe `text` récursivement selon une hiérarchie de séparateurs.
+    """Split `text` recursively along a hierarchy of separators.
 
-    Essaie de couper par paragraphe, puis ligne, puis phrase, puis mot. Chaque
-    chunk fait au plus `max_size` caractères (hors chevauchement repris du chunk
-    précédent), et `overlap` caractères de fin sont répétés au début du suivant.
-    `metadata` est copié sur chaque chunk renvoyé.
+    Tries to cut by paragraph, then line, then sentence, then word. Each
+    chunk is at most `max_size` characters (excluding the overlap carried over
+    from the previous chunk), and `overlap` trailing characters are repeated at the start of the next one.
+    `metadata` is copied onto each returned chunk.
     """
     if separators is None:
         separators = _DEFAULT_SEPARATORS
 
-    # Normalisation défensive : un appelant peut fournir overlap >= max_size ou
-    # un max_size <= 0, ce qui rendrait le pas de découpage <= 0 (plantage ou
-    # perte de texte). On borne au lieu de lever une exception.
+    # Defensive normalization: a caller may provide overlap >= max_size or
+    # a max_size <= 0, which would make the splitting step <= 0 (crash or
+    # text loss). We clamp instead of raising an exception.
     max_size = max(1, max_size)
     overlap = max(0, min(overlap, max_size - 1))
 

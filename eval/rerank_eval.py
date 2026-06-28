@@ -1,9 +1,9 @@
-"""Reranking : qualité **avec vs sans**, et coût en latence — sur un dataset BEIR.
+"""Reranking: quality **with vs without**, and latency cost — on a BEIR dataset.
 
-Pour chaque architecture : on récupère un top-N large, on note nDCG@10 (a) tel quel
-et (b) après reranking cross-encoder vers le top-10. Répond à deux questions :
-le reranking **améliore-t-il** chaque archi, et **égalise-t-il** les écarts entre
-elles ? — et à quel **coût en latence** (le cross-encoder sur N candidats).
+For each architecture: we retrieve a large top-N, then score nDCG@10 (a) as is
+and (b) after cross-encoder reranking down to the top-10. Answers two questions:
+does reranking **improve** each architecture, and does it **even out** the gaps
+between them? — and at what **latency cost** (the cross-encoder over N candidates).
 
     python -m eval.rerank_eval --dataset scifact --candidates 50
 """
@@ -38,7 +38,7 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
         if max_queries:
             queries_eval = queries_eval[:max_queries]
 
-    print(f"{dataset} : {len(texts)} docs, {len(queries_eval)} requêtes — indexation…", flush=True)
+    print(f"{dataset}: {len(texts)} docs, {len(queries_eval)} queries — indexing…", flush=True)
     stacks = assemble_stacks(texts, metadata, embedder=embedder)
     reranker = CrossEncoderReranker(reranker_model)
 
@@ -46,12 +46,12 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
     for name, rag in stacks.items():
         base = repl = fus_sum = rerank_ms = 0.0
         for qid, query in queries_eval:
-            results = rag.retriever.search(query, k=candidates)  # top-N large
-            base += ndcg_at_k(_ranked_doc_ids(results[:10]), qrels[qid], 10)  # sans reranking
+            results = rag.retriever.search(query, k=candidates)  # large top-N
+            base += ndcg_at_k(_ranked_doc_ids(results[:10]), qrels[qid], 10)  # without reranking
             start = time.perf_counter()
             replaced = reranker.rerank(query, results, top_k=10, mode="replace")
             rerank_ms += (time.perf_counter() - start) * 1000
-            repl += ndcg_at_k(_ranked_doc_ids(replaced), qrels[qid], 10)  # cross-encoder seul
+            repl += ndcg_at_k(_ranked_doc_ids(replaced), qrels[qid], 10)  # cross-encoder only
             fused = reranker.rerank(query, results, top_k=10, mode="fusion")
             fus_sum += ndcg_at_k(_ranked_doc_ids(fused), qrels[qid], 10)  # RRF base + cross-encoder
         n = len(queries_eval)
@@ -73,24 +73,24 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
         vals = [m[key] for m in report.values()]
         return max(vals) - min(vals)
 
-    print(f"\n{dataset} · top-{candidates} → top-10 · {len(queries_eval)} requêtes (fusion = RRF k=60)\n")
-    print(f"  {'archi':8} {'sans':>7} {'remplace':>9} {'fusion':>8}")
+    print(f"\n{dataset} · top-{candidates} → top-10 · {len(queries_eval)} queries (fusion = RRF k=60)\n")
+    print(f"  {'arch':8} {'without':>7} {'replace':>9} {'fusion':>8}")
     for k, m in report.items():
         print(f"  {k:8} {m['ndcg_base']:7.3f} {m['ndcg_replace']:9.3f} {m['ndcg_fusion']:8.3f}")
-    print(f"\n  écart entre archis : sans={spread('ndcg_base'):.3f}  "
-          f"remplace={spread('ndcg_replace'):.3f}  fusion={spread('ndcg_fusion'):.3f}")
-    print(f"  latence reranking : ~{sum(m['rerank_ms_per_query'] for m in report.values()) / len(report):.0f} ms/req (CPU)")
-    print(f"\n✅ Détails écrits dans {output}")
+    print(f"\n  gap between archs: without={spread('ndcg_base'):.3f}  "
+          f"replace={spread('ndcg_replace'):.3f}  fusion={spread('ndcg_fusion'):.3f}")
+    print(f"  reranking latency: ~{sum(m['rerank_ms_per_query'] for m in report.values()) / len(report):.0f} ms/query (CPU)")
+    print(f"\n✅ Details written to {output}")
     return payload
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Reranking cross-encoder : qualité avec/sans + latence (BEIR).")
+    ap = argparse.ArgumentParser(description="Cross-encoder reranking: quality with/without + latency (BEIR).")
     ap.add_argument("--dataset", default="scifact")
-    ap.add_argument("--candidates", type=int, default=50, help="taille du top-N récupéré avant reranking")
+    ap.add_argument("--candidates", type=int, default=50, help="size of the top-N retrieved before reranking")
     ap.add_argument("--max-queries", type=int, default=0)
     ap.add_argument("--embedder", default="all-MiniLM-L6-v2")
-    ap.add_argument("--reranker", default="cross-encoder/ms-marco-MiniLM-L-6-v2", help="modèle cross-encoder")
+    ap.add_argument("--reranker", default="cross-encoder/ms-marco-MiniLM-L-6-v2", help="cross-encoder model")
     ap.add_argument("--output", type=Path, default=ROOT / "eval" / "rerank_results.json")
     args = ap.parse_args()
     run(args.dataset, args.candidates, args.max_queries, args.embedder, args.output, args.reranker)

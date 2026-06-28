@@ -1,8 +1,8 @@
-"""Gabarit de prompt RAG partagé par tous les stacks.
+"""RAG prompt template shared by all stacks.
 
-Comme le chunker, le prompt est une variable tenue constante : les trois stacks
-utilisent exactement le même, pour que la comparaison ne porte que sur la
-stratégie de récupération.
+Like the chunker, the prompt is a variable held constant: the three stacks
+use exactly the same one, so that the comparison is only about the
+retrieval strategy.
 """
 
 DEFAULT_PROMPT_TEMPLATE = """Answer the question based ONLY on the following context.
@@ -17,9 +17,9 @@ Answer:"""
 
 
 def format_contexts(contexts: list[dict]) -> str:
-    """Concatène les chunks récupérés en un bloc de contexte numéroté.
+    """Concatenate the retrieved chunks into a numbered context block.
 
-    Chaque chunk est numéroté et, si disponible, annoté de son titre source.
+    Each chunk is numbered and, if available, annotated with its source title.
     """
     parts = []
     for i, ctx in enumerate(contexts, 1):
@@ -34,6 +34,6 @@ def build_prompt(
     contexts: list[dict],
     template: str | None = None,
 ) -> str:
-    """Assemble le prompt final à partir de la question et des contextes."""
+    """Assemble the final prompt from the question and the contexts."""
     tmpl = template or DEFAULT_PROMPT_TEMPLATE
     return tmpl.format(context=format_contexts(contexts), question=question)

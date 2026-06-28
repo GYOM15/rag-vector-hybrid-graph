@@ -1,4 +1,4 @@
-"""Stack 3 : Graph RAG en mémoire (entités heuristiques + networkx)."""
+"""Stack 3: in-memory Graph RAG (heuristic entities + networkx)."""
 
 from .entity_extractor import extract_entities
 from .graph_builder import build_graph

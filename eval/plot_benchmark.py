@@ -1,7 +1,7 @@
-"""Trace nDCG@10 par corpus × architecture depuis les sorties de beir_eval.
+"""Plot nDCG@10 per corpus × architecture from the beir_eval outputs.
 
-Lit eval/beir_results.json (SciFact) et eval/beir_hotpot.json (HotpotQA) et écrit
-docs/benchmark-results.svg. Nécessite l'extra [notebooks] (matplotlib).
+Reads eval/beir_results.json (SciFact) and eval/beir_hotpot.json (HotpotQA) and writes
+docs/benchmark-results.svg. Requires the [notebooks] extra (matplotlib).
 
     python -m eval.plot_benchmark
 """

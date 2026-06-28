@@ -1,11 +1,11 @@
-"""Évaluation de la RÉCUPÉRATION seule (sans LLM), sur un ou plusieurs embedders.
+"""Evaluation of RETRIEVAL alone (no LLM), over one or more embedders.
 
-Pour chaque embedder × architecture × k, mesure si le chunk contenant la réponse
-(`gold`) est récupéré, et à quel rang : hit@k et MRR. Aucun LLM requis →
-déterministe, gratuit, immunisé contre la mémoire du modèle. Agrégé globalement et
-par catégorie (`type`). Sert aussi à montrer le rôle du modèle d'embeddings.
+For each embedder × architecture × k, measures whether the chunk containing the
+answer (`gold`) is retrieved, and at what rank: hit@k and MRR. No LLM required →
+deterministic, free, immune to the model's memory. Aggregated globally and per
+category (`type`). Also serves to show the role of the embedding model.
 
-Exemple :
+Example:
     python -m eval.retrieval_eval
     python -m eval.retrieval_eval --embedders all-MiniLM-L6-v2 BAAI/bge-small-en-v1.5
 """
@@ -25,7 +25,7 @@ DEFAULT_EMBEDDERS = ["all-MiniLM-L6-v2", "BAAI/bge-small-en-v1.5"]
 
 
 def _first_hit_rank(retriever, question: str, gold: str, k_max: int) -> int | None:
-    """Rang (1-indexé) du 1er chunk contenant `gold`, ou None si hors top-k_max."""
+    """Rank (1-indexed) of the 1st chunk containing `gold`, or None if outside top-k_max."""
     gold = gold.lower()
     for rank, ctx in enumerate(retriever.search(question, k=k_max), 1):
         if gold in ctx["text"].lower():
@@ -65,7 +65,7 @@ def run(n_articles: int, output: Path, embedders: list[str]) -> dict:
 
     results = {}
     for emb in embedders:
-        print(f"\n=== Embedder : {emb} ({n_articles} articles) ===")
+        print(f"\n=== Embedder: {emb} ({n_articles} articles) ===")
         stacks = build_stacks(n_articles=n_articles, embedder=emb)
         report, suspects = _eval_one(stacks, data, types, cats, k_max)
         results[emb] = {"stacks": report, "unretrieved": suspects}
@@ -82,8 +82,8 @@ def run(n_articles: int, output: Path, embedders: list[str]) -> dict:
     }
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    # Comparaison transverse : MRR global par architecture et par embedder.
-    print("\n=== Comparaison embedders (MRR global) ===")
+    # Cross-cutting comparison: global MRR per architecture and per embedder.
+    print("\n=== Embedder comparison (global MRR) ===")
     stack_names = list(next(iter(results.values()))["stacks"])
     print("  " + "architecture".ljust(34) + "".join(e[:20].ljust(22) for e in embedders))
     for name in stack_names:
@@ -91,12 +91,12 @@ def run(n_articles: int, output: Path, embedders: list[str]) -> dict:
         row += "".join(f"{results[emb]['stacks'][name]['overall']['mrr']:.3f}".ljust(22) for emb in embedders)
         print(row)
 
-    print(f"\n✅ Détails écrits dans {output}")
+    print(f"\n✅ Details written to {output}")
     return payload
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Éval récupération RAG multi-embedder (hit@k, MRR, sans LLM).")
+    ap = argparse.ArgumentParser(description="Multi-embedder RAG retrieval eval (hit@k, MRR, no LLM).")
     ap.add_argument("--articles", type=int, default=100)
     ap.add_argument("--embedders", nargs="+", default=DEFAULT_EMBEDDERS)
     ap.add_argument("--output", type=Path, default=ROOT / "eval" / "retrieval_results.json")

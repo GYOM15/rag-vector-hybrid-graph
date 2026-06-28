@@ -1,14 +1,14 @@
-"""Fournisseur d'embeddings basé sur sentence-transformers."""
+"""Embedding provider based on sentence-transformers."""
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
 def _infer_prefixes(model_name: str) -> tuple[str, str]:
-    """Préfixes (requête, document) attendus par certaines familles de modèles.
+    """Prefixes (query, document) expected by certain model families.
 
-    e5 exige « query: » / « passage: » ; bge recommande une instruction côté
-    requête. Les autres (MiniLM, gte…) n'en utilisent pas.
+    e5 requires "query: " / "passage: "; bge recommends an instruction on the
+    query side. The others (MiniLM, gte...) do not use any.
     """
     name = model_name.lower()
     if "e5" in name:
@@ -19,10 +19,10 @@ def _infer_prefixes(model_name: str) -> tuple[str, str]:
 
 
 class EmbeddingModel:
-    """Encapsule sentence-transformers et gère les préfixes requête/document.
+    """Wrap sentence-transformers and handle the query/document prefixes.
 
-    Le modèle est choisi par `model_name` (all-MiniLM-L6-v2 par défaut) ; les
-    préfixes sont déduits du nom mais restent surchargables.
+    The model is selected by `model_name` (all-MiniLM-L6-v2 by default); the
+    prefixes are inferred from the name but remain overridable.
     """
 
     def __init__(
@@ -35,14 +35,14 @@ class EmbeddingModel:
         inferred_q, inferred_d = _infer_prefixes(model_name)
         self.query_prefix = inferred_q if query_prefix is None else query_prefix
         self.doc_prefix = inferred_d if doc_prefix is None else doc_prefix
-        # `get_sentence_embedding_dimension` renommé `get_embedding_dimension` récemment.
+        # `get_sentence_embedding_dimension` was recently renamed `get_embedding_dimension`.
         if hasattr(self.model, "get_embedding_dimension"):
             self.dimension = self.model.get_embedding_dimension()
         else:
             self.dimension = self.model.get_sentence_embedding_dimension()
 
     def encode(self, texts: list[str], batch_size: int = 32) -> np.ndarray:
-        """Encode des documents en vecteurs, forme (len(texts), dimension)."""
+        """Encode documents into vectors, shape (len(texts), dimension)."""
         if self.doc_prefix:
             texts = [self.doc_prefix + t for t in texts]
         return self.model.encode(
@@ -53,5 +53,5 @@ class EmbeddingModel:
         )
 
     def encode_query(self, query: str) -> np.ndarray:
-        """Encode une requête en un vecteur 1-D de forme (dimension,)."""
+        """Encode a query into a 1-D vector of shape (dimension,)."""
         return self.model.encode([self.query_prefix + query], convert_to_numpy=True)[0]

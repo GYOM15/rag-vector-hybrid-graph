@@ -1,8 +1,8 @@
-"""Test du décorateur `RerankedRetriever` — récupère large puis rerank.
+"""Test for the `RerankedRetriever` decorator — retrieve wide then rerank.
 
-On simule le récupérateur interne et le reranker (le vrai cross-encoder n'est jamais
-chargé) pour vérifier le câblage : élargissement du top-N, propagation de `mode`,
-réduction au top-k.
+We fake the inner retriever and the reranker (the real cross-encoder is never
+loaded) to check the wiring: widening of the top-N, propagation of `mode`,
+reduction to top-k.
 """
 
 from reranker import RerankedRetriever
@@ -29,9 +29,9 @@ class _FakeReranker:
 def test_widens_to_candidates_then_reranks_to_k():
     inner, rr = _FakeInner(), _FakeReranker()
     out = RerankedRetriever(inner, rr, mode="fusion", candidates=30).search("q", k=5)
-    assert inner.last_k == 30          # a élargi le top-N à `candidates`
-    assert rr.last == (5, "fusion")    # rerank vers top_k=k, mode propagé
-    # inner renvoie 30 candidats (d0..d29) ; le faux reranker inverse → top-5 = d29..d25
+    assert inner.last_k == 30          # widened the top-N to `candidates`
+    assert rr.last == (5, "fusion")    # rerank to top_k=k, mode propagated
+    # inner returns 30 candidates (d0..d29); the fake reranker reverses → top-5 = d29..d25
     assert [c["text"] for c in out] == ["d29", "d28", "d27", "d26", "d25"]
 
 

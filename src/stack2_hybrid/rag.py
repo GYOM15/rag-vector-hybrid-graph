@@ -1,10 +1,10 @@
-"""Pipeline RAG hybride : HybridRetriever (vectoriel + BM25 + RRF) + squelette partagé.
+"""Hybrid RAG pipeline: HybridRetriever (vector + BM25 + RRF) + shared skeleton.
 
-N'ajoute rien au pipeline générique ; seule la récupération (hybride) change.
+Adds nothing to the generic pipeline; only the retrieval (hybrid) changes.
 """
 
 from shared.rag import BaseRAG
 
 
 class HybridRAG(BaseRAG):
-    """RAG hybride sur le squelette RAG commun. Voir :class:`shared.rag.BaseRAG`."""
+    """Hybrid RAG on the common RAG skeleton. See :class:`shared.rag.BaseRAG`."""

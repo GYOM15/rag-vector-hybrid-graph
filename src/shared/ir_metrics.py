@@ -1,15 +1,15 @@
-"""Métriques de récupération (IR) pures : recall@k, nDCG@k, MRR.
+"""Pure retrieval (IR) metrics: recall@k, nDCG@k, MRR.
 
-Sans dépendance (stdlib seule) → testables en isolation. `ranked` est la liste
-des ids de documents triés par score décroissant ; `relevant` est un dict
-{doc_id: gain} (les jugements de pertinence / qrels, gain > 0).
+Dependency-free (stdlib only) -> testable in isolation. `ranked` is the list
+of document ids sorted by descending score; `relevant` is a dict
+{doc_id: gain} (the relevance judgments / qrels, gain > 0).
 """
 
 import math
 
 
 def recall_at_k(ranked: list[str], relevant: dict, k: int) -> float:
-    """Fraction des documents pertinents présents dans le top-k."""
+    """Fraction of relevant documents present in the top-k."""
     if not relevant:
         return 0.0
     topk = set(ranked[:k])
@@ -17,7 +17,7 @@ def recall_at_k(ranked: list[str], relevant: dict, k: int) -> float:
 
 
 def reciprocal_rank(ranked: list[str], relevant: dict) -> float:
-    """1 / rang du 1er document pertinent (0 si aucun)."""
+    """1 / rank of the 1st relevant document (0 if none)."""
     for i, doc in enumerate(ranked, 1):
         if doc in relevant:
             return 1.0 / i
@@ -25,7 +25,7 @@ def reciprocal_rank(ranked: list[str], relevant: dict) -> float:
 
 
 def ndcg_at_k(ranked: list[str], relevant: dict, k: int) -> float:
-    """nDCG@k avec gains gradués (DCG du classement / DCG idéal)."""
+    """nDCG@k with graded gains (DCG of the ranking / ideal DCG)."""
     dcg = sum(relevant.get(doc, 0.0) / math.log2(i + 1)
               for i, doc in enumerate(ranked[:k], 1))
     ideal = sorted(relevant.values(), reverse=True)[:k]

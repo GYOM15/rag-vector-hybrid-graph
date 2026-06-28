@@ -1,6 +1,6 @@
-"""Indexeur vectoriel FAISS (IndexFlatIP + normalisation L2 = similarité cosinus).
+"""FAISS vector indexer (IndexFlatIP + L2 normalization = cosine similarity).
 
-Stocke les chunks et leurs métadonnées, alignés par position. Persistance via
+Stores the chunks and their metadata, aligned by position. Persistence via
 save/load (.faiss / .chunks.json / .meta.json).
 """
 
@@ -12,7 +12,7 @@ import numpy as np
 
 
 class FaissIndexer:
-    """Index FAISS partagé par les stacks : recherche cosinus exacte sur les chunks."""
+    """FAISS index shared by the stacks: exact cosine search over the chunks."""
 
     def __init__(self, dimension: int = 384):
         self.dimension = dimension
@@ -21,7 +21,7 @@ class FaissIndexer:
         self.metadata: list[dict] = []
 
     def add(self, embeddings: np.ndarray, chunks: list[str], metadata: list[dict]):
-        """Ajoute des chunks et leurs embeddings (normalisés L2 avant insertion)."""
+        """Add chunks and their embeddings (L2-normalized before insertion)."""
         if len(embeddings) != len(chunks) or len(embeddings) != len(metadata):
             raise ValueError(
                 f"Length mismatch: {len(embeddings)} embeddings, "
@@ -33,7 +33,7 @@ class FaissIndexer:
                 f"index dimension {self.dimension}."
             )
 
-        # Normalisation L2 : la similarité cosinus s'obtient alors via le produit scalaire.
+        # L2 normalization: cosine similarity is then obtained via the dot product.
         embeddings = embeddings.astype(np.float32).copy()
         faiss.normalize_L2(embeddings)
 
@@ -43,11 +43,11 @@ class FaissIndexer:
 
     @property
     def size(self) -> int:
-        """Nombre de vecteurs actuellement dans l'index."""
+        """Number of vectors currently in the index."""
         return self.index.ntotal
 
     def save(self, path: str):
-        """Persiste l'index sur disque : {path}.faiss, .chunks.json, .meta.json."""
+        """Persist the index to disk: {path}.faiss, .chunks.json, .meta.json."""
         base = Path(path)
         base.parent.mkdir(parents=True, exist_ok=True)
 
@@ -60,7 +60,7 @@ class FaissIndexer:
             json.dump(self.metadata, f, ensure_ascii=False)
 
     def load(self, path: str):
-        """Recharge un index sauvegardé (même préfixe que save())."""
+        """Reload a saved index (same prefix as save())."""
         base = Path(path)
 
         index_path = base.with_suffix(".faiss")

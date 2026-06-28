@@ -1,1 +1,1 @@
-"""Évaluation et benchmark des architectures RAG."""
+"""Evaluation and benchmarking of RAG architectures."""

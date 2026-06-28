@@ -1,13 +1,13 @@
-"""Garde-fou anti-régression de la RÉCUPÉRATION (sans LLM, déterministe).
+"""Anti-regression guardrail for RETRIEVAL (no LLM, deterministic).
 
-Construit les 3 architectures sur un corpus « doré » minuscule et FIXE
-(`golden_corpus.json`), mesure le nDCG@5 de chacune, et le compare à une baseline
-commitée (`baselines.json`). **Échoue (code de sortie 1)** si une architecture passe
-sous sa baseline moins une tolérance — c'est ce qui en fait un vrai garde-fou en CI :
-un changement qui casse silencieusement la récupération fait échouer la CI.
+Builds the 3 architectures on a tiny, FIXED "golden" corpus
+(`golden_corpus.json`), measures the nDCG@5 of each, and compares it to a
+committed baseline (`baselines.json`). **Fails (exit code 1)** if an architecture
+drops below its baseline minus a tolerance - this is what makes it a real
+guardrail in CI: a change that silently breaks retrieval makes CI fail.
 
-    python -m eval.check_regression            # vérifie vs baselines (CI)
-    python -m eval.check_regression --update    # régénère eval/baselines.json
+    python -m eval.check_regression            # checks vs baselines (CI)
+    python -m eval.check_regression --update    # regenerates eval/baselines.json
 """
 
 import argparse
@@ -30,7 +30,7 @@ def _kind(name: str) -> str:
 
 
 def measure(embedder: str = "all-MiniLM-L6-v2") -> dict[str, float]:
-    """nDCG@5 moyen par architecture sur le corpus doré (déterministe)."""
+    """Average nDCG@5 per architecture on the golden corpus (deterministic)."""
     from shared.ir_metrics import ndcg_at_k
     from pipeline import assemble_stacks
 
@@ -53,7 +53,7 @@ def measure(embedder: str = "all-MiniLM-L6-v2") -> dict[str, float]:
 
 
 def check(scores: dict[str, float], baseline: dict) -> list[tuple]:
-    """Renvoie la liste des régressions (archi, attendu, obtenu) ; vide si tout va bien."""
+    """Returns the list of regressions (arch, expected, got); empty if all is well."""
     tol = baseline["tolerance"]
     failures = []
     for arch, want in baseline["scores"].items():
@@ -64,8 +64,8 @@ def check(scores: dict[str, float], baseline: dict) -> list[tuple]:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Garde-fou anti-régression récupération (corpus doré).")
-    ap.add_argument("--update", action="store_true", help="régénère eval/baselines.json puis quitte")
+    ap = argparse.ArgumentParser(description="Retrieval anti-regression guardrail (golden corpus).")
+    ap.add_argument("--update", action="store_true", help="regenerates eval/baselines.json then exits")
     ap.add_argument("--tolerance", type=float, default=DEFAULT_TOLERANCE)
     args = ap.parse_args()
 
@@ -75,24 +75,24 @@ def main() -> None:
         payload = {"metric": f"ndcg@{K}", "tolerance": args.tolerance,
                    "embedder": "all-MiniLM-L6-v2", "scores": scores}
         BASELINES.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        print(f"✅ baselines régénérées → {BASELINES.name} : {scores}")
+        print(f"✅ baselines regenerated -> {BASELINES.name}: {scores}")
         return
 
     baseline = json.loads(BASELINES.read_text("utf-8"))
     tol = baseline["tolerance"]
-    print(f"Garde-fou récupération · {baseline['metric']} · corpus doré · tolérance {tol}\n")
-    print(f"  {'archi':8} {'baseline':>9} {'actuel':>8} {'Δ':>9}  verdict")
+    print(f"Retrieval guardrail · {baseline['metric']} · golden corpus · tolerance {tol}\n")
+    print(f"  {'arch':8} {'baseline':>9} {'current':>8} {'Δ':>9}  verdict")
     for arch, want in baseline["scores"].items():
         got = scores.get(arch, 0.0)
         ok = got >= want - tol
-        print(f"  {arch:8} {want:9.4f} {got:8.4f} {got - want:+9.4f}  {'OK' if ok else '❌ RÉGRESSION'}")
+        print(f"  {arch:8} {want:9.4f} {got:8.4f} {got - want:+9.4f}  {'OK' if ok else '❌ REGRESSION'}")
 
     failures = check(scores, baseline)
     if failures:
         detail = ", ".join(f"{a} {g:.4f} < {w:.4f}-{tol}" for a, w, g in failures)
-        print(f"\n❌ {len(failures)} régression(s) : {detail}")
+        print(f"\n❌ {len(failures)} regression(s): {detail}")
         sys.exit(1)
-    print("\n✅ aucune régression")
+    print("\n✅ no regression")
 
 
 if __name__ == "__main__":

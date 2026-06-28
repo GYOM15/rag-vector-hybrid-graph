@@ -1,10 +1,10 @@
-"""Boucle récupération → réponse : Exact-Match / F1 sur les réponses gold HotpotQA.
+"""Retrieval -> answer loop: Exact-Match / F1 on HotpotQA gold answers.
 
-Pour chaque architecture, sur le **même échantillon** : nDCG@10 (qualité de
-récupération) et EM / F1 (qualité de la réponse générée), contre les réponses
-gold de HotpotQA. Sans juge, déterministe (le modèle tourne à température 0).
-Permet de répondre : « une meilleure récupération donne-t-elle de meilleures
-réponses ? » et de comparer un petit vs un gros modèle (--model).
+For each architecture, on the **same sample**: nDCG@10 (retrieval quality) and
+EM / F1 (generated answer quality), against the HotpotQA gold answers. No judge,
+deterministic (the model runs at temperature 0). Lets you answer: "does better
+retrieval lead to better answers?" and compare a small vs a large model
+(--model).
 
     python -m eval.answer_eval --max-queries 100 --model llama3.2:1b
     python -m eval.answer_eval --max-queries 100 --model llama3.2:3b
@@ -27,10 +27,10 @@ from eval.beir_eval import K_MAX, _ranked_doc_ids  # noqa: E402
 
 
 def load_hotpot_with_answers(n_questions: int, split: str = "validation"):
-    """Comme le chargeur HotpotQA distractor, mais renvoie aussi les réponses gold.
+    """Like the HotpotQA distractor loader, but also returns the gold answers.
 
-    Renvoie (texts, metadata, queries, qrels, golds) : le corpus = union des
-    paragraphes (support + distracteurs), qrels = titres support, golds[id] = réponse.
+    Returns (texts, metadata, queries, qrels, golds): the corpus = union of the
+    paragraphs (support + distractors), qrels = support titles, golds[id] = answer.
     """
     from datasets import load_dataset
 
@@ -57,8 +57,8 @@ def run(max_queries: int, model: str | None, output: Path) -> dict:
         os.environ["OLLAMA_MODEL"] = model
 
     texts, metadata, queries, qrels, golds = load_hotpot_with_answers(max_queries or 100)
-    print(f"HotpotQA : {len(texts)} docs, {len(queries)} questions — indexation + génération "
-          f"(modèle {model or os.getenv('OLLAMA_MODEL', '?')}, température 0)…", flush=True)
+    print(f"HotpotQA: {len(texts)} docs, {len(queries)} questions - indexing + generation "
+          f"(model {model or os.getenv('OLLAMA_MODEL', '?')}, temperature 0)...", flush=True)
     stacks = assemble_stacks(texts, metadata)
 
     report = {}
@@ -78,18 +78,18 @@ def run(max_queries: int, model: str | None, output: Path) -> dict:
                "stacks": report}
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print(f"\nHotpotQA — réponses gold · {len(queries)} questions · modèle {payload['config']['model']}\n")
+    print(f"\nHotpotQA - gold answers · {len(queries)} questions · model {payload['config']['model']}\n")
     print(f"  {'architecture':28s} {'nDCG@10':>8s} {'EM':>7s} {'F1':>7s}")
     for sname, m in report.items():
         print(f"  {sname:28s} {m['ndcg@10']:8.3f} {m['em']:7.3f} {m['f1']:7.3f}")
-    print(f"\n✅ Détails écrits dans {output}")
+    print(f"\n✅ Details written to {output}")
     return payload
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="EM/F1 des réponses HotpotQA gold (sans juge, température 0).")
-    ap.add_argument("--max-queries", type=int, default=100, help="nombre de questions (défaut 100)")
-    ap.add_argument("--model", default=None, help="modèle Ollama (p. ex. llama3.2:1b ou llama3.2:3b)")
+    ap = argparse.ArgumentParser(description="EM/F1 on HotpotQA gold answers (no judge, temperature 0).")
+    ap.add_argument("--max-queries", type=int, default=100, help="number of questions (default 100)")
+    ap.add_argument("--model", default=None, help="Ollama model (e.g. llama3.2:1b or llama3.2:3b)")
     ap.add_argument("--output", type=Path, default=ROOT / "eval" / "answer_results.json")
     args = ap.parse_args()
     run(args.max_queries, args.model, args.output)
