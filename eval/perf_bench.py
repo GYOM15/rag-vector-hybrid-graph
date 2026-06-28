@@ -1,10 +1,10 @@
-"""Mesures de performance/systèmes des 3 récupérateurs — **sans modèle de langage**.
+"""Performance/systems measurements of the 3 retrievers — **without a language model**.
 
-Tout est déterministe et rapide (on n'interroge que la récupération) :
-  1. coût de construction de l'index, par composant (embedding, FAISS, BM25, graphe) ;
-  2. latence de récupération isolée : échauffement + répétitions → médiane / p95 / p99 ;
-  3. débit (requêtes/s) sous concurrence (balayage du nombre de fils) ;
-  4. nDCG@10 (qualité) pour tracer le front de Pareto qualité × latence.
+Everything is deterministic and fast (we only query retrieval):
+  1. index build cost, per component (embedding, FAISS, BM25, graph);
+  2. isolated retrieval latency: warmup + repeats → median / p95 / p99;
+  3. throughput (queries/s) under concurrency (sweep over the number of threads);
+  4. nDCG@10 (quality) to trace the quality × latency Pareto front.
 
     python -m eval.perf_bench --dataset scifact --n-queries 200
 """
@@ -35,14 +35,14 @@ CONCURRENCY = (1, 2, 4, 8)
 
 
 def _timed(fn):
-    """Exécute fn() et renvoie (résultat, secondes écoulées)."""
+    """Runs fn() and returns (result, elapsed seconds)."""
     start = time.perf_counter()
     out = fn()
     return out, time.perf_counter() - start
 
 
 def build_with_timing(texts, metadata, embedder):
-    """Construit les 3 récupérateurs en chronométrant chaque composant."""
+    """Builds the 3 retrievers, timing each component."""
     embeddings = EmbeddingModel(embedder)
     vectors, t_embed = _timed(lambda: embeddings.encode(texts))
 
@@ -50,11 +50,11 @@ def build_with_timing(texts, metadata, embedder):
     _, t_faiss = _timed(lambda: indexer.add(vectors, texts, metadata))
 
     vector, t_vec = _timed(lambda: VectorRetriever(indexer, embeddings))
-    hybrid, t_hyb = _timed(lambda: HybridRetriever(indexer, embeddings))  # construit BM25
+    hybrid, t_hyb = _timed(lambda: HybridRetriever(indexer, embeddings))  # builds BM25
     graph_obj, t_graph_build = _timed(lambda: build_graph(texts, metadata))  # spaCy NER
     graph, t_graph_init = _timed(lambda: GraphRetriever(indexer, embeddings, graph_obj))
 
-    shared = t_embed + t_faiss  # partagé par les trois
+    shared = t_embed + t_faiss  # shared by all three
     build = {
         "shared_embed_faiss": round(shared, 2),
         "embed": round(t_embed, 2), "faiss": round(t_faiss, 2),
@@ -68,7 +68,7 @@ def build_with_timing(texts, metadata, embedder):
 
 
 def measure_latency(retriever, queries, warmup=10, repeats=3):
-    """Latence par requête (ms) : échauffement puis répétitions → médiane/p95/p99/moyenne."""
+    """Per-query latency (ms): warmup then repeats → median/p95/p99/mean."""
     for q in queries[:warmup]:
         retriever.search(q, k=K)
     lats = []
@@ -84,7 +84,7 @@ def measure_latency(retriever, queries, warmup=10, repeats=3):
 
 
 def measure_throughput(retriever, queries):
-    """Débit (requêtes/s) à différents niveaux de concurrence (fils)."""
+    """Throughput (queries/s) at different concurrency levels (threads)."""
     out = {}
     for workers in CONCURRENCY:
         def run():
@@ -96,7 +96,7 @@ def measure_throughput(retriever, queries):
 
 
 def measure_ndcg(retriever, queries_eval, qrels):
-    """nDCG@10 moyen (axe qualité du Pareto)."""
+    """Average nDCG@10 (quality axis of the Pareto front)."""
     total = sum(ndcg_at_k(_ranked_doc_ids(retriever.search(q, k=K)), qrels[qid], 10)
                 for qid, q in queries_eval)
     return round(total / max(1, len(queries_eval)), 4)
@@ -106,12 +106,12 @@ def run(dataset, n_queries, embedder, output):
     texts, metadata, queries_eval, qrels = load_beir(dataset)
     q_texts = [q for _, q in queries_eval][:n_queries]
 
-    print(f"{dataset} : {len(texts)} docs — construction (chronométrée)…", flush=True)
+    print(f"{dataset}: {len(texts)} docs — build (timed)…", flush=True)
     retrievers, build = build_with_timing(texts, metadata, embedder)
 
     report = {}
     for name, retr in retrievers.items():
-        print(f"  {name} : latence + débit + nDCG…", flush=True)
+        print(f"  {name}: latency + throughput + nDCG…", flush=True)
         report[name] = {
             "ndcg@10": measure_ndcg(retr, queries_eval, qrels),
             "latency": measure_latency(retr, q_texts),
@@ -123,23 +123,23 @@ def run(dataset, n_queries, embedder, output):
                "build_seconds": build, "stacks": report}
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print(f"\n{dataset} · {len(texts)} docs · {len(q_texts)} requêtes (k={K})\n")
-    print(f"  construction (s) : partagé embed+faiss={build['shared_embed_faiss']}  "
-          f"| +BM25={build['hybrid_bm25']}  | +graphe(NER)={build['graph_ner_build']}")
-    print(f"\n  {'archi':8} {'nDCG@10':>8} {'médiane':>9} {'p95':>8} {'p99':>8} "
+    print(f"\n{dataset} · {len(texts)} docs · {len(q_texts)} queries (k={K})\n")
+    print(f"  build (s): shared embed+faiss={build['shared_embed_faiss']}  "
+          f"| +BM25={build['hybrid_bm25']}  | +graph(NER)={build['graph_ner_build']}")
+    print(f"\n  {'arch':8} {'nDCG@10':>8} {'median':>9} {'p95':>8} {'p99':>8} "
           + "".join(f'qps@{w:<3}' for w in CONCURRENCY))
     for name, m in report.items():
         lat, tp = m["latency"], m["throughput_qps"]
         print(f"  {name:8} {m['ndcg@10']:8.3f} {lat['median_ms']:8.2f}ms {lat['p95_ms']:7.1f} "
               f"{lat['p99_ms']:7.1f} " + "".join(f"{tp[str(w)]:7.0f} " for w in CONCURRENCY))
-    print(f"\n✅ Détails écrits dans {output}")
+    print(f"\n✅ Details written to {output}")
     return payload
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Perf/systèmes des 3 récupérateurs (sans LLM).")
+    ap = argparse.ArgumentParser(description="Perf/systems of the 3 retrievers (no LLM).")
     ap.add_argument("--dataset", default="scifact")
-    ap.add_argument("--n-queries", type=int, default=200, help="requêtes pour latence/débit")
+    ap.add_argument("--n-queries", type=int, default=200, help="queries for latency/throughput")
     ap.add_argument("--embedder", default="all-MiniLM-L6-v2")
     ap.add_argument("--output", type=Path, default=ROOT / "eval" / "perf_results.json")
     args = ap.parse_args()

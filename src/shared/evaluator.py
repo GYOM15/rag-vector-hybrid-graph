@@ -1,8 +1,8 @@
-"""Évaluation RAGAS et boucle de benchmark des stacks.
+"""RAGAS evaluation and the stack benchmark loop.
 
-Les imports lourds (ragas, datasets) sont faits **à la demande** : importer ce
-module reste léger même sans l'extra `[eval]` installé. C'est seulement quand on
-appelle réellement RAGAS qu'il est requis.
+The heavy imports (ragas, datasets) are done **on demand**: importing this
+module stays lightweight even without the `[eval]` extra installed. It is only
+required when RAGAS is actually called.
 """
 
 
@@ -12,9 +12,9 @@ def evaluate_rag(
     contexts: list[list[str]],
     ground_truths: list[str],
 ) -> dict:
-    """Métriques RAGAS (faithfulness, answer_relevancy, context_precision, context_recall + per_question).
+    """RAGAS metrics (faithfulness, answer_relevancy, context_precision, context_recall + per_question).
 
-    Juge OpenAI par défaut → nécessite OPENAI_API_KEY. Lève ValueError si les listes diffèrent en longueur.
+    OpenAI judge by default -> requires OPENAI_API_KEY. Raises ValueError if the lists differ in length.
     """
     from datasets import Dataset
     from ragas import evaluate
@@ -59,14 +59,14 @@ _RAGAS_METRICS = ("faithfulness", "answer_relevancy", "context_precision", "cont
 
 
 def _mean_quality(per_question: list[dict], indices: list[int]) -> dict:
-    """Moyenne des métriques RAGAS sur un sous-ensemble de questions (par index)."""
+    """Average of the RAGAS metrics over a subset of questions (by index)."""
     summary = {}
     for metric in _RAGAS_METRICS:
         values = [
             float(per_question[i][metric])
             for i in indices
             if isinstance(per_question[i].get(metric), (int, float))
-            and per_question[i][metric] == per_question[i][metric]  # écarte les NaN
+            and per_question[i][metric] == per_question[i][metric]  # discards NaN
         ]
         if values:
             summary[metric] = round(sum(values) / len(values), 4)
@@ -80,9 +80,9 @@ def evaluate_stacks(
     k: int = 5,
     types: list[str] | None = None,
 ) -> dict[str, dict]:
-    """Évalue chaque stack (génération + latences + RAGAS), global et par `types` si fourni.
+    """Evaluate each stack (generation + latencies + RAGAS), overall and by `types` if provided.
 
-    Renvoie {nom_stack: metrics} ; si RAGAS échoue (clé absente…), seules les latences.
+    Returns {stack_name: metrics}; if RAGAS fails (missing key...), only the latencies.
     """
     n = len(questions)
     results: dict[str, dict] = {}
@@ -106,7 +106,7 @@ def evaluate_stacks(
             per_question = full.pop("per_question", []) or []
             metrics = full
         except Exception:
-            pass  # RAGAS optionnel : sans juge/clé, on garde juste les latences
+            pass  # RAGAS optional: without a judge/key, we keep just the latencies
 
         metrics["avg_retrieval_ms"] = round(retrieval / n, 2)
         metrics["avg_generation_ms"] = round(generation / n, 2)
@@ -115,7 +115,7 @@ def evaluate_stacks(
         if types:
             valid = per_question if len(per_question) == n else []
             by_type: dict[str, dict] = {}
-            for t in dict.fromkeys(types):  # catégories uniques, ordre conservé
+            for t in dict.fromkeys(types):  # unique categories, order preserved
                 idx = [i for i, tt in enumerate(types) if tt == t]
                 entry = {
                     "n": len(idx),

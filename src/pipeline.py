@@ -1,9 +1,9 @@
-"""Construction des trois pipelines RAG sur un même corpus.
+"""Building the three RAG pipelines on a single corpus.
 
-Charge le corpus, le découpe (chunking partagé), l'encode, construit l'index
-FAISS et le graphe d'entités, puis renvoie les trois architectures prêtes à
-interroger. **Source unique** utilisée par l'application Streamlit ET le script
-de benchmark — aucune logique dupliquée.
+Loads the corpus, splits it (shared chunking), encodes it, builds the FAISS index
+and the entity graph, then returns the three architectures ready to query. **Single
+source** used by both the Streamlit app AND the benchmark script — no duplicated
+logic.
 """
 
 import os
@@ -16,11 +16,11 @@ from stack1_traditional import TraditionalRAG, VectorRetriever
 from stack2_hybrid import HybridRAG, HybridRetriever
 from stack3_graphrag import GraphRAG, GraphRetriever, build_graph
 
-# Noms d'affichage des trois architectures (l'ordre = l'ordre d'affichage).
+# Display names of the three architectures (order = display order).
 STACK_NAMES = {
-    "vector": "Stack 1 — Vectoriel (FAISS)",
-    "hybrid": "Stack 2 — Hybride (BM25 + RRF)",
-    "graph": "Stack 3 — Graphe (networkx)",
+    "vector": "Stack 1 — Vector (FAISS)",
+    "hybrid": "Stack 2 — Hybrid (BM25 + RRF)",
+    "graph": "Stack 3 — Graph (networkx)",
 }
 
 _DATASET = "wikimedia/wikipedia"
@@ -28,9 +28,9 @@ _CONFIG = "20231101.simple"
 
 
 def load_chunks(n_articles: int = 500, max_size: int = 500, overlap: int = 50):
-    
-    """Charge le corpus Wikipédia et le découpe en chunks (liste de `Chunk`)."""
-    
+
+    """Loads the Wikipedia corpus and splits it into chunks (list of `Chunk`)."""
+
     from datasets import load_dataset
 
     ds = load_dataset(_DATASET, _CONFIG, split=f"train[:{n_articles}]")
@@ -45,14 +45,14 @@ def load_chunks(n_articles: int = 500, max_size: int = 500, overlap: int = 50):
 
 def assemble_stacks(texts, metadata, embedder: str = "all-MiniLM-L6-v2", llm_fn=call_llm,
                     rerank_mode: str | None = None, rerank_candidates: int = 30) -> dict:
-    """Construit les 3 RAG à partir d'unités prêtes (chunks ou documents) + métadonnées.
+    """Builds the 3 RAGs from ready-made units (chunks or documents) + metadata.
 
-    Index FAISS et graphe partagés ; seule la récupération diffère. Permet de
-    brancher n'importe quel corpus (Wikipédia, BEIR…). Renvoie {nom affiché: RAG}.
+    Shared FAISS index and graph; only retrieval differs. Lets you plug in any
+    corpus (Wikipedia, BEIR…). Returns {display name: RAG}.
 
-    Si `rerank_mode` ∈ {"replace", "fusion"}, chaque récupérateur est enveloppé d'un
-    étage de reranking cross-encoder. **Désactivé par défaut** : l'éval reranking
-    montre que son intérêt dépend des données (cf. README).
+    If `rerank_mode` ∈ {"replace", "fusion"}, each retriever is wrapped in a
+    cross-encoder reranking stage. **Off by default**: the reranking eval shows its
+    benefit is data-dependent (see README).
     """
     embeddings = EmbeddingModel(embedder)
     indexer = FaissIndexer(dimension=embeddings.dimension)
@@ -87,11 +87,11 @@ def build_stacks(
     rerank_candidates: int = 30,
 ) -> dict:
 
-    """Construit les 3 RAG sur le corpus (mêmes chunking/index/prompt ; seule la
-    récupération diffère). Renvoie {nom affiché: RAG}.
+    """Builds the 3 RAGs on the corpus (same chunking/index/prompt; only retrieval
+    differs). Returns {display name: RAG}.
 
-    `rerank_mode` (ou la variable d'environnement `RERANK_MODE`, off par défaut)
-    active l'étage de reranking optionnel — voir `assemble_stacks`."""
+    `rerank_mode` (or the `RERANK_MODE` environment variable, off by default)
+    enables the optional reranking stage — see `assemble_stacks`."""
 
     if rerank_mode is None:
         env = os.getenv("RERANK_MODE", "").strip().lower()

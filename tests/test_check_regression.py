@@ -1,7 +1,7 @@
-"""Tests de la logique du garde-fou anti-régression (`check`) — sans build lourd.
+"""Tests for the anti-regression guardrail logic (`check`) — no heavy build.
 
-On teste uniquement la comparaison baseline ↔ scores (les imports lourds de
-`check_regression.measure` sont paresseux, donc importer `check` reste léger).
+We only test the baseline ↔ scores comparison (the heavy imports in
+`check_regression.measure` are lazy, so importing `check` stays lightweight).
 """
 
 import sys
@@ -20,7 +20,7 @@ def test_no_regression_when_scores_hold():
 
 
 def test_small_dip_within_tolerance_passes():
-    # −0.04 reste sous la tolérance de 0.05 → toléré
+    # −0.04 stays below the 0.05 tolerance → tolerated
     assert check({"Vector": 0.96, "Hybrid": 0.9, "Graph": 0.8}, _BASE) == []
 
 
@@ -29,7 +29,7 @@ def test_drop_beyond_tolerance_is_flagged():
 
 
 def test_boundary_exactly_at_tolerance_passes():
-    # want − tol = 0.75 ; got = 0.75 → OK (comparaison stricte <)
+    # want − tol = 0.75 ; got = 0.75 → OK (strict < comparison)
     assert check({"Vector": 1.0, "Hybrid": 0.9, "Graph": 0.75}, _BASE) == []
 
 

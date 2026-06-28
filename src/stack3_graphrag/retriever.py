@@ -1,17 +1,17 @@
-"""Récupération graphe par local-search sur les entités.
+"""Graph retrieval via local search over entities.
 
-1. Graines vectorielles (FAISS) — base sémantique et repli.
-2. Entités de la *requête* (spaCy) → nœuds du graphe correspondants.
-3. Chunks reliés : mentionnant ces entités (MENTIONS) ou des entités voisines
-   (RELATED_TO, 1 hop, pondéré plus faiblement).
-Score = similarité vectorielle + recouvrement d'entités pondéré par **IDF**
-(les entités rares comptent plus → neutralise « Plant », « Role », etc.),
-**normalisé par la richesse en entités du chunk** : sans cela, un document « hub »
-(p. ex. la page « June » qui cite des dizaines de pays) accumule un boost additif
-énorme et déloge les vrais chunks à mesure que le corpus grandit. La normalisation
-√(nb d'entités) — analogue à la normalisation par longueur de BM25 — favorise les
-chunks *focalisés* et laisse la similarité vectorielle trancher.
-Repli sur le pur vectoriel si la requête n'a aucune entité connue.
+1. Vector seeds (FAISS) — semantic base and fallback.
+2. Entities of the *query* (spaCy) -> matching graph nodes.
+3. Linked chunks: mentioning those entities (MENTIONS) or neighboring entities
+   (RELATED_TO, 1 hop, weighted more lightly).
+Score = vector similarity + entity overlap weighted by **IDF**
+(rare entities count more -> neutralizes "Plant", "Role", etc.),
+**normalized by the chunk's entity richness**: without it, a "hub" document
+(e.g. the "June" page citing dozens of countries) accumulates a huge additive
+boost and displaces the real chunks as the corpus grows. The
+sqrt(num entities) normalization — analogous to BM25 length normalization — favors
+*focused* chunks and lets vector similarity decide.
+Falls back to pure vector if the query has no known entity.
 """
 
 import math
@@ -24,15 +24,15 @@ from shared.vector_index import FaissIndexer
 
 from .entity_extractor import extract_entities
 
-_VEC_SEEDS = 20          # graines vectorielles (base sémantique + repli)
-_RELATED_DISCOUNT = 0.5  # poids des entités atteintes via RELATED_TO (1 hop)
-_GRAPH_WEIGHT = 0.3      # poids du signal graphe vs similarité vectorielle
+_VEC_SEEDS = 20          # vector seeds (semantic base + fallback)
+_RELATED_DISCOUNT = 0.5  # weight of entities reached via RELATED_TO (1 hop)
+_GRAPH_WEIGHT = 0.3      # weight of the graph signal vs vector similarity
 
-# Normalisation du boost entité par la richesse du chunk : on divise par f(nb d'entités).
-# « none » = version naïve (les documents « hub » riches en entités raflent le boost et
-# délogent les chunks focalisés). √ (défaut) = analogue à la normalisation par longueur de
-# BM25. Bouton unique, balayé sur un split *held-out* (cf. eval/sweep_entity_norm.py) — pas
-# réglé sur le test. Toutes les formes valent >= 1 pour n >= 1 (jamais d'amplification).
+# Normalization of the entity boost by chunk richness: we divide by f(num entities).
+# "none" = naive version ("hub" documents rich in entities grab the boost and
+# displace focused chunks). sqrt (default) = analogous to BM25 length normalization.
+# Single knob, swept on a *held-out* split (cf. eval/sweep_entity_norm.py) — not
+# tuned on the test set. All forms are >= 1 for n >= 1 (never any amplification).
 _ENTITY_NORMS = {
     "none": lambda n: 1.0,
     "log": lambda n: 1.0 + math.log(n),
@@ -41,12 +41,12 @@ _ENTITY_NORMS = {
     "p75": lambda n: n ** 0.75,
     "linear": lambda n: float(n),
 }
-_DEFAULT_ENTITY_NORM = "p75"  # choisi par balayage held-out (eval/sweep_entity_norm.py)
+_DEFAULT_ENTITY_NORM = "p75"  # chosen by held-out sweep (eval/sweep_entity_norm.py)
 
 
 class GraphRetriever:
-    """Local-search par entités : graines vectorielles + chunks liés par entités,
-    scorés par similarité vectorielle + recouvrement d'entités pondéré IDF."""
+    """Entity local search: vector seeds + entity-linked chunks,
+    scored by vector similarity + IDF-weighted entity overlap."""
 
     def __init__(self, indexer: FaissIndexer, embedding_model: EmbeddingModel, graph,
                  entity_norm: str = _DEFAULT_ENTITY_NORM):
@@ -61,7 +61,7 @@ class GraphRetriever:
         if self.indexer.size == 0:
             return []
 
-        scored = dict(self._vector_seeds(query, max(_VEC_SEEDS, k)))  # base vectorielle
+        scored = dict(self._vector_seeds(query, max(_VEC_SEEDS, k)))  # vector base
         shared: dict[int, set] = {}
 
         for chunk_idx, entities, boost in self._entity_candidates(query):
@@ -72,7 +72,7 @@ class GraphRetriever:
         return [self._build_result(idx, score, shared.get(idx)) for idx, score in top]
 
     def _compute_idf(self) -> dict[str, float]:
-        """IDF normalisé par entité : log(1 + N/df) / log(1 + N), dans (0, 1]."""
+        """Per-entity normalized IDF: log(1 + N/df) / log(1 + N), in (0, 1]."""
         n_chunks = sum(1 for _, d in self.graph.nodes(data=True) if d.get("type") == "chunk") or 1
         denom = math.log(1 + n_chunks)
         idf: dict[str, float] = {}
@@ -86,7 +86,7 @@ class GraphRetriever:
         return idf
 
     def _count_chunk_entities(self) -> dict[int, int]:
-        """Nb d'entités distinctes par chunk (sert à normaliser le boost : pénalise les hubs)."""
+        """Number of distinct entities per chunk (used to normalize the boost: penalizes hubs)."""
         counts: dict[int, int] = {}
         for node, data in self.graph.nodes(data=True):
             if data.get("type") != "chunk":
@@ -98,17 +98,17 @@ class GraphRetriever:
         return counts
 
     def _entity_candidates(self, query: str) -> list[tuple[int, set, float]]:
-        """Chunks reliés aux entités de la requête (direct + RELATED_TO), avec boost IDF.
+        """Chunks linked to the query entities (direct + RELATED_TO), with IDF boost.
 
-        Renvoie (index_chunk, {entités}, boost), boost = somme des IDF des entités
-        de requête mentionnées (poids 1) et de leurs voisines RELATED_TO (poids réduit).
+        Returns (chunk_index, {entities}, boost), boost = sum of the IDFs of the
+        mentioned query entities (weight 1) and their RELATED_TO neighbors (reduced weight).
         """
         query_ids = [f"entity:{name.lower()}" for name in extract_entities(query)]
         query_ids = [eid for eid in query_ids if eid in self.graph]
         if not query_ids:
             return []
 
-        # Poids par entité atteinte : 1.0 pour les entités de la requête, réduit pour leurs voisines.
+        # Weight per reached entity: 1.0 for the query entities, reduced for their neighbors.
         weight: dict[str, float] = {}
         for eid in query_ids:
             weight[eid] = 1.0
@@ -129,13 +129,13 @@ class GraphRetriever:
                 entry = contributions.setdefault(node["index"], [0.0, set()])
                 entry[0] += w * idf
                 entry[1].add(name)
-        # Normalisation par la richesse en entités : sans elle, un chunk « hub » (beaucoup
-        # d'entités) accumule un boost démesuré et déloge les chunks focalisés.
+        # Normalization by entity richness: without it, a "hub" chunk (many
+        # entities) accumulates an outsized boost and displaces focused chunks.
         return [(idx, ents, boost / self._norm(self._chunk_n_entities.get(idx, 1) or 1))
                 for idx, (boost, ents) in contributions.items()]
 
     def _vector_seeds(self, query: str, n: int) -> list[tuple[int, float]]:
-        """(idx, similarité cosinus) des n chunks les plus proches."""
+        """(idx, cosine similarity) of the n nearest chunks."""
         query_emb = np.array([self.embedding_model.encode_query(query)], dtype=np.float32)
         faiss.normalize_L2(query_emb)
         n = min(n, self.indexer.size)

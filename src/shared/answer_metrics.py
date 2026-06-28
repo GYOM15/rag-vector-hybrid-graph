@@ -1,8 +1,8 @@
-"""Métriques de réponse *sans juge* : Exact Match et F1 (style SQuAD/HotpotQA).
+"""*Judge-free* answer metrics: Exact Match and F1 (SQuAD/HotpotQA style).
 
-Déterministes, pur stdlib. Mesurent la qualité d'une réponse générée contre une
-réponse *gold*, sans modèle-juge ni clé d'API — pour fermer la boucle
-« meilleure récupération → meilleure réponse » de façon reproductible.
+Deterministic, pure stdlib. They measure the quality of a generated answer against
+a *gold* answer, without a judge model or API key -- to close the
+"better retrieval -> better answer" loop in a reproducible way.
 """
 
 import re
@@ -14,22 +14,22 @@ _PUNCT = str.maketrans("", "", string.punctuation)
 
 
 def normalize_answer(text: str) -> str:
-    """Normalisation SQuAD : minuscules, sans ponctuation ni articles, espaces réduits."""
+    """SQuAD normalization: lowercase, no punctuation or articles, collapsed whitespace."""
     text = (text or "").lower().translate(_PUNCT)
     return " ".join(_ARTICLES.sub(" ", text).split())
 
 
 def exact_match(pred: str, gold: str) -> float:
-    """1.0 si les réponses normalisées sont identiques, sinon 0.0."""
+    """1.0 if the normalized answers are identical, otherwise 0.0."""
     return float(normalize_answer(pred) == normalize_answer(gold))
 
 
 def f1_score(pred: str, gold: str) -> float:
-    """F1 au niveau des tokens (style SQuAD) : recouvrement entre prédiction et gold."""
+    """Token-level F1 (SQuAD style): overlap between prediction and gold."""
     pred_toks = normalize_answer(pred).split()
     gold_toks = normalize_answer(gold).split()
     if not pred_toks or not gold_toks:
-        return float(pred_toks == gold_toks)  # 1.0 si les deux vides, sinon 0.0
+        return float(pred_toks == gold_toks)  # 1.0 if both empty, otherwise 0.0
     n_same = sum((Counter(pred_toks) & Counter(gold_toks)).values())
     if not n_same:
         return 0.0

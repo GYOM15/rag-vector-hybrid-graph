@@ -1,9 +1,9 @@
-"""Squelette RAG partagé par tous les stacks.
+"""RAG skeleton shared by all stacks.
 
-Le pipeline est identique pour les trois architectures : récupérer les chunks,
-assembler le prompt, appeler le LLM. Seule la stratégie de récupération change
-d'un stack à l'autre. On factorise donc l'orchestration ici ; un stack ne
-fournit que son `retriever` (un objet exposant `search(query, k) -> list[dict]`).
+The pipeline is identical for the three architectures: retrieve the chunks,
+assemble the prompt, call the LLM. Only the retrieval strategy changes
+from one stack to another. So we factor the orchestration out here; a stack
+only provides its `retriever` (an object exposing `search(query, k) -> list[dict]`).
 """
 
 import time
@@ -13,14 +13,14 @@ from .prompts import DEFAULT_PROMPT_TEMPLATE, build_prompt
 
 
 class Retriever(Protocol):
-    """Interface commune des récupérateurs : renvoyer les k chunks pertinents."""
+    """Common retriever interface: return the k relevant chunks."""
 
     def search(self, query: str, k: int = 5) -> list[dict]:
         ...
 
 
 class BaseRAG:
-    """Pipeline RAG générique : récupération → prompt → génération, avec latences."""
+    """Generic RAG pipeline: retrieval -> prompt -> generation, with latencies."""
 
     def __init__(
         self,
@@ -33,7 +33,7 @@ class BaseRAG:
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
 
     def query(self, question: str, k: int = 5) -> dict:
-        """Exécute le pipeline. Renvoie {answer, contexts, retrieval_ms, generation_ms, latency_ms}."""
+        """Run the pipeline. Returns {answer, contexts, retrieval_ms, generation_ms, latency_ms}."""
         start = time.perf_counter()
         contexts = self.retriever.search(question, k=k)
         retrieval_ms = (time.perf_counter() - start) * 1000

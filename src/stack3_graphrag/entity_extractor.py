@@ -1,28 +1,28 @@
-"""Extraction d'entités nommées via spaCy (NER local, en_core_web_sm).
+"""Named entity extraction via spaCy (local NER, en_core_web_sm).
 
-Remplace l'ancienne heuristique de capitalisation par un vrai NER statistique :
-on ne garde que les types d'entités utiles à un graphe de connaissances
-(personnes, lieux, organisations, événements…), en excluant dates et nombres.
-Le modèle est chargé paresseusement et mis en cache.
+Replaces the old capitalization heuristic with real statistical NER:
+we keep only the entity types useful to a knowledge graph
+(people, places, organizations, events...), excluding dates and numbers.
+The model is loaded lazily and cached.
 
-Installation du modèle : python -m spacy download en_core_web_sm
+Model installation: python -m spacy download en_core_web_sm
 """
 
 import re
 from functools import lru_cache
 
-# Types spaCy conservés (on écarte DATE, CARDINAL, ORDINAL… = bruit pour le graphe).
+# spaCy types kept (we discard DATE, CARDINAL, ORDINAL... = noise for the graph).
 _KEEP = {
     "PERSON", "NORP", "FAC", "ORG", "GPE", "LOC",
     "PRODUCT", "EVENT", "WORK_OF_ART", "LAW", "LANGUAGE",
 }
-# Article de tête parfois inclus par spaCy (« The RMS Titanic ») — retiré pour des nœuds cohérents.
+# Leading article sometimes included by spaCy ("The RMS Titanic") — removed for consistent nodes.
 _LEADING_ARTICLE = re.compile(r"^(?:the|a|an)\s+", re.IGNORECASE)
 
 
 @lru_cache(maxsize=1)
 def _nlp():
-    """Charge en_core_web_sm une seule fois (NER seul : tagger/parser désactivés)."""
+    """Loads en_core_web_sm only once (NER only: tagger/parser disabled)."""
     import spacy
 
     try:
@@ -32,13 +32,13 @@ def _nlp():
         )
     except OSError as exc:
         raise OSError(
-            "Modèle spaCy 'en_core_web_sm' introuvable. Installe-le avec :\n"
+            "spaCy model 'en_core_web_sm' not found. Install it with:\n"
             "    python -m spacy download en_core_web_sm"
         ) from exc
 
 
 def extract_entities(text: str, min_length: int = 2) -> list[str]:
-    """Entités nommées de `text` (types utiles au graphe), dédupliquées (casse ignorée)."""
+    """Named entities of `text` (graph-useful types), deduplicated (case-insensitive)."""
     seen: set[str] = set()
     found: list[str] = []
     for ent in _nlp()(text).ents:

@@ -1,9 +1,9 @@
-"""Tokenisation pour BM25 : minuscule, mots alphanumériques, sans mots vides, racinisés.
+"""Tokenization for BM25: lowercase, alphanumeric words, stopwords removed, stemmed.
 
-Isolé dans son propre module (dépendance légère snowballstemmer) pour rester
-testable sans charger faiss/rank_bm25. Nettement meilleur que `lower().split()` :
-ponctuation retirée (« 1912. » → « 1912 »), mots vides filtrés, racinisation
-Snowball (« diseases »/« disease » → même racine, « plants » → « plant »).
+Isolated in its own module (lightweight snowballstemmer dependency) so it stays
+testable without loading faiss/rank_bm25. Clearly better than `lower().split()`:
+punctuation stripped ("1912." -> "1912"), stopwords filtered out, Snowball
+stemming ("diseases"/"disease" -> same stem, "plants" -> "plant").
 """
 
 import re
@@ -21,7 +21,7 @@ _STOPWORDS = frozenset(
 
 
 def tokenize(text: str) -> list[str]:
-    """Tokens BM25 de `text` : minuscule, alphanumérique, sans mots vides, racinisés."""
+    """BM25 tokens of `text`: lowercase, alphanumeric, stopwords removed, stemmed."""
     words = _WORD.findall(text.lower())
     filtered = [w for w in words if w not in _STOPWORDS]
-    return _STEMMER.stemWords(filtered or words)  # repli sur `words` si tout est vide
+    return _STEMMER.stemWords(filtered or words)  # fall back to `words` if everything is empty

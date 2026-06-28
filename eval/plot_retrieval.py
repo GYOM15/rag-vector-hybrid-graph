@@ -1,8 +1,8 @@
-"""Trace la comparaison de récupération par embedder depuis retrieval_results.json.
+"""Plot the retrieval comparison per embedder from retrieval_results.json.
 
-Génère docs/retrieval-embedders.svg : MRR global (barres groupées par architecture,
-une grappe par embedder) + courbes hit@k du Vectoriel (effet de l'embedder).
-Nécessite l'extra [notebooks] (matplotlib).
+Generates docs/retrieval-embedders.svg: overall MRR (bars grouped by architecture,
+one cluster per embedder) + Vector hit@k curves (embedder effect).
+Requires the [notebooks] extra (matplotlib).
 
     python -m eval.plot_retrieval
 """

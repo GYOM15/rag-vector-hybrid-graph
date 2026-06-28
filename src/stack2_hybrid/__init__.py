@@ -1,4 +1,4 @@
-"""Stack 2 : recherche hybride en mémoire (vectoriel + BM25 + RRF)."""
+"""Stack 2: in-memory hybrid search (vector + BM25 + RRF)."""
 
 from .fusion import reciprocal_rank_fusion
 from .retriever import HybridRetriever

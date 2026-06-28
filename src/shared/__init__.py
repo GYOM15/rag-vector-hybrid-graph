@@ -1,14 +1,14 @@
-"""Modules partagés par les stacks de comparaison RAG.
+"""Modules shared by the RAG comparison stacks.
 
-Les symboles sont exposés en *lazy* (PEP 562) : importer un sous-module léger
-comme ``shared.chunker`` ne tire pas la pile ML (embeddings, llm, evaluator).
-Chaque symbole n'est chargé qu'au premier accès via ``shared.<nom>`` (ou
-``from shared import <nom>``).
+Symbols are exposed *lazily* (PEP 562): importing a lightweight submodule
+like ``shared.chunker`` does not pull in the ML stack (embeddings, llm, evaluator).
+Each symbol is only loaded on first access via ``shared.<name>`` (or
+``from shared import <name>``).
 """
 
 import importlib
 
-# Nom exposé -> sous-module qui le définit.
+# Exposed name -> submodule that defines it.
 _EXPORTS = {
     "Chunk": ".chunker",
     "recursive_chunk": ".chunker",
@@ -26,7 +26,7 @@ __all__ = list(_EXPORTS)
 
 
 def __getattr__(name: str):
-    """Importe le sous-module concerné à la demande (PEP 562)."""
+    """Import the relevant submodule on demand (PEP 562)."""
     if name in _EXPORTS:
         module = importlib.import_module(_EXPORTS[name], __name__)
         return getattr(module, name)

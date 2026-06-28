@@ -1,15 +1,15 @@
-"""Pipeline RAG traditionnel : recherche vectorielle FAISS + génération LLM.
+"""Traditional RAG pipeline: FAISS vector search + LLM generation.
 
-N'ajoute rien au squelette RAG partagé : seule la stratégie de récupération
-(vectorielle dense, via VectorRetriever) est propre à ce stack.
+Adds nothing to the shared RAG skeleton: only the retrieval strategy
+(dense vector, via VectorRetriever) is specific to this stack.
 """
 
 from shared.rag import BaseRAG
 
 
 class TraditionalRAG(BaseRAG):
-    """RAG vectoriel : VectorRetriever (FAISS) sur le squelette RAG commun.
+    """Vector RAG: VectorRetriever (FAISS) on the common RAG skeleton.
 
-    S'instancie avec ``TraditionalRAG(retriever, llm_fn)``. Voir
-    :class:`shared.rag.BaseRAG` pour le pipeline et le format du résultat.
+    Instantiate with ``TraditionalRAG(retriever, llm_fn)``. See
+    :class:`shared.rag.BaseRAG` for the pipeline and the result format.
     """

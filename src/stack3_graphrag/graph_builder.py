@@ -1,8 +1,8 @@
-"""Construction d'un graphe de connaissances en mémoire avec networkx.
+"""Building an in-memory knowledge graph with networkx.
 
-Chaque chunk et chaque entité devient un nœud. Une arête `MENTIONS` relie un
-chunk aux entités qu'il contient. Deux entités co-occurrentes (dans le même
-chunk) sont reliées par une arête `RELATED_TO` pondérée par leur nombre de
+Each chunk and each entity becomes a node. A `MENTIONS` edge links a chunk
+to the entities it contains. Two co-occurring entities (in the same chunk)
+are linked by a `RELATED_TO` edge weighted by their number of
 co-occurrences.
 """
 
@@ -12,8 +12,8 @@ from .entity_extractor import extract_entities
 
 
 def build_graph(chunks: list[str], metadata: list[dict]) -> "nx.Graph":
-    """Construit le graphe : nœuds ``chunk:{i}`` et ``entity:{nom}``, arêtes MENTIONS
-    (chunk→entité) et RELATED_TO (entité↔entité, pondérée par co-occurrence)."""
+    """Builds the graph: ``chunk:{i}`` and ``entity:{name}`` nodes, MENTIONS edges
+    (chunk->entity) and RELATED_TO edges (entity<->entity, weighted by co-occurrence)."""
     graph = nx.Graph()
 
     for i, (text, meta) in enumerate(zip(chunks, metadata)):
@@ -33,7 +33,7 @@ def build_graph(chunks: list[str], metadata: list[dict]) -> "nx.Graph":
 
 
 def _link_cooccurrences(graph: "nx.Graph", entities: list[str]) -> None:
-    """Relie (ou renforce) les entités apparaissant ensemble dans un même chunk."""
+    """Links (or strengthens) entities appearing together in the same chunk."""
     for a_pos in range(len(entities)):
         for b_pos in range(a_pos + 1, len(entities)):
             a = f"entity:{entities[a_pos].lower()}"

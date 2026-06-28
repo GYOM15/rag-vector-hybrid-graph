@@ -1,4 +1,4 @@
-"""Tests des métriques de réponse (Exact Match / F1, style SQuAD)."""
+"""Tests for the answer metrics (Exact Match / F1, SQuAD-style)."""
 
 from answer_metrics import exact_match, f1_score, normalize_answer
 
@@ -15,7 +15,7 @@ def test_exact_match_ignores_surface_form():
 
 
 def test_f1_partial_overlap():
-    # Réponse verbeuse vs gold court : EM=0 mais F1 partiel.
+    # Verbose answer vs short gold: EM=0 but partial F1.
     assert exact_match("The capital is Kabul", "Kabul") == 0.0
     assert 0.0 < f1_score("The capital is Kabul", "Kabul") < 1.0
     assert f1_score("Kabul", "Kabul") == 1.0

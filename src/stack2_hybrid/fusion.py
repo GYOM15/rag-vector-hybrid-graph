@@ -1,16 +1,16 @@
-"""Reciprocal Rank Fusion (RRF) — fusion de classements (pur Python).
+"""Reciprocal Rank Fusion (RRF) — ranking fusion (pure Python).
 
-Isolé dans son propre module (aucune dépendance lourde) pour rester testable
-sans charger FAISS ni rank_bm25.
+Isolated in its own module (no heavy dependencies) so it stays testable
+without loading FAISS or rank_bm25.
 """
 
 
 def reciprocal_rank_fusion(ranked_lists: list[list[int]], rrf_k: int = 60) -> dict[int, float]:
-    """Fusionne plusieurs classements (listes d'ids ordonnés) en scores RRF.
+    """Fuses several rankings (lists of ordered ids) into RRF scores.
 
-    score(id) = somme sur les classements de 1 / (rrf_k + rang), le rang
-    commençant à 0. Un id bien classé dans plusieurs listes obtient un score
-    plus élevé. `rrf_k` (60 par défaut) amortit le poids des premiers rangs.
+    score(id) = sum over the rankings of 1 / (rrf_k + rank), with the rank
+    starting at 0. An id ranked high in several lists gets a higher score.
+    `rrf_k` (60 by default) dampens the weight of the top ranks.
     """
     scores: dict[int, float] = {}
     for ranking in ranked_lists:

@@ -1,10 +1,10 @@
-"""Pipeline RAG sensible au graphe : GraphRetriever + squelette partagé.
+"""Graph-aware RAG pipeline: GraphRetriever + shared skeleton.
 
-N'ajoute rien au pipeline générique ; seule la récupération (graphe) change.
+Adds nothing to the generic pipeline; only the retrieval (graph) changes.
 """
 
 from shared.rag import BaseRAG
 
 
 class GraphRAG(BaseRAG):
-    """RAG sensible au graphe sur le squelette RAG commun. Voir :class:`shared.rag.BaseRAG`."""
+    """Graph-aware RAG on the common RAG skeleton. See :class:`shared.rag.BaseRAG`."""

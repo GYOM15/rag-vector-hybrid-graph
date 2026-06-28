@@ -1,13 +1,13 @@
-"""Interface LLM unifiée et pluggable.
+"""Unified, pluggable LLM interface.
 
-Trois backends, choisis via le paramètre `provider` ou la variable
-d'environnement `LLM_PROVIDER` :
-  - "ollama"      : inférence locale via Ollama (défaut).
-  - "openai"      : tout endpoint compatible OpenAI (OpenAI, **vLLM**, etc.).
-  - "huggingface" : modèle encodeur-décodeur local (p. ex. flan-t5).
+Three backends, selected via the `provider` parameter or the
+`LLM_PROVIDER` environment variable:
+  - "ollama"      : local inference via Ollama (default).
+  - "openai"      : any OpenAI-compatible endpoint (OpenAI, **vLLM**, etc.).
+  - "huggingface" : local encoder-decoder model (e.g. flan-t5).
 
-Les dépendances lourdes (ollama, transformers) sont importées **à la demande** :
-importer ce module reste léger quel que soit le backend réellement utilisé.
+The heavy dependencies (ollama, transformers) are imported **on demand**:
+importing this module stays lightweight regardless of the backend actually used.
 """
 
 import os
@@ -23,9 +23,9 @@ def call_llm(
     provider: str | None = None,
     max_length: int = 512,
 ) -> str:
-    """Génère une réponse via le backend choisi (`provider`/`LLM_PROVIDER`, défaut ollama).
+    """Generate an answer via the selected backend (`provider`/`LLM_PROVIDER`, default ollama).
 
-    `model=None` → modèle par défaut du backend. Lève ValueError si le provider est inconnu.
+    `model=None` -> backend default model. Raises ValueError if the provider is unknown.
     """
     provider = provider or os.getenv("LLM_PROVIDER", "ollama")
     try:
@@ -35,15 +35,15 @@ def call_llm(
     return handler(prompt, model, max_length)
 
 
-# Variable d'environnement et défaut du modèle, par backend.
+# Environment variable and model default, per backend.
 _MODEL_ENV = {"ollama": "OLLAMA_MODEL", "openai": "OPENAI_MODEL", "huggingface": "HF_MODEL"}
 _MODEL_DEFAULT = {"ollama": "llama3.2:3b", "openai": "default", "huggingface": "google/flan-t5-base"}
 
 
 def active_config() -> dict:
-    """Renvoie le backend LLM actif `{provider, model}` d'après l'environnement.
+    """Return the active LLM backend `{provider, model}` based on the environment.
 
-    Sert à étiqueter les résultats de benchmark (savoir quel modèle a généré).
+    Used to label the benchmark results (to know which model generated them).
     """
     provider = os.getenv("LLM_PROVIDER", "ollama")
     model = os.getenv(_MODEL_ENV.get(provider, "OLLAMA_MODEL"), _MODEL_DEFAULT.get(provider, "?"))
@@ -51,9 +51,9 @@ def active_config() -> dict:
 
 
 def _ollama_client(host: str):
-    """Client Ollama mis en cache par hôte : sa création (dont le contexte SSL) se fait
-    une seule fois, pas à chaque appel — plus rapide, et plus robuste sur les longues
-    boucles d'évaluation (évite de répéter une I/O fragile des centaines de fois)."""
+    """Ollama client cached per host: its creation (including the SSL context) happens
+    only once, not on every call -- faster, and more robust over long
+    evaluation loops (avoids repeating a fragile I/O hundreds of times)."""
     if host not in _OLLAMA_CLIENTS:
         import ollama
 
@@ -62,11 +62,11 @@ def _ollama_client(host: str):
 
 
 def _call_ollama(prompt: str, model: str | None, max_length: int) -> str:
-    """Inférence locale via Ollama (serveur défini par OLLAMA_URL).
+    """Local inference via Ollama (server defined by OLLAMA_URL).
 
-    Température 0 (décodage glouton) → génération **déterministe** : à contexte
-    identique, même réponse à chaque exécution. Indispensable pour des verdicts
-    reproductibles (sinon les réponses d'un petit modèle flottent d'un run à l'autre).
+    Temperature 0 (greedy decoding) -> **deterministic** generation: with an
+    identical context, the same answer on every run. Essential for
+    reproducible verdicts (otherwise a small model's answers drift from one run to the next).
     """
     model = model or os.getenv("OLLAMA_MODEL", "llama3.2:3b")
     client = _ollama_client(os.getenv("OLLAMA_URL", "http://localhost:11434"))
@@ -76,10 +76,10 @@ def _call_ollama(prompt: str, model: str | None, max_length: int) -> str:
 
 
 def _call_openai(prompt: str, model: str | None, max_length: int) -> str:
-    """Endpoint compatible OpenAI (OpenAI, vLLM, etc.) via la lib standard.
+    """OpenAI-compatible endpoint (OpenAI, vLLM, etc.) via the standard library.
 
-    Configuré par OPENAI_BASE_URL (défaut http://localhost:8000/v1, le serveur
-    vLLM), OPENAI_API_KEY et OPENAI_MODEL. Aucune dépendance supplémentaire.
+    Configured by OPENAI_BASE_URL (default http://localhost:8000/v1, the
+    vLLM server), OPENAI_API_KEY and OPENAI_MODEL. No additional dependency.
     """
     import json
     import urllib.request
@@ -106,7 +106,7 @@ def _call_openai(prompt: str, model: str | None, max_length: int) -> str:
 
 
 def _call_huggingface(prompt: str, model: str | None, max_length: int) -> str:
-    """Modèle HuggingFace encodeur-décodeur local (p. ex. flan-t5), mis en cache."""
+    """Local HuggingFace encoder-decoder model (e.g. flan-t5), cached."""
     from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
     model = model or os.getenv("HF_MODEL", "google/flan-t5-base")

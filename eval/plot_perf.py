@@ -1,8 +1,8 @@
-"""Trace les mesures systèmes depuis perf_results.json.
+"""Plot the system measurements from perf_results.json.
 
-Deux panneaux : (1) front de Pareto qualité (nDCG@10) × latence médiane, chaque
-point annoté de son coût de construction ; (2) débit (req/s) selon la concurrence.
-Écrit docs/perf-pareto.svg. Nécessite l'extra [notebooks] (matplotlib).
+Two panels: (1) quality (nDCG@10) × median latency Pareto front, each
+point annotated with its build cost; (2) throughput (req/s) by concurrency.
+Writes docs/perf-pareto.svg. Requires the [notebooks] extra (matplotlib).
 
     python -m eval.plot_perf
 """
@@ -26,7 +26,7 @@ def main() -> None:
     stacks, build = data["stacks"], data["build_seconds"]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
 
-    # Panneau 1 : Pareto qualité × latence (idéal = haut-gauche).
+    # Panel 1: quality × latency Pareto (ideal = top-left).
     for kind, m in stacks.items():
         x, y = m["latency"]["median_ms"], m["ndcg@10"]
         ax1.scatter(x, y, s=160, color=COLORS[kind], zorder=3, edgecolor="white", linewidth=1.5)
@@ -38,7 +38,7 @@ def main() -> None:
     ax1.invert_xaxis()
     ax1.grid(alpha=0.3)
 
-    # Panneau 2 : débit selon la concurrence.
+    # Panel 2: throughput by concurrency.
     conc = sorted((int(w) for w in next(iter(stacks.values()))["throughput_qps"]))
     for kind, m in stacks.items():
         ys = [m["throughput_qps"][str(w)] for w in conc]

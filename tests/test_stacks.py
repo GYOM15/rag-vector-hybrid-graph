@@ -1,7 +1,7 @@
-"""Tests des briques pures des stacks 2 et 3 (sans dépendances lourdes).
+"""Tests for the pure building blocks of stacks 2 and 3 (no heavy dependencies).
 
-On charge les modules par chemin de fichier pour éviter de déclencher les
-imports lourds des packages (faiss, rank_bm25, networkx, sentence-transformers).
+We load the modules by file path to avoid triggering the heavy
+imports of the packages (faiss, rank_bm25, networkx, sentence-transformers).
 """
 
 import importlib.util
@@ -34,10 +34,10 @@ def test_rrf_rewards_higher_ranks():
 
 
 def test_rrf_combines_across_lists():
-    # 5 est premier dans les deux classements -> meilleur score combiné.
+    # 5 is first in both rankings -> best combined score.
     fused = reciprocal_rank_fusion([[5, 1, 2], [5, 3, 4]])
     assert max(fused, key=fused.get) == 5
-    assert fused[5] == 2 / 60  # 1/(60+0) compté deux fois
+    assert fused[5] == 2 / 60  # 1/(60+0) counted twice
 
 
 def test_rrf_empty():
@@ -49,7 +49,7 @@ def test_rrf_k_parameter():
 
 
 # ---------------------------------------------------------------------------
-# Extraction d'entités (spaCy NER)
+# Entity extraction (spaCy NER)
 # ---------------------------------------------------------------------------
 
 def test_extract_finds_person_and_place():
@@ -70,7 +70,7 @@ def test_extract_excludes_dates_and_numbers():
 
 
 # ---------------------------------------------------------------------------
-# Tokenisation BM25 (hybride)
+# BM25 tokenization (hybrid)
 # ---------------------------------------------------------------------------
 
 def test_tokenize_strips_punctuation_and_case():
@@ -89,7 +89,7 @@ def test_tokenize_stems_plurals():
 
 
 # ---------------------------------------------------------------------------
-# Métriques IR (recall@k, nDCG@k, MRR)
+# IR metrics (recall@k, nDCG@k, MRR)
 # ---------------------------------------------------------------------------
 
 def test_recall_at_k():

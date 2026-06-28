@@ -1,8 +1,8 @@
-"""Évaluation par jugements de pertinence (qrels) des 3 architectures.
+"""Evaluation via relevance judgments (qrels) of the 3 architectures.
 
-Charge un corpus + requêtes + qrels (BEIR via HF, ou HotpotQA distractor pour le
-multi-hop), indexe le corpus (chaque document = une unité), interroge les 3
-retrievers et note contre les jugements humains : recall@k, nDCG@10, MRR. Sans LLM.
+Loads a corpus + queries + qrels (BEIR via HF, or HotpotQA distractor for
+multi-hop), indexes the corpus (each document = one unit), queries the 3
+retrievers and scores against the human judgments: recall@k, nDCG@10, MRR. No LLM.
 
     python -m eval.beir_eval --dataset scifact
     python -m eval.beir_eval --dataset hotpotqa-distractor --max-queries 500
@@ -23,7 +23,7 @@ K_MAX = 10
 
 
 def load_beir(name: str, split: str = "test"):
-    """Renvoie (texts, metadata, queries_eval, qrels) pour un dataset BEIR (HF)."""
+    """Returns (texts, metadata, queries_eval, qrels) for a BEIR dataset (HF)."""
     from datasets import load_dataset
 
     corpus = load_dataset(f"BeIR/{name}", "corpus")["corpus"]
@@ -48,11 +48,11 @@ def load_beir(name: str, split: str = "test"):
 
 
 def load_hotpot_distractor(n_questions: int = 500, split: str = "validation"):
-    """Corpus multi-hop depuis HotpotQA (distractor).
+    """Multi-hop corpus from HotpotQA (distractor).
 
-    Pour un échantillon de questions, l'union de leurs paragraphes (support +
-    distracteurs) forme le corpus ; les qrels sont les titres « supporting facts »
-    (les ~2 paragraphes à combiner pour répondre).
+    For a sample of questions, the union of their paragraphs (support +
+    distractors) forms the corpus; the qrels are the "supporting facts" titles
+    (the ~2 paragraphs to combine in order to answer).
     """
     from datasets import load_dataset
 
@@ -74,7 +74,7 @@ def load_hotpot_distractor(n_questions: int = 500, split: str = "validation"):
 
 
 def _ranked_doc_ids(results: list[dict]) -> list[str]:
-    """Ids de documents (dédupliqués, meilleur rang d'abord) depuis les chunks récupérés."""
+    """Document ids (deduplicated, best rank first) from the retrieved chunks."""
     seen, ranked = set(), []
     for r in results:
         doc_id = r["metadata"].get("doc_id")
@@ -85,10 +85,10 @@ def _ranked_doc_ids(results: list[dict]) -> list[str]:
 
 
 def evaluate_corpus(name, texts, metadata, queries_eval, qrels, embedder, output) -> dict:
-    """Indexe le corpus, interroge les 3 retrievers, note contre les qrels."""
+    """Indexes the corpus, queries the 3 retrievers, scores against the qrels."""
     from pipeline import assemble_stacks
 
-    print(f"{name} : {len(texts)} docs, {len(queries_eval)} requêtes jugées — indexation ({embedder})…")
+    print(f"{name}: {len(texts)} docs, {len(queries_eval)} judged queries - indexing ({embedder})...")
     stacks = assemble_stacks(texts, metadata, embedder=embedder)
 
     report = {}
@@ -108,12 +108,12 @@ def evaluate_corpus(name, texts, metadata, queries_eval, qrels, embedder, output
                           "n_queries": len(queries_eval)}, "stacks": report}
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print(f"\n{name} — {len(queries_eval)} requêtes · {len(texts)} docs · embedder {embedder}\n")
+    print(f"\n{name} - {len(queries_eval)} queries · {len(texts)} docs · embedder {embedder}\n")
     for sname, m in report.items():
         print(f"  {sname}")
         print("    " + "  ".join(f"recall@{k}={m[f'recall@{k}']:.3f}" for k in KS)
               + f"  nDCG@10={m['ndcg@10']:.3f}  MRR={m['mrr']:.3f}")
-    print(f"\n✅ Détails écrits dans {output}")
+    print(f"\n✅ Details written to {output}")
     return payload
 
 
@@ -129,11 +129,11 @@ def run(dataset: str, embedder: str, max_queries: int, output: Path) -> dict:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Éval qrels des 3 archis (recall@k, nDCG@10, MRR, sans LLM).")
-    ap.add_argument("--dataset", default="scifact", help="scifact, nfcorpus, … ou hotpotqa-distractor")
+    ap = argparse.ArgumentParser(description="Qrels eval of the 3 architectures (recall@k, nDCG@10, MRR, no LLM).")
+    ap.add_argument("--dataset", default="scifact", help="scifact, nfcorpus, ... or hotpotqa-distractor")
     ap.add_argument("--embedder", default="all-MiniLM-L6-v2")
     ap.add_argument("--max-queries", type=int, default=0,
-                    help="limiter (0 = toutes ; pour hotpotqa-distractor, taille de l'échantillon, défaut 500)")
+                    help="limit (0 = all; for hotpotqa-distractor, sample size, default 500)")
     ap.add_argument("--output", type=Path, default=ROOT / "eval" / "beir_results.json")
     args = ap.parse_args()
     run(args.dataset, args.embedder, args.max_queries, args.output)

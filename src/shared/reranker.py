@@ -1,10 +1,10 @@
-"""Reranking par cross-encoder : étape 2 d'une récupération en deux temps.
+"""Cross-encoder reranking: step 2 of a two-stage retrieval.
 
-Le récupérateur (vecteur / hybride / graphe) sort un **top-N large** ; le
-cross-encoder, qui lit la paire (requête, document) **ensemble**, les re-note
-finement et on garde le **top-k**. Plus précis qu'un bi-encodeur (qui encode la
-requête et le document *séparément*), mais trop lent pour tout le corpus — d'où
-les deux étapes : on ne le passe que sur les candidats déjà filtrés.
+The retriever (vector / hybrid / graph) outputs a **large top-N**; the
+cross-encoder, which reads the (query, document) pair **together**, re-scores
+them finely and we keep the **top-k**. More accurate than a bi-encoder (which encodes the
+query and the document *separately*), but too slow for the whole corpus -- hence
+the two stages: we only run it on the already-filtered candidates.
 """
 
 from functools import lru_cache
@@ -12,14 +12,14 @@ from functools import lru_cache
 
 @lru_cache(maxsize=2)
 def _model(name: str):
-    """Charge (et met en cache) le cross-encoder ; import paresseux."""
+    """Load (and cache) the cross-encoder; lazy import."""
     from sentence_transformers import CrossEncoder
 
     return CrossEncoder(name)
 
 
 class CrossEncoderReranker:
-    """Re-note des candidats avec un cross-encoder et renvoie le top-k réordonné."""
+    """Re-score candidates with a cross-encoder and return the reordered top-k."""
 
     def __init__(self, model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"):
         self.model_name = model_name
@@ -28,12 +28,12 @@ class CrossEncoderReranker:
         self, query: str, candidates: list[dict], top_k: int,
         mode: str = "replace", rrf_k: int = 60,
     ) -> list[dict]:
-        """Réordonne `candidates` (dicts avec une clé "text") et renvoie le top-k.
+        """Reorder `candidates` (dicts with a "text" key) and return the top-k.
 
-        - `replace` : on suit le cross-encoder seul (il **remplace** le classement de base).
-        - `fusion`  : RRF entre le rang de base (position d'entrée) et celui du
-          cross-encoder — chaque classement « vote », ce qui **protège** un
-          récupérateur déjà fort de se faire tirer vers le bas.
+        - `replace`: we follow the cross-encoder alone (it **replaces** the base ranking).
+        - `fusion` : RRF between the base rank (input position) and the
+          cross-encoder rank -- each ranking "votes", which **protects** an
+          already-strong retriever from being dragged down.
         """
         if not candidates:
             return []
@@ -54,12 +54,12 @@ class CrossEncoderReranker:
 
 
 class RerankedRetriever:
-    """Décorateur : ajoute un étage de reranking à n'importe quel récupérateur.
+    """Decorator: add a reranking stage to any retriever.
 
-    Expose le **même** `search(query, k)` : récupère un top-N élargi via le
-    récupérateur interne, puis le cross-encoder réordonne et on renvoie le top-k.
-    Transparent pour la RAG et l'application — on enveloppe le récupérateur, rien
-    d'autre ne change (responsabilité unique). Désactivé par défaut dans le pipeline.
+    Exposes the **same** `search(query, k)`: retrieves an enlarged top-N via the
+    inner retriever, then the cross-encoder reorders and we return the top-k.
+    Transparent for the RAG and the application -- we wrap the retriever, nothing
+    else changes (single responsibility). Disabled by default in the pipeline.
     """
 
     def __init__(self, inner, reranker: CrossEncoderReranker,
