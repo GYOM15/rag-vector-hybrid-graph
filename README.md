@@ -60,7 +60,7 @@ so the comparison is fair (controlled variables).
 
 ## Architecture
 
-![Architecture](docs/architecture.svg)
+<img src="docs/architecture.svg" alt="Architecture" width="100%">
 
 Only the **retriever** differs between stacks; chunking, embeddings, FAISS index,
 prompt and LLM are shared. `pipeline.build_stacks()` is the single source of truth
