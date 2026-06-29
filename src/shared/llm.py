@@ -123,11 +123,13 @@ def _call_huggingface(prompt: str, model: str | None, max_length: int) -> str:
             _HF_CACHE[model] = ("causal", tokenizer, AutoModelForCausalLM.from_pretrained(model))
     kind, tokenizer, llm_model = _HF_CACHE[model]
 
-    if kind == "causal":  # instruct decoder: use the chat template, decode only the new tokens
-        inputs = tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt}], add_generation_prompt=True, return_tensors="pt")
-        outputs = llm_model.generate(inputs, max_new_tokens=max_length, do_sample=False)
-        return tokenizer.decode(outputs[0][inputs.shape[1]:], skip_special_tokens=True).strip()
+    if kind == "causal":  # instruct decoder: render the chat template, decode only the new tokens
+        text = tokenizer.apply_chat_template(
+            [{"role": "user", "content": prompt}], tokenize=False, add_generation_prompt=True)
+        model_inputs = tokenizer([text], return_tensors="pt")
+        outputs = llm_model.generate(**model_inputs, max_new_tokens=max_length, do_sample=False)
+        new_tokens = outputs[0][model_inputs.input_ids.shape[1]:]
+        return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
     inputs = tokenizer(prompt, return_tensors="pt", max_length=max_length, truncation=True)
     outputs = llm_model.generate(**inputs, max_length=max_length)
