@@ -89,8 +89,9 @@ def render_beir() -> None:
     ndcg = {ds: {_short(k): v["ndcg@10"] for k, v in d["stacks"].items()} for ds, d in loaded.items()}
     _grouped_bar(_cols(pd.DataFrame(ndcg).T), "Dataset", "nDCG@10",
                  "nDCG@10 by dataset (higher = better)", ".3f")
-    st.caption("Hybrid wins on all 3 corpora; Graph is last "
-               "(Pareto-dominated on standard IR).")
+    st.caption("Hybrid wins on all 3 corpora. Graph trails on SciFact/HotpotQA but edges out "
+               "Vector on the entity-heavy NFCorpus (consistent with its named-entity strength) "
+               "— though it stays the costliest index to build.")
 
     st.divider()
     ds = st.selectbox("Dataset detail", list(loaded.keys()), key="beir_ds")
