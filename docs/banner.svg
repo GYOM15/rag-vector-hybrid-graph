@@ -1,0 +1,20 @@
+<svg viewBox="0 0 1000 200" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <title>RAG — Vector, Hybrid, Graph</title>
+  <desc>Three RAG retrieval architectures compared fairly.</desc>
+  <rect width="1000" height="200" rx="18" fill="#0d1117"/>
+  <rect width="8" height="200" rx="4" fill="#6366f1"/>
+  <text x="44" y="90" font-size="68" font-weight="800" fill="#e6edf3" letter-spacing="3">RAG</text>
+  <text x="200" y="90" font-size="26" font-weight="700" fill="#818cf8">Vector · Hybrid · Graph</text>
+  <text x="46" y="130" font-size="18" fill="#9aa4b2">Three RAG architectures, compared fairly — only the retriever changes.</text>
+  <text x="46" y="160" font-size="14" fill="#6b7280" letter-spacing="0.4">FAISS · BM25 + RRF · spaCy entity graph · BEIR eval · reranking · held-out tuning</text>
+  <g transform="translate(815,40)" fill="none">
+    <circle cx="2" cy="22" r="8" fill="#3b82f6"/>
+    <circle cx="2" cy="61" r="8" fill="#22c55e"/>
+    <circle cx="2" cy="100" r="8" fill="#a855f7"/>
+    <path d="M12 22 C52 22 52 61 88 61" stroke="#30363d" stroke-width="2"/>
+    <path d="M12 61 H88" stroke="#30363d" stroke-width="2"/>
+    <path d="M12 100 C52 100 52 61 88 61" stroke="#30363d" stroke-width="2"/>
+    <rect x="88" y="44" width="64" height="34" rx="9" fill="#161b22" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="120" y="66" font-size="15" fill="#e6edf3" text-anchor="middle" font-weight="600">LLM</text>
+  </g>
+</svg>
