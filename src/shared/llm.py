@@ -4,7 +4,8 @@ Three backends, selected via the `provider` parameter or the
 `LLM_PROVIDER` environment variable:
   - "ollama"      : local inference via Ollama (default).
   - "openai"      : any OpenAI-compatible endpoint (OpenAI, **vLLM**, etc.).
-  - "huggingface" : local encoder-decoder model (e.g. flan-t5).
+  - "huggingface" : local model — encoder-decoder (flan-t5) or instruct decoder
+                    (Qwen2.5-Instruct…); the kind is auto-detected.
 
 The heavy dependencies (ollama, transformers) are imported **on demand**:
 importing this module stays lightweight regardless of the backend actually used.
@@ -106,16 +107,28 @@ def _call_openai(prompt: str, model: str | None, max_length: int) -> str:
 
 
 def _call_huggingface(prompt: str, model: str | None, max_length: int) -> str:
-    """Local HuggingFace encoder-decoder model (e.g. flan-t5), cached."""
-    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    """Local HuggingFace model, cached. Handles both encoder-decoder models
+    (e.g. flan-t5) and instruct decoder/causal-LM models (e.g. Qwen2.5-Instruct);
+    the kind is auto-detected from the model config."""
+    from transformers import (
+        AutoConfig, AutoModelForCausalLM, AutoModelForSeq2SeqLM, AutoTokenizer,
+    )
 
     model = model or os.getenv("HF_MODEL", "google/flan-t5-base")
     if model not in _HF_CACHE:
-        _HF_CACHE[model] = (
-            AutoTokenizer.from_pretrained(model),
-            AutoModelForSeq2SeqLM.from_pretrained(model),
-        )
-    tokenizer, llm_model = _HF_CACHE[model]
+        tokenizer = AutoTokenizer.from_pretrained(model)
+        if AutoConfig.from_pretrained(model).is_encoder_decoder:
+            _HF_CACHE[model] = ("seq2seq", tokenizer, AutoModelForSeq2SeqLM.from_pretrained(model))
+        else:
+            _HF_CACHE[model] = ("causal", tokenizer, AutoModelForCausalLM.from_pretrained(model))
+    kind, tokenizer, llm_model = _HF_CACHE[model]
+
+    if kind == "causal":  # instruct decoder: use the chat template, decode only the new tokens
+        inputs = tokenizer.apply_chat_template(
+            [{"role": "user", "content": prompt}], add_generation_prompt=True, return_tensors="pt")
+        outputs = llm_model.generate(inputs, max_new_tokens=max_length, do_sample=False)
+        return tokenizer.decode(outputs[0][inputs.shape[1]:], skip_special_tokens=True).strip()
+
     inputs = tokenizer(prompt, return_tensors="pt", max_length=max_length, truncation=True)
     outputs = llm_model.generate(**inputs, max_length=max_length)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)

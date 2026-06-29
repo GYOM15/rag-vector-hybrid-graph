@@ -97,6 +97,10 @@ def render_chat_tab() -> None:
     """3 chats side by side; one shared question goes to the 3 architectures."""
     st.caption("The same question is sent to the 3 architectures; each keeps its own thread. "
                "(No conversational memory: each question is independent.)")
+    st.info("**Corpus:** ~500 Simple-English Wikipedia articles (countries, people, history, "
+            "science…). Ask *factual* questions about them — e.g. *“When did the Titanic sink?”*, "
+            "*“What is the official language of France?”*, *“Where was Alan Turing born?”* "
+            "Out-of-corpus questions get an honest “I don't know”.", icon=":material/lightbulb:")
 
     top = st.columns([3, 1], vertical_alignment="bottom")
     k = top[0].slider("Number of retrieved chunks (k)", 1, 10, 5)
