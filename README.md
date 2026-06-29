@@ -60,20 +60,6 @@ so the comparison is fair (controlled variables).
 
 ## Architecture
 
-The pipeline is identical for all three stacks — **only the retriever differs** (plus an optional rerank stage):
-
-```mermaid
-flowchart LR
-    Q[Question] --> R{Retriever — the only piece that changes}
-    R -->|dense · FAISS| V[Vector]
-    R -->|BM25 + RRF| H[Hybrid]
-    R -->|entity graph| G[Graph]
-    V --> RR[optional cross-encoder rerank]
-    H --> RR
-    G --> RR
-    RR --> P[shared prompt] --> L[shared LLM] --> A[Answer]
-```
-
 ![Architecture](docs/architecture.svg)
 
 Only the **retriever** differs between stacks; chunking, embeddings, FAISS index,
