@@ -8,6 +8,7 @@ sentence-transformers>=2.0
 transformers>=4.40
 faiss-cpu>=1.7
 rank-bm25>=0.2
+snowballstemmer>=2.2
 networkx>=3.0
 spacy>=3.8,<3.9
 numpy>=1.24
