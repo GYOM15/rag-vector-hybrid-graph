@@ -2,6 +2,9 @@
 
 <img src="docs/banner.svg" alt="RAG - Vector, Hybrid, Graph" width="800">
 
+<br/>
+<br/>
+
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![FAISS](https://img.shields.io/badge/Vector-FAISS-009999)
 ![Embeddings](https://img.shields.io/badge/Embeddings-MiniLM-FFD21E?logo=huggingface&logoColor=black)
