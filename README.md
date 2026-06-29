@@ -1,17 +1,6 @@
 <div align="center">
 
-<pre>
-██████╗  █████╗  ██████╗ 
-██╔══██╗██╔══██╗██╔════╝ 
-██████╔╝███████║██║  ███╗
-██╔══██╗██╔══██║██║   ██║
-██║  ██║██║  ██║╚██████╔╝
-╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ 
-</pre>
-
-**Three RAG architectures, compared fairly.**
-
-`Vector` · `Hybrid (BM25 + RRF)` · `Graph` — same corpus · chunking · prompt · LLM
+<img src="docs/banner.svg" alt="RAG - Vector, Hybrid, Graph" width="800">
 
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![FAISS](https://img.shields.io/badge/Vector-FAISS-009999)
