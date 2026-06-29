@@ -44,6 +44,18 @@ so the comparison is fair (controlled variables).
 | **Hybrid** | vector + BM25, fused by **RRF** | exact keywords (dates, names, codes) |
 | **Graph** | spaCy NER → entity graph (networkx) + **local-search** (query entities via MENTIONS/RELATED_TO, IDF-weighted) | relational / multi-hop |
 
+## Highlights
+
+**🔗 [Live demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph)** — the 3 retrievers side by side + an in-app evaluation dashboard, on a free CPU Space.
+
+- **Fair by construction** — same corpus, chunking, prompt and LLM; *only the retriever changes*.
+- **Hybrid (BM25 + dense + RRF) is the robust winner** across 3 BEIR corpora (SciFact / HotpotQA / NFCorpus).
+- **Debugged the Graph at scale** — found *why* it failed (entity-hub pollution), fixed it with a principled normalization, exponent chosen on a **held-out split** (never on test).
+- **Reranking doesn't generalize** — *replace* vs *fuse* flips by dataset; measured, with the rule for when to use which.
+- **Reader quality > size** — a 1.5B *instruct* model (Qwen2.5) reads a distractor correctly where a 3B (Llama-3.2) misreads it — shown **live**.
+- **The generator is the bottleneck** end-to-end — better retrieval ≠ better answers without a capable reader.
+- **Built like production** — deterministic (temp 0), a **regression guard in CI** (nDCG gate), honest negative results, and an **audit** that re-ran every claim and corrected two overstatements.
+
 ## Contents
 
 - [Architecture](#architecture) — the 3 retrievers, controlled variables
@@ -55,6 +67,20 @@ so the comparison is fair (controlled variables).
 - [Roadmap](#roadmap) · [Tests](#tests) · [Data](#data) · [License](#license)
 
 ## Architecture
+
+The pipeline is identical for all three stacks — **only the retriever differs** (plus an optional rerank stage):
+
+```mermaid
+flowchart LR
+    Q[Question] --> R{Retriever — the only piece that changes}
+    R -->|dense · FAISS| V[Vector]
+    R -->|BM25 + RRF| H[Hybrid]
+    R -->|entity graph| G[Graph]
+    V --> RR[optional cross-encoder rerank]
+    H --> RR
+    G --> RR
+    RR --> P[shared prompt] --> L[shared LLM] --> A[Answer]
+```
 
 ![Architecture](docs/architecture.svg)
 
@@ -306,6 +332,13 @@ Honest reading:
 - Absolute EM/F1 are low by construction (small models; verbose answers vs 1–3-word gold, harsh on Exact-Match; multi-hop needs combining two documents).
 
 **Scope note — deliberately local at this stage.** This ran ~300 generations (~20 min) on a laptop with **no batched serving**: fine for a one-off baseline, not for scale. The next stage — **vLLM + Ray** ([Roadmap](#roadmap)) — batches on GPU, making this eval fast *and* unlocking a larger, more capable reader (the setting where the retrieval→answer link should sharpen). Read the table as a current-stage baseline, not the last word.
+
+> **Reader quality beats reader size (shown live).** On a distractor question — *"When did the
+> Titanic sink?"*, with both the sink date **and** the *launch* date in the retrieved context —
+> `llama3.2:3b` confidently returned the **launch** date, while a *smaller but newer*
+> **`Qwen2.5-1.5B-Instruct`** answered correctly. For RAG *reading*, model **quality/recency beats
+> raw size** — try it on the [live demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph).
+> (Reranking doesn't fix it: the right chunk was already #1; the generator simply misread it.)
 
 ### Performance & systems
 
