@@ -105,7 +105,8 @@ Space → **Settings** → **Variables and secrets** → **New variable** (a *Va
 
 | Name | Value | Why |
 |---|---|---|
-| `LLM_PROVIDER` | `huggingface` | the Chat uses flan-t5 (no Ollama on the Space) |
+| `LLM_PROVIDER` | `huggingface` | the Chat generates locally (no Ollama on the Space) |
+| `HF_MODEL` | `Qwen/Qwen2.5-1.5B-Instruct` | a small *instruct* model — **correct** answers (a measured win over flan-t5, see Notes); slower on CPU. Omit to use the lighter/faster `google/flan-t5-base` default |
 | `DEMO_ARTICLES` | `200` | smaller corpus = faster first build |
 
 Adding variables restarts the Space.
@@ -140,9 +141,12 @@ them (~1–4 min rebuild). For an always-on demo, upgrade the Space hardware (pa
 
 ## Notes
 - **Memory**: the free tier (~16 GB) fits torch + faiss + spaCy + flan-t5.
-- **Generation quality**: flan-t5-base is a small demo model. The full-quality, batched
-  generation is the AWS/vLLM endpoint (see [`infra/DEPLOY.md`](../infra/DEPLOY.md)); once it
-  is up, point the Space at it with `LLM_PROVIDER=openai` + `OPENAI_BASE_URL`.
+- **Generation quality**: set `HF_MODEL=Qwen/Qwen2.5-1.5B-Instruct` for accurate answers —
+  it beat both flan-t5 *and* a larger Llama-3.2-3B in our tests (model **quality** > size),
+  at the cost of slower CPU generation. `google/flan-t5-base` is the faster-but-weaker
+  default. The full-quality, batched generation is the AWS/vLLM endpoint (see
+  [`infra/DEPLOY.md`](../infra/DEPLOY.md)); point the Space at it with `LLM_PROVIDER=openai`
+  + `OPENAI_BASE_URL`.
 - **Updating the Space later**: re-copy the changed files into the Space clone and
   `git add -A && git commit && git push`, or link the Space to GitHub for auto-sync.
 - **Credentials**: creating the Space, the token, and pushing all use *your* HF account —
