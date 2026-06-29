@@ -26,8 +26,9 @@
 ![Streamlit](https://img.shields.io/badge/App-Streamlit-FF4B4B?logo=streamlit&logoColor=white)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 [![CI](https://github.com/gyom15/rag-vector-hybrid-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/gyom15/rag-vector-hybrid-graph/actions)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph)
 
-[Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation) · [Roadmap](#roadmap)
+[**🔗 Live demo**](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph) · [Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation) · [Roadmap](#roadmap)
 
 </div>
 
@@ -115,7 +116,7 @@ Generation needs an LLM, selected by `LLM_PROVIDER` (copy `.env.example` → `.e
 |---|---|---|---|
 | `ollama` *(default)* | `OLLAMA_URL`, `OLLAMA_MODEL` | decoder LLM (llama3.2…) | local dev |
 | `openai` | `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL` | decoder LLM | OpenAI **or a vLLM server** |
-| `huggingface` | `HF_MODEL` | **seq2seq only** (flan-t5…) | self-contained, no server |
+| `huggingface` | `HF_MODEL` | seq2seq (flan-t5) **or** instruct decoder (Qwen2.5…), auto-detected | self-contained, no server |
 
 ```bash
 ollama pull llama3.2:3b          # set OLLAMA_MODEL=llama3.2:3b
@@ -137,8 +138,9 @@ streamlit run app/streamlit_app.py
   *visualises* their output — like MLflow / W&B. The two **fast** evals (the regression
   guard, the toy-corpus retrieval) and the RAGAS benchmark also **run live** in-app.
 
-> **Hosted demo** — deploy the app (the dashboard + a flan-t5 Chat) to a free Hugging Face
-> Space: see [docs/DEPLOY-HF.md](docs/DEPLOY-HF.md).
+> **🔗 Live demo** — [**try it on Hugging Face Spaces**](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph):
+> the full dashboard + a working Chat (Qwen2.5-1.5B-Instruct on free CPU). Deploy your own with
+> [docs/DEPLOY-HF.md](docs/DEPLOY-HF.md).
 
 ### 4. Reproduce the evaluation
 
@@ -363,8 +365,8 @@ judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 Planned, not yet implemented:
 
 - **Serving at scale** — a backend-agnostic serving benchmark ([`eval/serving_bench.py`](eval/serving_bench.py): req/s, tokens/s, p50/p95/p99 under a concurrency sweep), and a **vLLM + Ray Serve** deployment (PagedAttention, continuous batching, autoscaling) reachable via the existing `openai` provider with **no pipeline code change**. Remaining: the GPU run, autoscaling, and the serving-throughput Pareto.
-- **Hosted demo** — a retrieval-first Streamlit demo on HF Spaces (generation wired to the vLLM endpoint above).
-- **Breadth** — stronger embedders (bge/e5) on the BEIR datasets, plus more datasets (NFCorpus, FiQA).
+- **Full-quality hosted generation** — the [live HF Spaces demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph) already serves the dashboard + a Qwen2.5-1.5B Chat on free CPU; pointing it at the vLLM endpoint above (the `openai` provider) swaps in a 7B+ model for full-quality answers.
+- **Breadth** — more datasets (e.g. FiQA) and embedders (e.g. e5) on top of the current SciFact / HotpotQA / NFCorpus × MiniLM / bge coverage.
 
 ## Tests
 
