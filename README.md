@@ -229,8 +229,11 @@ leaves one knob, `p`. I swept it (`none, log, 0.25, 0.5, 0.75, 1.0`) on a **held
 validation split** (SciFact-train + NFCorpus-validation) and report on the **untouched
 test split** — the test set never selects the formula
 ([sweep_entity_norm.py](eval/sweep_entity_norm.py)). My intuition (a *softer* penalty) was
-**wrong**: a *stronger* one, `p=0.75`, won validation (mean nDCG 0.486, vs 0.481 for √,
-0.479 for log, 0.453 for the unnormalized bug). That's the point of measuring instead of guessing.
+**wrong**: a *stronger* one, `p=0.75`, won validation (mean nDCG 0.486 — but only *just* ahead
+of linear `p=1.0` at 0.485, then √ 0.481, log 0.479, unnormalized bug 0.453). The margin over
+linear is thin, and linear even edges `p=0.75` on the HotpotQA *test* split (0.763 vs 0.748) —
+which is *exactly* why the formula stays locked on the held-out split and never on test. That's
+the point of measuring instead of guessing.
 
 | nDCG@10 (Graph), test split | before (bug) | **after (p=0.75)** | Δ |
 |---|---|---|---|
