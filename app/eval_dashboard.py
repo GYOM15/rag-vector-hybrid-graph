@@ -159,6 +159,16 @@ def render_systems() -> None:
                  "Index build cost (lower = better)", ".0f")
     st.caption(f"Graph spaCy NER ≈ {bs.get('graph_ner_build', 0):.0f}s — the most expensive index.")
 
+    mem = d.get("build_memory_mb")
+    if mem:
+        st.divider()
+        st.markdown(
+            f"**Memory** — the FAISS vector store is ~{mem.get('faiss_vectors_mb', 0):.0f} MB; the whole "
+            f"process peaks at ~{mem.get('process_peak_mb', 0):.0f} MB, dominated by the embedding model "
+            f"+ spaCy runtime. At this corpus scale the per-index structures are tens of MB — so **memory "
+            f"isn't the differentiator here; build time is** (the graph's NER pass). The networkx graph "
+            f"grows with entity count, so memory would surface at larger scale.")
+
     st.divider()
     lat = {_short(k): {"median": v["latency"]["median_ms"], "p95": v["latency"]["p95_ms"],
                        "p99": v["latency"]["p99_ms"]} for k, v in d["stacks"].items()}
