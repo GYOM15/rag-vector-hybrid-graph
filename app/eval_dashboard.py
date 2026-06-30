@@ -164,7 +164,8 @@ def render_systems() -> None:
         st.divider()
         st.markdown(
             f"**Memory** — the FAISS vector store is ~{mem.get('faiss_vectors_mb', 0):.0f} MB; the whole "
-            f"process peaks at ~{mem.get('process_peak_mb', 0):.0f} MB, dominated by the embedding model "
+            f"process peaks at ~{mem.get('process_peak_mb', 0):.0f} MB (a high-water mark, not resident "
+            f"steady state), dominated by the embedding model "
             f"+ spaCy runtime. At this corpus scale the per-index structures are tens of MB — so **memory "
             f"isn't the differentiator here; build time is** (the graph's NER pass). The networkx graph "
             f"grows with entity count, so memory would surface at larger scale.")

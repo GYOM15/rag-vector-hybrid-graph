@@ -47,7 +47,9 @@ def _timed(fn):
 
 
 def _peak_rss_mb() -> float:
-    """Process peak resident memory in MB (ru_maxrss is bytes on macOS, KB on Linux)."""
+    """Process *peak* RSS in MB. `ru_maxrss` is a monotonic high-water mark (bytes on
+    macOS, KB on Linux), so deltas are peak-allocation growth — what you provision for —
+    not resident steady-state size."""
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return rss / (1024 * 1024) if sys.platform == "darwin" else rss / 1024
 
@@ -79,7 +81,9 @@ def build_with_timing(texts, metadata, embedder):
         "graph_total": round(shared + t_graph_build + t_graph_init, 2),
         "graph_ner_build": round(t_graph_build, 2),
     }
-    # Peak-RSS growth per component (captures native FAISS + Python BM25/graph), MB.
+    # Peak-RSS high-water marks (single pass; ru_maxrss is monotonic) — allocation peaks
+    # to provision for, NOT resident steady-state: spaCy's transient allocations inflate
+    # the graph delta. `faiss_vectors_mb` is the exact resident size of the vector store.
     memory = {
         "faiss_vectors_mb": round(float(np.asarray(vectors).nbytes) / 1e6, 1),
         "shared_embed_faiss_peak_mb": round(m_shared - m0, 1),
@@ -107,15 +111,19 @@ def measure_latency(retriever, queries, warmup=10, repeats=3):
 
 
 def measure_throughput(retriever, queries, warmup=1, repeats=3):
-    """Throughput (queries/s) per thread-concurrency level: warmup + repeats → median."""
+    """Throughput (queries/s) per thread-concurrency level: warmup + repeats → median.
+
+    The pool is created once per level and reused, so the warmup absorbs thread spin-up
+    and the timed repeats measure steady-state dispatch, not pool construction.
+    """
     out = {}
     for workers in CONCURRENCY:
-        def run(workers=workers):
-            with ThreadPoolExecutor(max_workers=workers) as ex:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            def run(ex=ex):
                 list(ex.map(lambda q: retriever.search(q, k=K), queries))
-        for _ in range(warmup):
-            run()
-        qps = [len(queries) / _timed(run)[1] for _ in range(repeats)]
+            for _ in range(warmup):
+                run()
+            qps = [len(queries) / _timed(run)[1] for _ in range(repeats)]
         out[str(workers)] = round(float(np.median(qps)), 1)
     return out
 
