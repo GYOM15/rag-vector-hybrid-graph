@@ -8,62 +8,69 @@
     "repeats": 3
   },
   "build_seconds": {
-    "shared_embed_faiss": 45.25,
-    "embed": 45.24,
+    "shared_embed_faiss": 44.96,
+    "embed": 44.95,
     "faiss": 0.01,
-    "vector_total": 45.25,
-    "hybrid_total": 63.18,
-    "hybrid_bm25": 17.93,
-    "graph_total": 218.89,
-    "graph_ner_build": 173.6
+    "vector_total": 44.96,
+    "hybrid_total": 63.44,
+    "hybrid_bm25": 18.48,
+    "graph_total": 225.42,
+    "graph_ner_build": 180.42
+  },
+  "build_memory_mb": {
+    "faiss_vectors_mb": 8.0,
+    "shared_embed_faiss_peak_mb": 20.4,
+    "hybrid_bm25_peak_mb": 0.0,
+    "graph_peak_mb": 68.8,
+    "process_peak_mb": 603.5
   },
   "stacks": {
     "vector": {
       "ndcg@10": 0.6484,
       "latency": {
-        "median_ms": 8.4,
-        "p95_ms": 11.14,
-        "p99_ms": 13.25,
-        "mean_ms": 8.87,
+        "median_ms": 8.71,
+        "p95_ms": 12.01,
+        "p99_ms": 14.99,
+        "mean_ms": 9.15,
         "n_calls": 600
       },
       "throughput_qps": {
-        "1": 101.9,
-        "2": 121.6,
-        "4": 138.0,
-        "8": 140.2
+        "1": 92.9,
+        "2": 119.9,
+        "4": 123.3,
+        "8": 129.1
       }
     },
     "hybrid": {
       "ndcg@10": 0.7108,
       "latency": {
-        "median_ms": 15.68,
-        "p95_ms": 21.65,
-        "p99_ms": 24.37,
-        "mean_ms": 16.23,
+        "median_ms": 16.79,
+        "p95_ms": 24.12,
+        "p99_ms": 27.15,
+        "mean_ms": 17.57,
         "n_calls": 600
       },
       "throughput_qps": {
-        "1": 58.4,
-        "2": 65.8,
-        "4": 68.3,
-        "8": 64.6
+        "1": 54.8,
+        "2": 58.3,
+        "4": 61.5,
+        "8": 58.4
       }
     },
     "graph": {
       "ndcg@10": 0.6426,
       "latency": {
-        "median_ms": 12.38,
-        "p95_ms": 16.68,
-        "p99_ms": 18.32,
-        "mean_ms": 12.9,
+        "median_ms": 13.19,
+        "p95_ms": 18.39,
+        "p99_ms": 23.13,
+        "mean_ms": 13.89,
         "n_calls": 600
       },
       "throughput_qps": {
-        "1": 73.5,
-        "2": 91.7,
-        "4": 97.8,
-        "8": 75.9
+        "1": 67.4,
+        "2": 84.9,
+        "4": 89.7,
+        "8": 81.9
       }
     }
   }

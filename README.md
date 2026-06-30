@@ -321,19 +321,21 @@ Honest reading:
 ### Performance & systems
 
 Retrieval is a *systems* question too, not only a quality one. Measured **without any LLM**
-(deterministic, fast) on SciFact (5,183 docs, 200 queries, k=10) — [perf_bench.py](eval/perf_bench.py):
+(deterministic; latency and throughput are warmup + repeated → median) on SciFact
+(5,183 docs, 200 queries, k=10) — [perf_bench.py](eval/perf_bench.py):
 
 ![Quality × latency Pareto and throughput](docs/perf-pareto.svg)
 
 | | nDCG@10 | build (s) | latency med / p95 / p99 (ms) | throughput @8 (q/s) |
 |---|---|---|---|---|
-| **Vector** | 0.648 | 45 | **8.4** / 11 / 13 | **140** |
-| **Hybrid** | **0.711** | 63 | 15.7 / 22 / 24 | 65 |
-| **Graph** | 0.643 | **219** | 12.4 / 17 / 18 | 76 |
+| **Vector** | 0.648 | 45 | **8.7** / 12 / 15 | **129** |
+| **Hybrid** | **0.711** | 63 | 16.8 / 24 / 27 | 58 |
+| **Graph** | 0.643 | **225** | 13.2 / 18 / 23 | 82 |
 
-- **Build cost** — the entity-graph is **~3.5× costlier to build**: its spaCy NER pass alone is **174 s** vs FAISS's near-zero. The quality tables never showed this half.
-- **Latency** — Vector is fastest (8.4 ms median); Hybrid slowest (BM25 + dense + RRF fusion); Graph between.
-- **Scaling** — only **Vector scales with concurrency** (102 → 140 q/s, 1 → 8 threads): FAISS releases the GIL, while Hybrid (`rank_bm25`) and Graph (`networkx`) are Python-bound and plateau.
+- **Build cost** — the entity-graph is **~5× costlier to build**: its spaCy NER pass alone is **~180 s** vs FAISS's near-zero. The quality tables never showed this half.
+- **Latency** — Vector is fastest (8.7 ms median); Hybrid slowest (BM25 + dense + RRF fusion); Graph between.
+- **Scaling** — only **Vector scales with concurrency** (93 → 129 q/s, 1 → 8 threads): FAISS releases the GIL, so its native search runs across threads. The BM25 (`rank_bm25`) and graph (`networkx`) retrievers are pure-Python CPU-bound, so the GIL serialises them and they plateau — a runtime limit of *this* shared single-process shape, **not an algorithmic verdict** (a multiprocess server would scale them too; a contended host also flattens the curve, so the sweep needs a quiet machine).
+- **Memory** — the FAISS vector store is only ~8 MB; the process peaks at ~600 MB, dominated by the embedding model + spaCy. At this scale the per-index memory (tens of MB) is dwarfed by the model runtime, so **memory isn't the differentiator here — build time is**. The networkx graph grows with entity count, so it would surface at larger scale.
 - **Pareto verdict** — **Vector** (efficiency) and **Hybrid** (quality) sit on the frontier; pick by your latency budget. **Graph is dominated** on standard IR — lower nDCG than Vector, higher latency, far costlier to build. Its niche is elsewhere (named-entity robustness, interpretable `shared_entities`), not this trade-off.
 
 Single-machine, in-process numbers; batched/GPU **serving** throughput is the [Roadmap](#roadmap)'s vLLM + Ray stage.
