@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars and fill in. (terraform.tfvars is gitignored.)
+
+allowed_cidr = "REPLACE_WITH_YOUR_IP/32" # find it: curl ifconfig.me
+key_name     = "your-ec2-key-pair"       # an existing EC2 key pair name
+repo_url     = "https://github.com/GYOM15/rag-vector-hybrid-graph.git"
+repo_branch  = "feat/aws-serving" # test on the branch; set "main" once you merge it
+
+# Optional overrides:
+# region        = "us-east-1"
+# instance_type = "g5.xlarge"
+# model         = "Qwen/Qwen2.5-7B-Instruct"

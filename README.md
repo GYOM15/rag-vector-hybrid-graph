@@ -378,6 +378,7 @@ judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 Planned, not yet implemented:
 
 - **Serving at scale** — a backend-agnostic serving benchmark ([`eval/serving_bench.py`](eval/serving_bench.py): req/s, tokens/s, p50/p95/p99 under a concurrency sweep), and a **vLLM + Ray Serve** deployment (PagedAttention, continuous batching, autoscaling) reachable via the existing `openai` provider with **no pipeline code change**. Remaining: the GPU run, autoscaling, and the serving-throughput Pareto.
+- **Production deploy + observability** *(scaffolded — Terraform)* — [`infra/`](infra/): Terraform for a GPU EC2 instance running vLLM + **Prometheus** + **Grafana** (dashboards-as-code), locked to your IP. `terraform apply` → live latency / throughput / GPU dashboards under load → `terraform destroy`. Remaining: the run itself (GPU quota approved).
 - **Full-quality hosted generation** — the [live HF Spaces demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph) already serves the dashboard + a Qwen2.5-1.5B Chat on free CPU; pointing it at the vLLM endpoint above (the `openai` provider) swaps in a 7B+ model for full-quality answers.
 - **Breadth** — more datasets (e.g. FiQA) and embedders (e.g. e5) on top of the current SciFact / HotpotQA / NFCorpus × MiniLM / bge coverage.
 
