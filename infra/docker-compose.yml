@@ -1,0 +1,52 @@
+# Serving + observability, one Docker network. Services reach each other by name.
+# MODEL comes from .env (written by user_data.sh).
+services:
+  # The model server. Exposes the OpenAI-compatible API AND Prometheus metrics at /metrics.
+  vllm:
+    image: vllm/vllm-openai:latest
+    command: ["--model", "${MODEL}", "--max-model-len", "8192"]
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # GPU hardware metrics (utilisation, memory, power, temperature) at :9400/metrics.
+  dcgm-exporter:
+    image: nvidia/dcgm-exporter:latest
+    ports:
+      - "9400:9400"
+    cap_add: [SYS_ADMIN]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Scrapes vllm + dcgm-exporter every 15s and stores the time series.
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  # Dashboards. Datasource + dashboards are provisioned from files (no manual clicks).
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
