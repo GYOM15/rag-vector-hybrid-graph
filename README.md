@@ -79,7 +79,7 @@ context) *or* from **generation** (the chunk is there but the model misreads it)
 Both must succeed — the matrix below shows why raising `k` alone or upgrading the
 model alone is not enough:
 
-![Retrieval × Generation](docs/retrieval-vs-generation.svg)
+<img src="docs/retrieval-vs-generation.svg" alt="Retrieval × Generation" width="100%">
 
 ## Project structure
 
@@ -198,7 +198,7 @@ is deterministic, and needs no API key. Metrics are pure, unit-tested functions
 
 ### Results — nDCG@10 (human qrels)
 
-![Benchmark results](docs/benchmark-results.svg)
+<img src="docs/benchmark-results.svg" alt="Benchmark results" width="100%">
 
 | nDCG@10 (MiniLM) | SciFact (single-hop) | HotpotQA (multi-hop) | NFCorpus (medical IR) |
 |---|---|---|---|
@@ -276,7 +276,7 @@ sensitive to the embedder. Hybrid still wins: the embedder is a knob, not the ve
 On a tagged set (factoid = paraphrased semantic, keyword = exact token), each
 architecture shows a distinct character (toy corpus, MRR):
 
-![Per-query-type MRR](docs/per-category.svg)
+<img src="docs/per-category.svg" alt="Per-query-type MRR" width="100%">
 
 | MRR | factoid (semantic) | keyword (exact token) |
 |---|---|---|
@@ -324,7 +324,7 @@ Retrieval is a *systems* question too, not only a quality one. Measured **withou
 (deterministic; latency and throughput are warmup + repeated → median) on SciFact
 (5,183 docs, 200 queries, k=10) — [perf_bench.py](eval/perf_bench.py):
 
-![Quality × latency Pareto and throughput](docs/perf-pareto.svg)
+<img src="docs/perf-pareto.svg" alt="Quality × latency Pareto and throughput" width="100%">
 
 | | nDCG@10 | build (s) | latency med / p95 / p99 (ms) | throughput @8 (q/s) |
 |---|---|---|---|---|
