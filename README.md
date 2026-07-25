@@ -338,7 +338,48 @@ Retrieval is a *systems* question too, not only a quality one. Measured **withou
 - **Memory** — the FAISS vector store is ~8 MB (exact resident size); the process peaks at ~600 MB — a monotonic high-water mark (what you'd provision for, *not* the resting footprint) — dominated by the embedding model + spaCy. At this scale the per-index memory is dwarfed by the model runtime, so **memory isn't the differentiator here — build time is**. The networkx graph grows with entity count, so it would surface at larger scale.
 - **Pareto verdict** — **Vector** (efficiency) and **Hybrid** (quality) sit on the frontier; pick by your latency budget. **Graph is dominated** on standard IR — lower nDCG than Vector, higher latency, far costlier to build. Its niche is elsewhere (named-entity robustness, interpretable `shared_entities`), not this trade-off.
 
-Single-machine, in-process numbers; batched/GPU **serving** throughput is the [Roadmap](#roadmap)'s vLLM + Ray stage.
+Single-machine, in-process numbers. The **batched/GPU serving** side is measured for real below.
+
+### Serving & observability (deployed on AWS)
+
+The deployed, GPU half of the systems story. The pipeline's `openai` provider points at a real
+vLLM server — provisioned by **Terraform** on a single **AWS g5.xlarge (NVIDIA A10G, 24 GB)**,
+serving **Qwen2.5-7B-Instruct**, with **Prometheus + Grafana + DCGM** for observability (single-IP
+security group; `terraform apply` -> run the load -> `terraform destroy`, a few dollars). IaC:
+[`infra/` on the `dev` branch](https://github.com/GYOM15/rag-vector-hybrid-graph/tree/dev/infra).
+
+**Serving throughput -- the inverse of the GIL-bound retrievers.** Sweeping request concurrency
+(1 -> 64) with [`serving_bench.py`](eval/serving_bench.py), which **streams** each request to
+separate **TTFT** (time-to-first-token) and **TPOT** (time-per-output-token) from total latency:
+
+| concurrency | req/s | tokens/s | latency p50 | TTFT p50 | TPOT |
+|---|--:|--:|--:|--:|--:|
+| 1 | 0.6 | 29 | 1.7 s | 84 ms | 33 ms |
+| 16 | 8.0 | 393 | 1.8 s | 137 ms | 34 ms |
+| 32 | 14.7 | 731 | 1.8 s | 189 ms | 34 ms |
+| **64** | **22.6** | **1138** | 2.1 s | 271 ms | 36 ms |
+
+- **Throughput scales ~38x** (0.6 -> 22.6 req/s, 29 -> 1138 tokens/s) from 1 to 64 concurrent
+  requests on **one GPU** -- vLLM's **continuous batching** packing requests together. The
+  *opposite* of the CPU retrievers, whose BM25/graph throughput plateaus under the GIL.
+- **Latency is flat to ~32, then a saturation knee**: p50 holds ~1.8-2.1 s, but **TTFT climbs
+  137 -> 271 ms** and the **p99 tail rises to ~8 s** as requests wait to be batched -- the classic
+  latency/throughput trade-off, visible *only* because we measure TTFT/TPOT.
+- Grafana under load: **GPU util pegged at 100%** (~260 W); **VRAM 15 GB (weights) -> 21 GB** as
+  the KV-cache grows to fill the A10G; the batching queue with **running up to 24, waiting ~= 0**
+  -- the engine kept up with headroom.
+
+![Serving dashboards under load: throughput, batching queue, latency, GPU util](docs/serving-dashboard.png)
+![GPU memory: weights + KV-cache](docs/gpu-memory.png)
+
+**Answer quality with a capable reader -- a metric caveat, not a model win.** Running the pipeline
+end-to-end through the 7B (`answer_eval`, 50 HotpotQA questions) *lowered* EM/F1 vs the local 3B
+(F1 ~ 0.11 vs 0.16-0.21, EM = 0). Not because the 7B is worse -- it answers **correctly but
+verbosely** (*"Barack Obama was born on August 4, 1961, in Honolulu, Hawaii"* vs the gold `1961`),
+and token-overlap F1 against 1-3-word gold **penalises verbosity**. Retrieval was identical (nDCG
+unchanged), isolating a **metric artifact**: judge-free surface metrics conflate correctness with
+format-conformity -- the same length bias documented in the GraphRAG-evaluation literature. A
+bigger reader needs a terser prompt (or a semantic metric) to *show* its edge on this benchmark.
 
 ### Reranking — does it help, and *how* should you do it?
 
@@ -377,7 +418,7 @@ judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
 
 Planned, not yet implemented:
 
-- **Serving at scale** — a backend-agnostic serving benchmark ([`eval/serving_bench.py`](eval/serving_bench.py): req/s, tokens/s, p50/p95/p99 under a concurrency sweep), and a **vLLM + Ray Serve** deployment (PagedAttention, continuous batching, autoscaling) reachable via the existing `openai` provider with **no pipeline code change**. Remaining: the GPU run, autoscaling, and the serving-throughput Pareto.
+- **Serving at scale** — a backend-agnostic serving benchmark ([`eval/serving_bench.py`](eval/serving_bench.py): req/s, tokens/s, p50/p95/p99 under a concurrency sweep), and a **vLLM + Ray Serve** deployment (PagedAttention, continuous batching, autoscaling) reachable via the existing `openai` provider with **no pipeline code change**. The single-GPU run is **done** (see [Serving & observability](#serving--observability-deployed-on-aws)); remaining: **Ray Serve autoscaling** across multiple GPUs and a multi-node serving Pareto.
 - **Full-quality hosted generation** — the [live HF Spaces demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph) already serves the dashboard + a Qwen2.5-1.5B Chat on free CPU; pointing it at the vLLM endpoint above (the `openai` provider) swaps in a 7B+ model for full-quality answers.
 - **Breadth** — more datasets (e.g. FiQA) and embedders (e.g. e5) on top of the current SciFact / HotpotQA / NFCorpus × MiniLM / bge coverage.
 
