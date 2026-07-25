@@ -271,6 +271,12 @@ moves little (+0.015, BM25 already carried the lexical signal the better embedde
 **Graph** barely budges (+0.003) — its heavy entity-normalization makes the ranking less
 sensitive to the embedder. Hybrid still wins: the embedder is a knob, not the verdict.
 
+<img src="docs/retrieval-embedders.svg" alt="Retrieval by embedder: MRR by architecture, and Vector hit@k" width="100%">
+
+> Demo corpus (indicative of *character*, not a ranking -- the rigorous verdict is the SciFact
+> table above): every architecture lifts with the stronger embedder (left), and the embedder
+> shifts Vector's whole hit@k curve (right).
+
 ### By query type — where each architecture shines
 
 On a tagged set (factoid = paraphrased semantic, keyword = exact token), each
