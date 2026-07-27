@@ -29,3 +29,6 @@ eval/*.json
 # Fichiers perso (non versionnés)
 slides_prompts.md
 youtube_metadata.md
+
+# Notebooks pédagogiques FR — gardés en local, hors du repo public (série YouTube)
+notebooks/
