@@ -1,20 +1,46 @@
-<svg viewBox="0 0 1000 200" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-  <title>RAG — Vector, Hybrid, Graph</title>
-  <desc>Three RAG retrieval architectures compared fairly.</desc>
-  <rect width="1000" height="200" rx="18" fill="#0d1117"/>
-  <rect width="8" height="200" rx="4" fill="#6366f1"/>
-  <text x="44" y="90" font-size="68" font-weight="800" fill="#e6edf3" letter-spacing="3">RAG</text>
-  <text x="200" y="90" font-size="26" font-weight="700" fill="#818cf8">Vector · Hybrid · Graph</text>
-  <text x="46" y="130" font-size="18" fill="#9aa4b2">Three RAG architectures, compared fairly — only the retriever changes.</text>
-  <text x="46" y="160" font-size="14" fill="#6b7280" letter-spacing="0.4">FAISS · BM25 + RRF · spaCy entity graph · BEIR eval · reranking · held-out tuning</text>
-  <g transform="translate(815,40)" fill="none">
-    <circle cx="2" cy="22" r="8" fill="#3b82f6"/>
-    <circle cx="2" cy="61" r="8" fill="#22c55e"/>
-    <circle cx="2" cy="100" r="8" fill="#a855f7"/>
-    <path d="M12 22 C52 22 52 61 88 61" stroke="#30363d" stroke-width="2"/>
-    <path d="M12 61 H88" stroke="#30363d" stroke-width="2"/>
-    <path d="M12 100 C52 100 52 61 88 61" stroke="#30363d" stroke-width="2"/>
-    <rect x="88" y="44" width="64" height="34" rx="9" fill="#161b22" stroke="#6366f1" stroke-width="1.5"/>
-    <text x="120" y="66" font-size="15" fill="#e6edf3" text-anchor="middle" font-weight="600">LLM</text>
+<svg viewBox="0 0 1600 672" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <title>One RAG pipeline, benchmarked at every layer</title>
+  <desc>Three RAG retrieval architectures (Vector, Hybrid, Graph) benchmarked across retrieval, reranking, generation and serving.</desc>
+  <rect width="1600" height="672" rx="20" fill="#0d1117"/>
+  <rect width="12" height="672" rx="6" fill="#6366f1"/>
+  <text x="110" y="150" font-size="60" font-weight="800" fill="#e6edf3">One RAG pipeline,</text>
+  <text x="110" y="224" font-size="60" font-weight="800" fill="#e6edf3">benchmarked at every layer.</text>
+  <text x="112" y="288" font-size="26" fill="#9aa4b2">Three architectures — same corpus, prompt &amp; LLM, only the retriever changes</text>
+  <g font-size="27" font-weight="600">
+    <rect x="110" y="368" width="212" height="64" rx="14" fill="#161b22" stroke="#3b82f6" stroke-width="2.5"/>
+    <circle cx="144" cy="400" r="11" fill="#3b82f6"/><text x="174" y="409" fill="#e6edf3">Vector</text>
+    <rect x="110" y="438" width="212" height="64" rx="14" fill="#161b22" stroke="#22c55e" stroke-width="2.5"/>
+    <circle cx="144" cy="470" r="11" fill="#22c55e"/><text x="174" y="479" fill="#e6edf3">Hybrid</text>
+    <rect x="110" y="508" width="212" height="64" rx="14" fill="#161b22" stroke="#a855f7" stroke-width="2.5"/>
+    <circle cx="144" cy="540" r="11" fill="#a855f7"/><text x="174" y="549" fill="#e6edf3">Graph</text>
   </g>
+  <g stroke="#8b949e" stroke-width="2.5" fill="none">
+    <path d="M322 400 C370 400 372 470 396 470"/>
+    <path d="M322 470 H396"/>
+    <path d="M322 540 C370 540 372 470 396 470"/>
+    <path d="M396 470 H448"/>
+  </g>
+  <path d="M448 463 L462 470 L448 477 Z" fill="#8b949e"/>
+  <g>
+    <rect x="460" y="428" width="180" height="84" rx="16" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+    <text x="550" y="478" font-size="27" font-weight="600" fill="#e6edf3" text-anchor="middle">Retrieve</text>
+    <text x="550" y="552" font-size="22" font-weight="600" fill="#818cf8" text-anchor="middle">nDCG@10</text>
+    <rect x="720" y="428" width="180" height="84" rx="16" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+    <text x="810" y="478" font-size="27" font-weight="600" fill="#e6edf3" text-anchor="middle">Rerank</text>
+    <text x="810" y="552" font-size="22" font-weight="600" fill="#818cf8" text-anchor="middle">RRF fusion</text>
+    <rect x="980" y="428" width="180" height="84" rx="16" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+    <text x="1070" y="478" font-size="27" font-weight="600" fill="#e6edf3" text-anchor="middle">Generate</text>
+    <text x="1070" y="552" font-size="22" font-weight="600" fill="#818cf8" text-anchor="middle">EM / F1</text>
+    <rect x="1240" y="428" width="180" height="84" rx="16" fill="#161b22" stroke="#30363d" stroke-width="2"/>
+    <text x="1330" y="478" font-size="27" font-weight="600" fill="#e6edf3" text-anchor="middle">Serve</text>
+    <text x="1330" y="552" font-size="22" font-weight="600" fill="#818cf8" text-anchor="middle">1,138 tok/s</text>
+  </g>
+  <g stroke="#8b949e" stroke-width="3" fill="none">
+    <path d="M646 470 H708"/>
+    <path d="M906 470 H968"/>
+    <path d="M1166 470 H1228"/>
+  </g>
+  <path d="M708 463 L722 470 L708 477 Z" fill="#8b949e"/>
+  <path d="M968 463 L982 470 L968 477 Z" fill="#8b949e"/>
+  <path d="M1228 463 L1242 470 L1228 477 Z" fill="#8b949e"/>
 </svg>

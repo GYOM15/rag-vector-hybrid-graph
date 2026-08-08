@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/banner.svg" alt="RAG - Vector, Hybrid, Graph" width="800">
+<img src="docs/banner.svg" alt="One RAG pipeline, benchmarked at every layer — Vector, Hybrid, Graph" width="800">
 
 <br/>
 <br/>
@@ -26,9 +26,10 @@
 
 ---
 
-Comparative study of three **Retrieval-Augmented Generation** architectures on the
-**same corpus, chunking, prompt and LLM** — only the *retrieval strategy* changes,
-so the comparison is fair (controlled variables).
+A **full-stack benchmark** of three **Retrieval-Augmented Generation** architectures —
+**Vector · Hybrid · Graph** — on the **same corpus, chunking, prompt and LLM**, so the
+comparison is fair (only the *retriever* changes). The same pipeline is then measured
+**at every layer**: retrieval, reranking, answer quality, systems performance, and **GPU serving**.
 
 | Stack | Retrieval | What it adds |
 |------|-----------|--------------|
@@ -40,12 +41,15 @@ so the comparison is fair (controlled variables).
 
 **🔗 [Live demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph)** — the 3 retrievers side by side + an in-app evaluation dashboard, on a free CPU Space.
 
+> Not just a retrieval comparison — the same pipeline is benchmarked **end to end**, from retrieval to GPU serving.
+
 - **Fair by construction** — same corpus, chunking, prompt and LLM; *only the retriever changes*.
 - **Hybrid (BM25 + dense + RRF) is the robust winner** across 3 BEIR corpora (SciFact / HotpotQA / NFCorpus).
 - **Debugged the Graph at scale** — found *why* it failed (entity-hub pollution), fixed it with a principled normalization, exponent chosen on a **held-out split** (never on test).
 - **Reranking doesn't generalize** — *replace* vs *fuse* flips by dataset; measured, with the rule for when to use which.
 - **Reader quality > size** — a 1.5B *instruct* model (Qwen2.5) reads a distractor correctly where a 3B (Llama-3.2) misreads it — shown **live**.
 - **The generator is the bottleneck** end-to-end — better retrieval ≠ better answers without a capable reader.
+- **Deployed & measured on a GPU** — Qwen2.5-7B served with **vLLM** on an AWS A10G; continuous batching scaled throughput **~38×** on one GPU (→ 1,138 tok/s), with **Prometheus + Grafana** observability.
 - **Built like production** — deterministic (temp 0), a **regression guard in CI** (nDCG gate), honest negative results, and an **audit** that re-ran every claim and corrected two overstatements.
 
 ## Contents
@@ -55,6 +59,7 @@ so the comparison is fair (controlled variables).
 - [Evaluation](#evaluation)
   - [Diagnosing & fixing the graph at scale](#diagnosing-and-fixing-the-graphs-failure-at-scale) — the diagnose → fix → held-out story
   - [Performance & systems](#performance--systems) — build cost, latency p95/p99, throughput, Pareto
+  - [Serving & observability](#serving--observability-deployed-on-aws) — vLLM on GPU, ~38× throughput, Grafana
   - [Reranking](#reranking--does-it-help-and-how-should-you-do-it) — does it help, and *how*? (replace vs fuse)
 - [Roadmap](#roadmap) · [Tests](#tests) · [Data](#data) · [License](#license)
 
