@@ -10,8 +10,11 @@ they mostly measure verbosity: a model that answers correctly in a full sentence
 scores below a terser, less accurate one. Hence:
 - `--prompt short` asks for the shortest answer span (or "unknown") - an eval-only
   template, so the app's prompt is untouched;
-- `contains` (the normalized gold occurs in the answer as whole tokens) is reported
-  next to EM/F1: it credits a correct but verbose answer;
+- `contains` (the normalized gold occurs in the answer as whole tokens, with guards
+  against yes/no refusals, hedges and restated choice questions - see
+  shared.answer_metrics.contains_answer) is reported next to EM/F1: it credits a
+  correct but verbose answer. `answer_tokens` (mean answer length) sits next to it,
+  so a model that "wins" contains by listing candidates shows up as verbose;
 - every generation is saved under "per_query", so any claim can be audited, and the
   means come with 95% bootstrap CIs plus paired tests between stacks (eval/stats.py).
 
@@ -28,7 +31,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from shared.answer_metrics import contains_answer, exact_match, f1_score  # noqa: E402
+from shared.answer_metrics import (  # noqa: E402
+    contains_answer,
+    exact_match,
+    f1_score,
+    normalize_answer,
+)
 from shared.ir_metrics import ndcg_at_k  # noqa: E402
 from shared.llm import active_config  # noqa: E402
 from shared.prompts import DEFAULT_PROMPT_TEMPLATE  # noqa: E402
@@ -51,7 +59,12 @@ Question: {question}
 Answer:"""
 
 PROMPTS = {"default": DEFAULT_PROMPT_TEMPLATE, "short": SHORT_PROMPT_TEMPLATE}
-METRICS = ("ndcg@10", "em", "f1", "contains")
+# Recorded in each snapshot: the definition of "contains" is part of what the numbers mean.
+CONTAINS_RULE = ("normalized gold as a contiguous whole-token run of the normalized answer, "
+                 "not next to 'or'/'nor'/'vs'; yes/no golds: the reply opens with the gold "
+                 "word alone and its first sentence lacks the opposite; golds named in the "
+                 "question: the reply opens with the gold, not followed by 'or'/'and'")
+METRICS = ("ndcg@10", "em", "f1", "contains", "answer_tokens")
 
 
 def load_hotpot_with_answers(n_questions: int, split: str = "validation"):
@@ -80,10 +93,15 @@ def load_hotpot_with_answers(n_questions: int, split: str = "validation"):
     return texts, metadata, queries, qrels, golds
 
 
-def score_answer(answer: str, gold: str) -> dict[str, float]:
-    """EM / F1 / contains of one generated answer against its gold."""
+def score_answer(answer: str, gold: str, question: str = "") -> dict[str, float]:
+    """EM / F1 / contains of one generated answer against its gold, plus its length.
+
+    The question is passed to `contains_answer`: when the gold is one of the options
+    the question names, merely restating the question must not count as an answer.
+    """
     return {"em": exact_match(answer, gold), "f1": f1_score(answer, gold),
-            "contains": contains_answer(answer, gold)}
+            "contains": contains_answer(answer, gold, question),
+            "answer_tokens": float(len(normalize_answer(answer).split()))}
 
 
 def run(max_queries: int, model: str | None, output: Path, prompt: str = "default",
@@ -115,7 +133,7 @@ def run(max_queries: int, model: str | None, output: Path, prompt: str = "defaul
             out = rag.query(rec["question"], k=k)
             retrieved = _ranked_doc_ids(out["contexts"])
             row = {"ndcg@10": ndcg_at_k(retrieved, qrels[rec["qid"]], 10)}
-            row |= score_answer(out["answer"], rec["gold"])
+            row |= score_answer(out["answer"], rec["gold"], rec["question"])
             for m in METRICS:
                 cols[short][m].append(row[m])
             rec["stacks"][short] = ({"answer": out["answer"]}
@@ -135,6 +153,7 @@ def run(max_queries: int, model: str | None, output: Path, prompt: str = "defaul
                    "k": k, "decoding": "greedy (temperature 0)", "n_docs": len(texts),
                    "n_queries": len(queries),
                    "corpus": corpus_description("hotpotqa-distractor", n_corpus),
+                   "contains_rule": CONTAINS_RULE,
                    "ci": "95% percentile bootstrap over questions (10k resamples, seed 0)",
                    "provenance": run_metadata()},
         "stacks": report,
@@ -149,11 +168,11 @@ def run(max_queries: int, model: str | None, output: Path, prompt: str = "defaul
     print(f"\nHotpotQA - gold answers · {len(queries)} questions · {cfg['provider']} "
           f"{cfg['model']} · prompt {prompt}\n")
     print(f"  {'architecture':28s} {'nDCG@10':>8s} {'EM':>7s} {'F1':>7s} {'contains':>9s}"
-          "   F1 95% CI")
+          f" {'tokens':>7s}   F1 95% CI")
     for sname, m in report.items():
         lo, hi = m["ci95"]["f1"]
         print(f"  {sname:28s} {m['ndcg@10']:8.3f} {m['em']:7.3f} {m['f1']:7.3f} "
-              f"{m['contains']:9.3f}   [{lo:.3f}, {hi:.3f}]")
+              f"{m['contains']:9.3f} {m['answer_tokens']:7.1f}   [{lo:.3f}, {hi:.3f}]")
     print("\n  paired F1 (diff = first - second, 95% CI, sign-flip p)")
     for pair, r in payload["paired"].items():
         print(f"    {pair:14} {r['mean_diff']:+.4f} [{r['lo']:+.4f}, {r['hi']:+.4f}]  "
