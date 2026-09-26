@@ -25,7 +25,7 @@ _TAIL = f"\nQuestion: {_QUESTION}\n\nAnswer:"
 
 
 class _WhitespaceTokenizer:
-    """The minimal interface `fit_seq2seq_prompt` relies on: 1 word = 1 token."""
+    """The minimal interface `fit_prompt` relies on: 1 word = 1 token."""
 
     def encode(self, text, add_special_tokens=False):
         return text.split()
@@ -44,7 +44,7 @@ def _prompt(n_chunks: int) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Seq2seq prompt fitting (flan-t5: 512-token encoder)
+# Prompt fitting (flan-t5's 512-token encoder; input cap of instruct models)
 # ---------------------------------------------------------------------------
 
 def test_marker_matches_the_prompt_template():
@@ -55,12 +55,12 @@ def test_marker_matches_the_prompt_template():
 
 def test_short_prompt_is_unchanged():
     prompt = _prompt(1)
-    assert llm.fit_seq2seq_prompt(prompt, _TOK, 10_000) == prompt
+    assert llm.fit_prompt(prompt, _TOK, 10_000) == prompt
 
 
 def test_long_prompt_keeps_the_question_and_the_top_chunks():
-    fitted = llm.fit_seq2seq_prompt(_prompt(50), _TOK, 100)  # ~1,300 tokens -> 100
-    assert len(_TOK.encode(fitted)) == 100                     # fills the budget, no more
+    fitted = llm.fit_prompt(_prompt(50), _TOK, 100)            # ~1,300 tokens -> 100
+    assert len(_TOK.encode(fitted)) == 100                      # fills the budget, no more
     assert fitted.endswith(_TAIL)                               # question kept verbatim
     assert fitted.startswith("Answer the question based ONLY")  # instruction kept
     assert "chunk0" in fitted and "chunk49" not in fitted       # head cut from its end
@@ -68,12 +68,13 @@ def test_long_prompt_keeps_the_question_and_the_top_chunks():
 
 def test_without_marker_falls_back_to_plain_truncation():
     text = " ".join(f"w{i}" for i in range(50))
-    assert llm.fit_seq2seq_prompt(text, _TOK, 10) == " ".join(f"w{i}" for i in range(10))
+    assert llm.fit_prompt(text, _TOK, 10) == " ".join(f"w{i}" for i in range(10))
 
 
 def test_question_longer_than_the_budget_keeps_its_end():
-    prompt = "Context:\nabc\nQuestion: " + " ".join(f"q{i}" for i in range(30)) + "\n\nAnswer:"
-    assert llm.fit_seq2seq_prompt(prompt, _TOK, 5).split() == ["q26", "q27", "q28", "q29", "Answer:"]
+    question = " ".join(f"q{i}" for i in range(30))
+    prompt = f"Context:\nabc\nQuestion: {question}\n\nAnswer:"
+    assert llm.fit_prompt(prompt, _TOK, 5).split() == ["q26", "q27", "q28", "q29", "Answer:"]
 
 
 def test_boundary_drift_is_re_measured():
@@ -82,7 +83,7 @@ def test_boundary_drift_is_re_measured():
             return " ".join(ids) + " <x>"
 
     tok = _Drifting()
-    fitted = llm.fit_seq2seq_prompt(_prompt(50), tok, 100)
+    fitted = llm.fit_prompt(_prompt(50), tok, 100)
     assert len(tok.encode(fitted)) <= 100
     assert fitted.endswith(_TAIL)
 
@@ -129,6 +130,53 @@ def test_seq2seq_keeps_the_question_and_bounds_new_tokens(hf):
     assert len(hf.tok.encoded) <= 30 - 1                           # fits the encoder
     assert " ".join(hf.tok.encoded).endswith("Alan Turing born? Answer:")  # question survived
     assert hf.model.kwargs == {"max_new_tokens": 64}                # answer length, not input
+
+
+class _FakeCausalTokenizer(_WhitespaceTokenizer):
+    """Chat template = 2 marker tokens around the user message."""
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=False):
+        return f"<user> {messages[0]['content']} <assistant>"
+
+    def __call__(self, texts, return_tensors=None):
+        self.encoded = self.encode(texts[0])
+        return _CausalInputs(input_ids=self.encoded)
+
+
+class _CausalInputs(dict):
+    @property
+    def input_ids(self):
+        return types.SimpleNamespace(shape=(1, len(self["input_ids"])))
+
+
+class _FakeCausalModel:
+    def generate(self, input_ids, **kwargs):
+        return [input_ids + ["Maida", "Vale"]]  # prompt + new tokens, like HF decoders
+
+
+@pytest.fixture
+def causal(monkeypatch):
+    tok = _FakeCausalTokenizer()
+    monkeypatch.setattr(llm, "_load_hf_model", lambda name: ("causal", tok, _FakeCausalModel()))
+    monkeypatch.setattr(llm, "_HF_CACHE", {})
+    monkeypatch.setattr(llm, "_CAUSAL_MAX_INPUT", 100)
+    return tok
+
+
+def test_causal_prompt_within_the_cap_is_unchanged(causal):
+    prompt = _prompt(2)
+    answer = llm.call_llm(prompt, provider="huggingface", model="fake-qwen")
+    assert answer == "Maida Vale"  # only the new tokens are decoded
+    assert causal.encoded == ["<user>", *_TOK.encode(prompt), "<assistant>"]
+
+
+def test_causal_input_is_capped_and_keeps_the_question(causal):
+    # A huge question (e.g. from a client bypassing the app's length check) must not reach
+    # generate() unbounded: it runs under the global lock, blocking every other session.
+    huge = _prompt(50).replace(_QUESTION, "blah " * 100_000 + _QUESTION)
+    assert llm.call_llm(huge, provider="huggingface", model="fake-qwen") == "Maida Vale"
+    assert len(causal.encoded) <= 100 + 2                        # cap + the template's markers
+    assert " ".join(causal.encoded).endswith("born? Answer: <assistant>")
 
 
 def test_hf_cache_keeps_a_single_model(hf):

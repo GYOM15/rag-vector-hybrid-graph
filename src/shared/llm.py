@@ -26,6 +26,10 @@ DEFAULT_OPENAI_BASE_URL = "http://localhost:8000/v1"  # the vLLM server
 _DEFAULT_TIMEOUT_S = 120.0
 # flan-t5 was trained on 512-token inputs; also the cap when a tokenizer reports no limit.
 _SEQ2SEQ_MAX_INPUT = 512
+# Input cap of the instruct (causal) path. The app's largest prompt (k=10 chunks of ~500
+# chars + a 500-char question) stays under ~2k tokens, so this only bites on abnormal input,
+# which would otherwise run unbounded through generate() while holding _HF_LOCK.
+_CAUSAL_MAX_INPUT = 4096
 
 # At most ONE HF model in memory (a CPU Space can't hold several). The lock serializes
 # loading AND generation: concurrent sessions don't load the same model twice, and on a
@@ -152,15 +156,15 @@ def _call_openai(
     return body["choices"][0]["message"]["content"]
 
 
-def fit_seq2seq_prompt(prompt: str, tokenizer, max_tokens: int,
-                       marker: str = QUESTION_MARKER) -> str:
+def fit_prompt(prompt: str, tokenizer, max_tokens: int, marker: str = QUESTION_MARKER) -> str:
     """Shorten `prompt` to at most `max_tokens` tokens WITHOUT losing the question.
 
     The template ends with the question (after `marker`), so a plain right-side
     truncation cuts off exactly what the model must answer. Instead, the tail (from the
     last `marker`) is kept whole and only the head (instruction + context) is cut, from
     its end: the instruction and the top-ranked chunks, which come first, survive.
-    Without the marker, falls back to plain truncation.
+    Without the marker, falls back to plain truncation. Used by both HF paths: to fit
+    flan-t5's 512-token encoder, and as a safety cap on an instruct model's input.
 
     `tokenizer` only needs `encode(text, add_special_tokens=False) -> list` and
     `decode(ids, skip_special_tokens=True) -> str` (any HF tokenizer).
@@ -216,18 +220,21 @@ def _call_huggingface(prompt: str, model: str | None, max_length: int) -> str:
     with _HF_LOCK:
         kind, tokenizer, llm_model = _hf_model(model)
 
-        if kind == "causal":  # instruct decoder: render the chat template, decode only the new tokens
+        if kind == "causal":
+            # Instruct decoder: render the chat template, decode only the new tokens. The
+            # input is bounded first (question kept): generation holds the global lock.
+            content = fit_prompt(prompt, tokenizer, _CAUSAL_MAX_INPUT)
             text = tokenizer.apply_chat_template(
-                [{"role": "user", "content": prompt}], tokenize=False, add_generation_prompt=True)
+                [{"role": "user", "content": content}], tokenize=False, add_generation_prompt=True)
             model_inputs = tokenizer([text], return_tensors="pt")
             outputs = llm_model.generate(**model_inputs, max_new_tokens=max_length, do_sample=False)
             new_tokens = outputs[0][model_inputs.input_ids.shape[1]:]
             return tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
         # Encoder-decoder: the input must fit the encoder, question included (see
-        # fit_seq2seq_prompt); `max_length` only bounds the *answer* (new tokens).
+        # fit_prompt); `max_length` only bounds the *answer* (new tokens).
         limit = min(getattr(tokenizer, "model_max_length", _SEQ2SEQ_MAX_INPUT), _SEQ2SEQ_MAX_INPUT)
-        text = fit_seq2seq_prompt(prompt, tokenizer, limit - tokenizer.num_special_tokens_to_add())
+        text = fit_prompt(prompt, tokenizer, limit - tokenizer.num_special_tokens_to_add())
         inputs = tokenizer(text, return_tensors="pt", max_length=limit, truncation=True)
         outputs = llm_model.generate(**inputs, max_new_tokens=max_length)
         return tokenizer.decode(outputs[0], skip_special_tokens=True)
