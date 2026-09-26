@@ -41,6 +41,9 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
     print(f"{dataset}: {len(texts)} docs, {len(queries_eval)} queries — indexing…", flush=True)
     stacks = assemble_stacks(texts, metadata, embedder=embedder)
     reranker = CrossEncoderReranker(reranker_model)
+    # Warm-up: load (or download) the cross-encoder and run a first prediction before
+    # any timing — otherwise that one-off cost is charged to the first stack's latency.
+    reranker.rerank("warm-up", [{"text": "warm-up"}], top_k=1)
 
     report = {}
     for name, rag in stacks.items():

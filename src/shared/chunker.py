@@ -32,9 +32,10 @@ def _make_chunk(text: str, index: int, metadata: dict | None) -> Chunk:
 
 
 def _split_by_separator(text: str, separator: str) -> list[str]:
-    """Split `text` on `separator`, ignoring empty fragments."""
-    if separator == "":
-        return list(text)  # last resort: character by character
+    """Split `text` on a non-empty `separator`, ignoring blank fragments.
+
+    The empty separator is handled by `_recursive_split` (character windows).
+    """
     return [part for part in text.split(separator) if part.strip()]
 
 
@@ -122,6 +123,11 @@ def _recursive_split(
         return [_make_chunk(stripped, 0, metadata)] if stripped else []
 
     for i, sep in enumerate(separators):
+        if sep == "":
+            # Last resort, "cut anywhere": the character windows below keep the
+            # text's spaces. Splitting into single characters would strip each one
+            # and delete every space (words glued together).
+            break
         segments = _split_by_separator(text, sep)
         if len(segments) <= 1:
             continue  # this separator splits nothing: move on to the next one
