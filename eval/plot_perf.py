@@ -1,13 +1,18 @@
-"""Plot the system measurements from perf_results.json.
+"""Plot the system measurements from a perf_bench snapshot.
 
 Two panels: (1) quality (nDCG@10) × median latency Pareto front, each
 point annotated with its build cost; (2) throughput (req/s) by concurrency.
-Writes docs/perf-pareto.svg. Requires the [notebooks] extra (matplotlib).
+Reads the committed eval/reference/perf_scifact.json (--input overrides it) and writes
+docs/perf-pareto.svg. Titles only describe what is plotted: how each stack scales
+with threads is read off the curves, not asserted in the figure (a claim baked into a
+title goes stale when the data changes). Requires the [notebooks] extra (matplotlib).
 
     python -m eval.plot_perf
 """
 
+import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -22,7 +27,14 @@ BUILD_KEY = {"vector": "vector_total", "hybrid": "hybrid_total", "graph": "graph
 
 
 def main() -> None:
-    data = json.loads((ROOT / "eval" / "perf_results.json").read_text("utf-8"))
+    ap = argparse.ArgumentParser(description="Quality × latency Pareto + throughput by threads.")
+    ap.add_argument("--input", type=Path, default=ROOT / "eval" / "reference" / "perf_scifact.json")
+    ap.add_argument("--output", type=Path, default=ROOT / "docs" / "perf-pareto.svg")
+    args = ap.parse_args()
+    if not args.input.exists():
+        sys.exit(f"❌ missing snapshot {args.input} — run eval.perf_bench, or pass --input")
+
+    data = json.loads(args.input.read_text("utf-8"))
     stacks, build = data["stacks"], data["build_seconds"]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
 
@@ -35,18 +47,19 @@ def main() -> None:
     ax1.set_xlabel("median retrieval latency (ms) — lower is better →", fontsize=9)
     ax1.set_ylabel("nDCG@10 — higher is better ↑", fontsize=9)
     ax1.set_title("Quality × latency Pareto\n(↖ ideal; label = index build time)")
+    ax1.margins(x=0.2, y=0.2)  # room for the point labels inside the axes
     ax1.invert_xaxis()
     ax1.grid(alpha=0.3)
 
     # Panel 2: throughput by concurrency.
-    conc = sorted((int(w) for w in next(iter(stacks.values()))["throughput_qps"]))
+    conc = sorted(int(w) for w in next(iter(stacks.values()))["throughput_qps"])
     for kind, m in stacks.items():
         ys = [m["throughput_qps"][str(w)] for w in conc]
         ax2.plot(conc, ys, "-o", color=COLORS[kind], label=SHORT[kind])
     ax2.set_xlabel("concurrent threads", fontsize=9)
     ax2.set_ylabel("throughput (queries / second)", fontsize=9)
     ax2.set_xticks(conc)
-    ax2.set_title("Throughput vs concurrency\n(only Vector scales — FAISS releases the GIL)")
+    ax2.set_title("Throughput vs concurrency\n(thread pool in one process, median of repeats)")
     ax2.legend(fontsize=9)
     ax2.grid(alpha=0.3)
 
@@ -54,9 +67,8 @@ def main() -> None:
     fig.suptitle(f"Retrieval systems profile — {cfg['dataset']}, {cfg['n_docs']} docs "
                  f"(no LLM)", fontsize=12)
     fig.tight_layout()
-    out = ROOT / "docs" / "perf-pareto.svg"
-    fig.savefig(out, bbox_inches="tight")
-    print(f"✅ {out}")
+    fig.savefig(args.output, bbox_inches="tight")
+    print(f"✅ {args.output}")
 
 
 if __name__ == "__main__":
