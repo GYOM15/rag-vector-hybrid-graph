@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from eval.provenance import run_metadata  # noqa: E402
+from eval.provenance import finish_metadata, run_metadata  # noqa: E402
 from eval.stats import bootstrap_ci, pairwise  # noqa: E402
 from shared.ir_metrics import ndcg_at_k, recall_at_k, reciprocal_rank  # noqa: E402
 
@@ -107,9 +107,14 @@ def _ranked_doc_ids(results: list[dict]) -> list[str]:
 
 
 def evaluate_corpus(name, texts, metadata, queries_eval, qrels, embedder, output,
-                    corpus: str = "") -> dict:
-    """Indexes the corpus, queries the 3 retrievers, scores against the qrels."""
+                    corpus: str = "", provenance: dict | None = None) -> dict:
+    """Indexes the corpus, queries the 3 retrievers, scores against the qrels.
+
+    `provenance`: `run_metadata()` taken before the data was loaded (default: now).
+    """
     from pipeline import assemble_stacks
+
+    provenance = provenance or run_metadata()
 
     print(f"{name}: {len(texts)} docs, {len(queries_eval)} judged queries - indexing ({embedder})...")
     stacks = assemble_stacks(texts, metadata, embedder=embedder)
@@ -142,7 +147,7 @@ def evaluate_corpus(name, texts, metadata, queries_eval, qrels, embedder, output
     payload = {"config": {"dataset": name, "embedder": embedder, "n_docs": len(texts),
                           "n_queries": len(queries_eval), "corpus": corpus or name,
                           "ci": "95% percentile bootstrap over queries (10k resamples, seed 0)",
-                          "provenance": run_metadata()},
+                          "provenance": finish_metadata(provenance)},
                "stacks": report,
                "paired_metric": "ndcg@10",
                "paired": pairwise(ndcg_per_stack)}
@@ -163,6 +168,7 @@ def evaluate_corpus(name, texts, metadata, queries_eval, qrels, embedder, output
 
 
 def run(dataset: str, embedder: str, max_queries: int, output: Path) -> dict:
+    provenance = run_metadata()  # the code that runs is the code at the start
     if dataset == "hotpotqa-distractor":
         loaded = load_hotpot_distractor(max_queries or 500)
     else:
@@ -171,7 +177,8 @@ def run(dataset: str, embedder: str, max_queries: int, output: Path) -> dict:
             queries_eval = queries_eval[:max_queries]
         loaded = (texts, metadata, queries_eval, qrels)
     corpus = corpus_description(dataset, max_queries or 500)
-    return evaluate_corpus(dataset, *loaded, embedder=embedder, output=output, corpus=corpus)
+    return evaluate_corpus(dataset, *loaded, embedder=embedder, output=output, corpus=corpus,
+                           provenance=provenance)
 
 
 def main() -> None:

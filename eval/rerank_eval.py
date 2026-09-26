@@ -34,7 +34,7 @@ from pipeline import assemble_stacks  # noqa: E402
 from eval.beir_eval import (  # noqa: E402
     _ranked_doc_ids, corpus_description, load_beir, load_hotpot_distractor,
 )
-from eval.provenance import run_metadata  # noqa: E402
+from eval.provenance import finish_metadata, run_metadata  # noqa: E402
 from eval.stats import bootstrap_ci, paired_bootstrap  # noqa: E402
 
 VARIANTS = ("base", "replace", "fusion")  # without reranking / cross-encoder only / RRF
@@ -77,6 +77,7 @@ def _summary(per_query: dict[str, dict[str, float]], rerank_ms: float) -> dict:
 def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: Path,
         reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2",
         corpus_questions: int = 0) -> dict:
+    provenance = run_metadata()  # the code that runs is the code at the start
     if dataset == "hotpotqa-distractor":
         n_corpus = corpus_questions or max_queries or 500
         texts, metadata, queries_eval, qrels = load_hotpot_distractor(n_corpus)
@@ -116,7 +117,7 @@ def run(dataset: str, candidates: int, max_queries: int, embedder: str, output: 
                           "n_queries": len(queries_eval), "n_docs": len(texts), "corpus": corpus,
                           "reranker": reranker.model_name,
                           "ci": "95% percentile bootstrap over queries (10k resamples, seed 0)",
-                          "provenance": run_metadata()},
+                          "provenance": finish_metadata(provenance)},
                "stacks": report}
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 

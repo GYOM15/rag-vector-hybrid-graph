@@ -219,9 +219,12 @@ def answer_caption(runs: dict[str, dict], metric: str = "f1") -> str:
 
 
 def provenance_note(config: dict) -> str:
-    """" · code <sha> (+ uncommitted changes)" from a snapshot's provenance, or "" if absent."""
+    """" · code <sha> (+ uncommitted changes)" from a snapshot's provenance, or "" if absent;
+    also says when the checkout moved while the run was going (`finish_metadata`)."""
     prov = config.get("provenance") or {}
     sha = prov.get("git_sha")
     if not sha:
         return ""
-    return f" · code {sha[:7]}" + (" + uncommitted changes" if prov.get("git_dirty") else "")
+    return (f" · code {sha[:7]}" + (" + uncommitted changes" if prov.get("git_dirty") else "")
+            + (" (checkout changed during the run)" if prov.get("code_changed_during_run")
+               else ""))

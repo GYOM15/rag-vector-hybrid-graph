@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 load_dotenv(ROOT / ".env")  # loads OPENAI_API_KEY (RAGAS judge) and others from .env
 
-from eval.provenance import run_metadata  # noqa: E402
+from eval.provenance import finish_metadata, run_metadata  # noqa: E402
 from pipeline import build_stacks  # noqa: E402
 from shared.llm import active_config  # noqa: E402
 
@@ -35,6 +35,7 @@ def run(n_articles: int, k: int, max_questions: int | None, output: Path) -> dic
     """Builds the stacks, evaluates them, and writes the results to `output`."""
     from shared.evaluator import evaluate_stacks
 
+    provenance = run_metadata()  # the code that runs is the code at the start
     data = json.loads((ROOT / "eval" / "questions.json").read_text(encoding="utf-8"))
     if max_questions:
         data = data[:max_questions]
@@ -54,7 +55,7 @@ def run(n_articles: int, k: int, max_questions: int | None, output: Path) -> dic
             "n_questions": len(questions),
             "generated_at": datetime.now().isoformat(timespec="seconds"),
             "llm": active_config(),
-            "provenance": run_metadata(),
+            "provenance": finish_metadata(provenance),
         },
         "stacks": results,
     }

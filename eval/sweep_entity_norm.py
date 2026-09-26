@@ -27,7 +27,7 @@ from pipeline import STACK_NAMES, assemble_stacks  # noqa: E402
 from stack3_graphrag.retriever import _DEFAULT_ENTITY_NORM, _ENTITY_NORMS  # noqa: E402
 
 from eval.beir_eval import _ranked_doc_ids, K_MAX, load_beir, load_hotpot_distractor  # noqa: E402
-from eval.provenance import run_metadata  # noqa: E402
+from eval.provenance import finish_metadata, run_metadata  # noqa: E402
 
 NORMS = list(_ENTITY_NORMS)  # order: none, log, p25, sqrt, p75, linear
 
@@ -73,6 +73,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Held-out sweep of the graph's entity-boost norm.")
     ap.add_argument("--output", type=Path, default=ROOT / "eval" / "sweep_results.json")
     args = ap.parse_args()
+    provenance = run_metadata()  # the code that runs is the code at the start
 
     # (label, role, retriever, queries, qrels) — role ∈ {val, test}
     evals = []
@@ -112,7 +113,7 @@ def main() -> None:
     mean_val, best = summary["mean_val_ndcg@10"], summary["chosen"]
     payload = {"config": {"norms": NORMS, "k": K_MAX, "graph": STACK_NAMES["graph"],
                           "n_queries": {label: len(queries) for label, _, _, queries, _ in evals},
-                          "provenance": run_metadata()},
+                          "provenance": finish_metadata(provenance)},
                **summary}
     args.output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 

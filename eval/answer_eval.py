@@ -42,7 +42,7 @@ from shared.llm import active_config  # noqa: E402
 from shared.prompts import DEFAULT_PROMPT_TEMPLATE  # noqa: E402
 
 from eval.beir_eval import K_MAX, _ranked_doc_ids, corpus_description, short_name  # noqa: E402
-from eval.provenance import run_metadata  # noqa: E402
+from eval.provenance import finish_metadata, run_metadata  # noqa: E402
 from eval.stats import bootstrap_ci, pairwise  # noqa: E402
 
 # Same structure as DEFAULT_PROMPT_TEMPLATE (instructions, context, same question tail);
@@ -108,6 +108,7 @@ def run(max_queries: int, model: str | None, output: Path, prompt: str = "defaul
         k: int = K_MAX) -> dict:
     from pipeline import assemble_stacks
 
+    provenance = run_metadata()  # the code that runs is the code at the start
     if model:
         os.environ["OLLAMA_MODEL"] = model
     llm = active_config()  # what actually generates: the provider and *its* model
@@ -155,7 +156,7 @@ def run(max_queries: int, model: str | None, output: Path, prompt: str = "defaul
                    "corpus": corpus_description("hotpotqa-distractor", n_corpus),
                    "contains_rule": CONTAINS_RULE,
                    "ci": "95% percentile bootstrap over questions (10k resamples, seed 0)",
-                   "provenance": run_metadata()},
+                   "provenance": finish_metadata(provenance)},
         "stacks": report,
         "paired_metric": "f1",
         "paired": pairwise({s: c["f1"] for s, c in cols.items()}),
