@@ -34,6 +34,7 @@ from stack2_hybrid import HybridRetriever  # noqa: E402
 from stack3_graphrag import GraphRetriever, build_graph  # noqa: E402
 
 from eval.beir_eval import _ranked_doc_ids, load_beir  # noqa: E402
+from eval.provenance import run_metadata  # noqa: E402
 
 K = 10
 CONCURRENCY = (1, 2, 4, 8)
@@ -152,7 +153,8 @@ def run(dataset, n_queries, embedder, output):
         }
 
     payload = {"config": {"dataset": dataset, "n_docs": len(texts), "embedder": embedder,
-                          "n_queries": len(q_texts), "k": K, "repeats": 3},
+                          "n_queries": len(q_texts), "k": K, "repeats": 3,
+                          "provenance": run_metadata()},
                "build_seconds": build, "build_memory_mb": memory, "stacks": report}
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 

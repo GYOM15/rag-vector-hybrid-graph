@@ -14,7 +14,8 @@ its size follows --max-queries (unlike beir_eval's fixed 500-question corpus) un
 --corpus-questions is set; `config.corpus` / `config.n_docs` record which one was used.
 
     python -m eval.rerank_eval --dataset scifact --candidates 50
-    python -m eval.rerank_eval --dataset hotpotqa-distractor --max-queries 100 --corpus-questions 500
+    python -m eval.rerank_eval --dataset hotpotqa-distractor \
+        --max-queries 100 --corpus-questions 500
 """
 
 import argparse

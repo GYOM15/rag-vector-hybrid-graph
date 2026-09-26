@@ -22,7 +22,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 load_dotenv(ROOT / ".env")  # loads OPENAI_API_KEY (RAGAS judge) and others from .env
 
+from eval.provenance import run_metadata  # noqa: E402
 from pipeline import build_stacks  # noqa: E402
+from shared.llm import active_config  # noqa: E402
 
 
 def _ground_truths(data: list[dict]) -> list[str]:
@@ -51,6 +53,8 @@ def run(n_articles: int, k: int, max_questions: int | None, output: Path) -> dic
             "k": k,
             "n_questions": len(questions),
             "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "llm": active_config(),
+            "provenance": run_metadata(),
         },
         "stacks": results,
     }
