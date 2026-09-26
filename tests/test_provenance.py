@@ -42,3 +42,10 @@ def test_without_git_the_fields_are_none(monkeypatch):
 def test_missing_packages_are_omitted(monkeypatch):
     monkeypatch.setattr(provenance, "PACKAGES", ("surely-not-an-installed-dist-xyz",))
     assert provenance._package_versions() == {}
+
+
+def test_dirty_files_keep_the_whole_path():
+    # The first status column is often a space: it must not eat the path's first letter.
+    porcelain = " M eval/beir_eval.py\nM  src/pipeline.py\n?? eval/new_tool.py"
+    assert provenance._dirty_files(porcelain) == [
+        "eval/beir_eval.py", "src/pipeline.py", "eval/new_tool.py"]
