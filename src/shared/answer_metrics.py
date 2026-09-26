@@ -36,3 +36,22 @@ def f1_score(pred: str, gold: str) -> float:
     precision = n_same / len(pred_toks)
     recall = n_same / len(gold_toks)
     return 2 * precision * recall / (precision + recall)
+
+
+def contains_answer(pred: str, gold: str) -> float:
+    """1.0 if the normalized gold occurs in the normalized prediction as whole tokens.
+
+    Both sides go through `normalize_answer`, then the gold's token sequence must
+    appear *contiguously* in the prediction's tokens ("the capital is Kabul" contains
+    "Kabul"; "Kabuli" does not, nor does "Kabul ... city" contain "Kabul city" with a
+    gap). Unlike EM/F1 it does not penalize a correct but verbose answer, which is what
+    small instruct models produce even when asked to be brief. It rewards hedging that
+    lists several candidates, so it is reported *alongside* EM/F1, never instead.
+    An empty gold contains nothing (0.0).
+    """
+    pred_toks = normalize_answer(pred).split()
+    gold_toks = normalize_answer(gold).split()
+    n = len(gold_toks)
+    if not n:
+        return 0.0
+    return float(any(pred_toks[i:i + n] == gold_toks for i in range(len(pred_toks) - n + 1)))

@@ -1,6 +1,6 @@
 """Tests for the answer metrics (Exact Match / F1, SQuAD-style)."""
 
-from answer_metrics import exact_match, f1_score, normalize_answer
+from answer_metrics import contains_answer, exact_match, f1_score, normalize_answer
 
 
 def test_normalize_strips_case_punct_articles():
@@ -30,3 +30,30 @@ def test_f1_handles_empty():
 def test_yes_no_answers():
     assert exact_match("Yes.", "yes") == 1.0
     assert f1_score("no", "yes") == 0.0
+
+
+def test_contains_accepts_correct_verbose_answers():
+    assert contains_answer("The capital of Afghanistan is Kabul.", "Kabul") == 1.0
+    assert contains_answer("It was designed by Gustave Eiffel in 1889", "gustave eiffel") == 1.0
+    assert contains_answer("Kabul", "Kabul") == 1.0
+    # Normalization applies to both sides: case, punctuation, articles.
+    assert contains_answer("Yes, it is.", "yes") == 1.0
+    assert contains_answer("the RMS Titanic!", "The RMS Titanic") == 1.0
+
+
+def test_contains_requires_whole_tokens():
+    assert contains_answer("Kabuli pulao is a dish", "Kabul") == 0.0
+    assert contains_answer("a playwright", "Wright") == 0.0
+    assert contains_answer("1,000 metres", "1000") == 1.0  # punctuation stripped inside tokens
+
+
+def test_contains_requires_a_contiguous_run():
+    assert contains_answer("New and old York", "New York") == 0.0
+    assert contains_answer("York, New", "New York") == 0.0
+    assert contains_answer("in New York City", "New York") == 1.0
+
+
+def test_contains_edge_cases():
+    assert contains_answer("anything", "") == 0.0
+    assert contains_answer("", "Kabul") == 0.0
+    assert contains_answer("unknown", "Kabul") == 0.0
