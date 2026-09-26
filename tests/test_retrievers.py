@@ -84,15 +84,48 @@ def test_hybrid_real_lexical_hit_still_counts():
     assert "the zebra migration" in _texts(hybrid.search("zebra", k=5))
 
 
+def test_hybrid_keeps_lexical_hits_with_zero_idf():
+    """"zebra" is in exactly half the chunks: its BM25Okapi IDF is 0, so a
+    `score > 0` filter dropped both real lexical hits."""
+    texts = ["red car", "blue boat", "zebra herd running", "zebra stripes pattern"]
+    hybrid = HybridRetriever(_indexer(_descending(4), texts), _FakeEmbeddings())
+
+    assert set(_texts(hybrid.search("zebra", k=2))) == set(texts[2:])
+
+
 @pytest.mark.parametrize("k", [30, 50])
 def test_hybrid_returns_k_results_beyond_candidates(k):
-    """Each list is min(max(candidates, k), size) deep: with candidates=20, k=30
-    used to return fewer than 30 results and k > 40 at most 40."""
+    """With candidates=20, k=30 used to return fewer than 30 results and k > 40 at
+    most 40: the fused pool is completed with the next vector hits."""
     texts = [f"filler {i}" for i in range(60)]
     texts[:3] = ["rare term alpha", "rare term beta", "rare term gamma"]
     hybrid = HybridRetriever(_indexer(_descending(60), texts), _FakeEmbeddings(), candidates=20)
 
-    assert len(hybrid.search("rare", k=k)) == k
+    results = hybrid.search("rare", k=k)
+    scores = [r["score"] for r in results]
+    assert len(results) == k
+    assert scores == sorted(scores, reverse=True)  # padding ranks below the fused pool
+
+
+def test_hybrid_top10_does_not_depend_on_k():
+    """Chunk 25 is vector rank 26 and BM25 rank 21 (20 denser "alpha" chunks). A
+    fusion depth growing with k put it in both lists at k=30, where it jumped from
+    absent to rank 1 of the top-10."""
+    texts = [f"filler {i}" for i in range(60)]
+    texts[40:] = [f"alpha alpha alpha {i}" for i in range(40, 60)]
+    texts[25] = "alpha plus some longer padding words here 25"
+    hybrid = HybridRetriever(_indexer(_descending(60), texts), _FakeEmbeddings(), candidates=20)
+
+    top = {k: _texts(hybrid.search("alpha", k=k)) for k in (10, 30, 50)}
+    assert top[10] == top[30][:10] == top[50][:10]
+    assert top[30] == top[50][:30]
+    assert texts[25] not in top[10]
+
+
+def test_hybrid_corpus_without_tokens_does_not_crash():
+    """Chunks that all tokenize to [] used to crash BM25Okapi (division by zero)."""
+    hybrid = HybridRetriever(_indexer(_descending(2), ["!!!", "???"]), _FakeEmbeddings())
+    assert _texts(hybrid.search("anything", k=2)) == ["!!!", "???"]
 
 
 def test_hybrid_empty_index_returns_empty():

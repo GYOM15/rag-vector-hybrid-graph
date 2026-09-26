@@ -100,6 +100,14 @@ def test_tokenize_normalizes_unicode_and_drops_underscores():
     assert tokenize("foo_bar") == tokenize("foo bar")  # underscore is a separator
 
 
+def test_tokenize_keeps_combining_marks_inside_words():
+    # Combining marks are not `\w`: Devanagari vowel signs used to cut every word
+    # into fragments ("हिन्दी" -> "ह", "न", "द").
+    assert tokenize("हिन्दी भाषा") == ["हिन्दी", "भाषा"]
+    assert tokenize("g\u0303uarani") == ["g\u0303uarani"]  # g + tilde: no NFC form
+    assert tokenize("\u0301alpha") == ["alpha"]  # a stray mark starts no word
+
+
 # ---------------------------------------------------------------------------
 # IR metrics (recall@k, nDCG@k, MRR)
 # ---------------------------------------------------------------------------
