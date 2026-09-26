@@ -105,3 +105,29 @@ def test_provenance_note():
     assert ei.provenance_note({}) == ""
     cfg = {"provenance": {"git_sha": "4308fe0da5bc20b5", "git_dirty": True}}
     assert ei.provenance_note(cfg) == " · code 4308fe0 + uncommitted changes"
+
+
+def test_label_runs_keeps_every_file_when_labels_collide():
+    def snap(model, n):
+        return {"config": {"model": model, "n_queries": n}, "stacks": {}}
+    runs = ei.label_runs({"1b": snap("llama3.2:1b", 50), "1b_rerun": snap("llama3.2:1b", 4),
+                          "3b": snap("llama3.2:3b", 50)})
+    assert list(runs) == ["llama3.2:1b · 1b", "llama3.2:1b · 1b_rerun", "llama3.2:3b"]
+    assert runs["llama3.2:1b · 1b_rerun"]["config"]["n_queries"] == 4
+
+
+def test_answer_caption_shows_n_and_flags_unlike_or_verbose_runs():
+    def run(model, f1s, n, **cfg):
+        return {"config": {"model": model, "n_queries": n} | cfg,
+                "stacks": {s: {"f1": v} for s, v in zip(("Vector", "Hybrid", "Graph"), f1s)}}
+    short = run("llama3.2:1b", [0.30, 0.32, 0.31], 100, prompt="short")
+    runs = ei.label_runs({"7b": run("?", [0.10, 0.11, 0.12], 50), "1b_short": short})
+    text = ei.answer_caption(runs)
+    assert text.startswith("Mean F1 over the stacks: llama3.2:1b (short prompt) 0.310 (n=100), "
+                           "7b 0.110 (n=50)")
+    assert "not a like-for-like ranking" in text
+    # The old run (no "prompt" recorded) used the default prompt: F1 is flagged as verbosity.
+    assert "7b used the default prompt" in text and "mostly measures verbosity" in text
+    # Same setup everywhere, short prompt: no caveat.
+    same = ei.answer_caption({"a": short, "b": run("llama3.2:3b", [0.4] * 3, 100, prompt="short")})
+    assert "like-for-like" not in same and "verbosity" not in same

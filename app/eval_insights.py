@@ -11,6 +11,8 @@ at all (older runs) are flagged as such.
 No streamlit / pandas import: unit-testable in the light CI job.
 """
 
+from collections import Counter
+
 ALPHA = 0.05
 _VERDICT = {True: "significant", False: "within noise", None: "significance unknown"}
 
@@ -154,22 +156,54 @@ def run_label(snap: dict, fallback: str) -> str:
     return f"{label} ({prompt} prompt)" if prompt and prompt != "default" else label
 
 
+def label_runs(snaps: dict[str, dict]) -> dict[str, dict]:
+    """{label: snapshot} from {file stem: snapshot}, keeping one entry per file.
+
+    Two runs with the same model and prompt (a re-run with another n or k) get the
+    same `run_label`; keyed by it, one would silently overwrite the other, so colliding
+    labels get their file stem appended.
+    """
+    labels = {stem: run_label(snap, stem) for stem, snap in snaps.items()}
+    counts = Counter(labels.values())
+    return {(label if counts[label] == 1 else f"{label} · {stem}"): snaps[stem]
+            for stem, label in labels.items()}
+
+
+def run_setup(snap: dict) -> tuple[int | None, str]:
+    """(questions, prompt variant) of an answer-eval run. Snapshots from before
+    `--prompt` existed record no prompt: they all used the app's default one."""
+    cfg = snap.get("config", {})
+    n = cfg.get("n_queries") or next(iter(snap["stacks"].values()), {}).get("n_queries")
+    return n, cfg.get("prompt") or "default"
+
+
 def answer_caption(runs: dict[str, dict], metric: str = "f1") -> str:
-    """Mean score per run (model) + the largest gap between architectures within each run."""
+    """Mean score per run (model) + the largest gap between architectures within each run,
+    with the caveats that keep runs from being ranked like-for-like when they are not."""
     if not runs:
         return ""
     means = {label: sum(s[metric] for s in snap["stacks"].values()) / len(snap["stacks"])
              for label, snap in runs.items()}
+    setups = {label: run_setup(snap) for label, snap in runs.items()}
     ranked = sorted(means, key=means.get, reverse=True)
-    parts = [f"Mean {metric.upper()} over the stacks: "
-             + ", ".join(f"{label} {means[label]:.3f}" for label in ranked)]
+    parts = [f"Mean {metric.upper()} over the stacks: " + ", ".join(
+        f"{label} {means[label]:.3f}" + (f" (n={setups[label][0]})" if setups[label][0] else "")
+        for label in ranked)]
+    if len(set(setups.values())) > 1:
+        parts.append("The runs differ in sample size or prompt: not a like-for-like ranking")
+    verbose = [label for label in ranked if setups[label][1] == "default"]
+    if verbose and metric in ("em", "f1"):
+        parts.append(f"{_join(verbose)} used the default prompt, which lets the model answer "
+                     f"in full sentences: there {metric.upper()} mostly measures verbosity "
+                     "(a correct but wordy answer scores low) — compare *contains* where "
+                     "recorded, or runs with `--prompt short`")
     gaps = []
     for label in ranked:
         snap = runs[label]
         stacks = {short_name(k): v for k, v in snap["stacks"].items()}
         best, worst = (max(stacks, key=lambda s: stacks[s][metric]),
                        min(stacks, key=lambda s: stacks[s][metric]))
-        n = next(iter(stacks.values())).get("n_queries", snap.get("config", {}).get("n_queries"))
+        n = setups[label][0]
         gap = stacks[best][metric] - stacks[worst][metric]
         if not gap:
             gaps.append(f"{label}: all stacks equal")
