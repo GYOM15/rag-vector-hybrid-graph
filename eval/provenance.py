@@ -27,13 +27,22 @@ _OUTPUT_PATHS = (":(exclude)eval/reference", ":(exclude)docs")
 
 
 def _git(*args: str) -> str | None:
-    """Output of a git command run at the repo root, or None (no git, not a checkout)."""
+    """Output of a git command run at the repo root, or None (no git, not a checkout).
+
+    Only trailing whitespace is stripped: `status --porcelain` lines start with a
+    two-column status that may be a space (" M file").
+    """
     try:
         out = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True,
                              timeout=10, check=True)
     except (OSError, subprocess.SubprocessError):
         return None
-    return out.stdout.strip()
+    return out.stdout.rstrip()
+
+
+def _dirty_files(porcelain: str) -> list[str]:
+    """Paths listed by `git status --porcelain` ("XY path" lines, XY = 2 status columns)."""
+    return [line[3:] for line in porcelain.splitlines() if line.strip()]
 
 
 def _package_versions() -> dict[str, str]:
@@ -56,7 +65,7 @@ def run_metadata() -> dict:
     """
     sha = _git("rev-parse", "HEAD")
     status = _git("status", "--porcelain", "--", ".", *_OUTPUT_PATHS) if sha else None
-    dirty_files = [line[3:] for line in status.splitlines()] if status else []
+    dirty_files = _dirty_files(status) if status else []
     return {
         "git_sha": sha or None,
         "git_dirty": None if status is None else bool(dirty_files),
