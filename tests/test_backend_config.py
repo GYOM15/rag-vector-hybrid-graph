@@ -49,6 +49,20 @@ def test_public_demo_off_when_unset():
     assert not is_public_demo({})
 
 
+@pytest.mark.parametrize("value", [None, "", "public"])
+def test_public_demo_fails_closed_on_a_hf_space(value):
+    # HF sets SPACE_ID in every Space: a Space deployed without PUBLIC_DEMO stays locked.
+    env = {"SPACE_ID": "gyom15/rag-vector-hybrid-graph"}
+    if value is not None:
+        env["PUBLIC_DEMO"] = value
+    assert is_public_demo(env)
+
+
+@pytest.mark.parametrize("value", ["0", "false", "Off", " no "])
+def test_public_demo_explicit_opt_out_on_a_hf_space(value):
+    assert not is_public_demo({"SPACE_ID": "gyom15/private-space", "PUBLIC_DEMO": value})
+
+
 def test_demo_articles():
     assert demo_articles({}) == 500
     assert demo_articles({"DEMO_ARTICLES": "200"}) == 200
@@ -142,6 +156,13 @@ def test_exfiltration_attempt_sends_no_secret_on_the_wire(monkeypatch):
 def test_public_demo_ignores_the_session_choice():
     env = {**_SERVER, "PUBLIC_DEMO": "1"}
     visitor = BackendChoice("openai", "other", "https://attacker.example/v1", "sk-visitor")
+    assert llm_kwargs(visitor, env) == {"provider": "openai", "model": "served",
+                                        "base_url": _URL, "api_key": "server-secret"}
+
+
+def test_a_hf_space_without_public_demo_is_locked_too():
+    env = {**_SERVER, "SPACE_ID": "gyom15/rag-vector-hybrid-graph"}
+    visitor = BackendChoice("huggingface", "someone/huge-70b-model")
     assert llm_kwargs(visitor, env) == {"provider": "openai", "model": "served",
                                         "base_url": _URL, "api_key": "server-secret"}
 

@@ -11,7 +11,8 @@ of Streamlit) so they are unit-tested:
     session: otherwise a visitor could aim the app at their own server and collect
     the owner's secret.
 With `PUBLIC_DEMO` on, visitors can't change the backend at all (no endpoint to
-redirect, no model id to download): every session uses the server's.
+redirect, no model id to download): every session uses the server's. It fails closed:
+on a Hugging Face Space it is on unless explicitly turned off.
 """
 
 import os
@@ -22,6 +23,7 @@ from shared.llm import DEFAULT_OPENAI_BASE_URL, active_config
 
 PROVIDERS = ("ollama", "openai", "huggingface")
 _TRUTHY = {"1", "true", "yes", "on"}
+_FALSY = {"0", "false", "no", "off"}
 
 
 def _env(env: Mapping[str, str] | None) -> Mapping[str, str]:
@@ -29,8 +31,20 @@ def _env(env: Mapping[str, str] | None) -> Mapping[str, str]:
 
 
 def is_public_demo(env: Mapping[str, str] | None = None) -> bool:
-    """`PUBLIC_DEMO` set to 1/true/yes/on (any case) -> visitors can't configure the backend."""
-    return _env(env).get("PUBLIC_DEMO", "").strip().lower() in _TRUTHY
+    """Whether visitors are barred from configuring the backend.
+
+    `PUBLIC_DEMO` = 1/true/yes/on (any case) -> yes; 0/false/no/off -> no. Unset (or
+    anything else): yes only on a Hugging Face Space, detected by the `SPACE_ID` that HF
+    sets in every Space. Fail closed: a Space deployed without the variable stays locked;
+    its owner opts out explicitly (PUBLIC_DEMO=0, e.g. a private Space).
+    """
+    env = _env(env)
+    value = env.get("PUBLIC_DEMO", "").strip().lower()
+    if value in _TRUTHY:
+        return True
+    if value in _FALSY:
+        return False
+    return bool(env.get("SPACE_ID", "").strip())
 
 
 def demo_articles(env: Mapping[str, str] | None = None) -> int:

@@ -75,6 +75,7 @@ rm -f app.py Dockerfile src/streamlit_app.py
 > `git status` should then list them as deleted): they aren't part of this app — a stray
 > `Dockerfile` can take over the build, and the template's `src/streamlit_app.py` would ship
 > inside our `src/` package.
+
 > Copying `.gitignore` matters: the scratch `eval/*.json` outputs stay uncommitted, but the
 > committed `eval/reference/*.json` (the dashboard's numbers) **are** included. `cp` printing
 > nothing means success.
@@ -120,7 +121,7 @@ Space → **Settings** → **Variables and secrets** → **New variable** (a *Va
 | `LLM_PROVIDER` | `huggingface` | the Chat generates locally (no Ollama on the Space) |
 | `HF_MODEL` | `Qwen/Qwen2.5-1.5B-Instruct` | a small *instruct* model — **correct** answers (a measured win over flan-t5, see Notes); slower on CPU. Omit to use the lighter/faster `google/flan-t5-base` default |
 | `DEMO_ARTICLES` | `200` | smaller corpus = faster first build |
-| `PUBLIC_DEMO` | `1` | **required for a public Space.** All visitors share one Python process: this locks the LLM backend to the one configured here (the sidebar becomes read-only — no provider/model/URL/key inputs, so no arbitrary model downloads) and disables the live RAGAS benchmark |
+| `PUBLIC_DEMO` | `1` | **required for a public Space.** All visitors share one Python process: this locks the LLM backend to the one configured here (the sidebar becomes read-only — no provider/model/URL/key inputs, so no arbitrary model downloads) and disables the live RAGAS benchmark. Already the default on a Space (the app detects HF's `SPACE_ID`), so a forgotten variable fails closed — set it anyway to be explicit; `0` turns it off (e.g. a private Space) |
 
 Adding variables restarts the Space.
 

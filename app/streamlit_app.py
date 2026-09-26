@@ -11,8 +11,8 @@ independently (comparative chat log, not contextual multi-turn).
 
 Multi-user: all sessions share this process (and the cached stacks), so a session's
 LLM backend is kept in `st.session_state` and passed per call — never written to
-`os.environ`. `PUBLIC_DEMO=1` (hosted Space) locks the backend to the server's; see
-`backend_config.py`.
+`os.environ`. `PUBLIC_DEMO=1` (the default on a Hugging Face Space) locks the backend to
+the server's; see `backend_config.py`.
 
 Run:  streamlit run app/streamlit_app.py
 """
@@ -125,7 +125,8 @@ def render_chat_tab(llm_fn) -> None:
     st.caption("The same question is sent to the 3 architectures; each keeps its own thread. "
                "(No conversational memory: each question is independent.)")
     st.info(f"**Corpus:** {demo_articles()} Simple-English Wikipedia articles (countries, "
-            "people, history, science…). Ask *factual* questions about them — e.g. *“When did the Titanic sink?”*, "
+            "people, history, science…). Ask *factual* questions about them — e.g. "
+            "*“When did the Titanic sink?”*, "
             "*“What is the official language of France?”*, *“Where was Alan Turing born?”* "
             "Out-of-corpus questions get an honest “I don't know”.", icon=":material/lightbulb:")
 
@@ -138,6 +139,11 @@ def render_chat_tab(llm_fn) -> None:
         st.session_state.chat = {name: [] for name in STACK_NAMES.values()}
 
     prompt = st.chat_input("Ask the 3 architectures a question…", max_chars=_MAX_QUESTION_CHARS)
+    # `max_chars` is only enforced by the browser: Streamlit hands the server whatever the
+    # websocket sent, so a crafted client could push megabytes through the 3 stacks.
+    if prompt and len(prompt) > _MAX_QUESTION_CHARS:
+        st.error(f"Question too long (max {_MAX_QUESTION_CHARS} characters).")
+        prompt = None
     if prompt:
         stacks = get_stacks()
         with st.spinner("Generating the 3 answers…"):
@@ -227,10 +233,12 @@ _LATENCY_LABELS = {
     "avg_generation_ms": "Generation",
     "avg_latency_ms": "Total",
 }
-def render_benchmark_results() -> None:
-    """Shows the last results.json: comparison table + charts."""
+def render_benchmark_results(can_run: bool = True) -> None:
+    """Shows the last results.json: comparison table + charts. `can_run`: whether the
+    benchmark form is offered above (else don't point to it)."""
     if not RESULTS_PATH.exists():
-        st.info("No results yet. Run a benchmark above.")
+        st.info("No results yet. Run a benchmark above." if can_run
+                else "No benchmark results in this deployment.")
         return
 
     import pandas as pd
@@ -301,15 +309,16 @@ def _render_by_type(stacks: dict, pd) -> None:
 def render_ragas_tab(backend: dict) -> None:
     """Live RAGAS benchmark (local only) + the last results.json."""
     st.subheader("RAGAS benchmark (generation + judging)")
+    can_run = False
     if is_public_demo():
         st.info("The live RAGAS benchmark is disabled on the public demo: its judge needs an "
                 "OpenAI key, and a shared demo neither asks visitors for one nor lends the "
-                "server's. Run it locally (README §4); the last results are shown below.",
-                icon=":material/lock:")
+                "server's. Run it locally (README §4).", icon=":material/lock:")
     elif importlib.util.find_spec("ragas") is None:
         st.info("RAGAS isn't installed in this deployment — run the benchmark locally "
-                "(see README §4). The last results are shown below.")
+                "(see README §4).")
     else:
+        can_run = True
         with st.form("bench_form"):
             c1, c2 = st.columns(2)
             n_q = c1.number_input("Number of questions", 1, 50, 5)
@@ -322,14 +331,15 @@ def render_ragas_tab(backend: dict) -> None:
         if go:
             if key.strip():
                 # RAGAS reads its judge's key from the env only. Acceptable here and ONLY
-                # here: this branch never runs with PUBLIC_DEMO, i.e. a local, single-user
-                # app — on a shared server it would hand this key to every other visitor.
+                # here: this branch never runs in public-demo mode (PUBLIC_DEMO / HF Space),
+                # i.e. a local, single-user app — on a shared server it would hand this key
+                # to every other visitor.
                 os.environ["OPENAI_API_KEY"] = key.strip()
             if not os.getenv("OPENAI_API_KEY"):
                 st.warning("No OpenAI key → only latencies will be computed (RAGAS skipped).")
             run_benchmark(int(n_q), int(k_b), backend)
     st.divider()
-    render_benchmark_results()
+    render_benchmark_results(can_run)
 
 
 st.set_page_config(page_title="RAG comparison", layout="wide")

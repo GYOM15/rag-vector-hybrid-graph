@@ -16,7 +16,7 @@ Question: {question}
 Answer:"""
 
 # Start of the template's tail (the question + "Answer:"). When a prompt must be shortened
-# to fit a small encoder (flan-t5), everything from here on is kept — see llm.py.
+# to fit a model's input budget (e.g. flan-t5), everything from here on is kept — see llm.py.
 QUESTION_MARKER = "\nQuestion:"
 
 
