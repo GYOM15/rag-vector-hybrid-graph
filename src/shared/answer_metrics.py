@@ -38,15 +38,58 @@ def f1_score(pred: str, gold: str) -> float:
     return 2 * precision * recall / (precision + recall)
 
 
-def contains_answer(pred: str, gold: str) -> float:
-    """1.0 if the normalized gold occurs in the normalized prediction as whole tokens.
+# A token next to one of these turns the answer into a choice: "2001 or 2002", "A vs B".
+_ALTERNATIVES = frozenset({"or", "nor", "versus", "vs"})
+_POLAR = {"yes": "no", "no": "yes"}  # yes/no gold -> the opposite polarity
+# A yes/no reply must open with the word standing alone ("No, ...", "Yes.", "no"),
+# not "No one knows", "No information in the context" or "Yes/no".
+_LEADING_POLAR = re.compile(r"^\W*(yes|no)\b\s*(?:[^\w\s/]|$)", re.IGNORECASE)
+_SENTENCE_END = re.compile(r"[.!?;\n]")
 
-    Both sides go through `normalize_answer`, then the gold's token sequence must
-    appear *contiguously* in the prediction's tokens ("the capital is Kabul" contains
-    "Kabul"; "Kabuli" does not, nor does "Kabul ... city" contain "Kabul city" with a
-    gap). Unlike EM/F1 it does not penalize a correct but verbose answer, which is what
-    small instruct models produce even when asked to be brief. It rewards hedging that
-    lists several candidates, so it is reported *alongside* EM/F1, never instead.
+
+def _occurrences(toks: list[str], sub: list[str]) -> list[int]:
+    """Start indices where `sub` occurs contiguously in `toks`."""
+    n = len(sub)
+    return [i for i in range(len(toks) - n + 1) if toks[i:i + n] == sub]
+
+
+def _polar_answer(pred: str, gold: str) -> float:
+    """Yes/no gold: the reply opens with the gold word, standing alone, and its first
+    sentence does not also say the opposite ("Yes, and no")."""
+    lead = _LEADING_POLAR.match(pred or "")
+    if not lead or lead.group(1).lower() != gold:
+        return 0.0
+    first_sentence = _SENTENCE_END.split(pred.strip(), maxsplit=1)[0]
+    return float(_POLAR[gold] not in normalize_answer(first_sentence).split())
+
+
+def contains_answer(pred: str, gold: str, question: str = "") -> float:
+    """1.0 if the normalized prediction contains the normalized gold as an *answer*.
+
+    Unlike EM/F1 it does not penalize a correct but verbose answer, which is what
+    small instruct models produce even when asked to be brief. But raw containment
+    also credits wrong answers in HotpotQA's most common shapes, so it is guarded:
+
+    - general case: the gold's tokens (after `normalize_answer`) occur *contiguously*
+      in the prediction's tokens ("the capital is Kabul" contains "Kabul"; "Kabuli"
+      does not, nor does "Kabul ... city" contain "Kabul city"), in at least one place
+      not adjacent to an alternative ("or", "nor", "vs", "versus"): "2001 or 2002"
+      and "either 1999 or 2001" credit neither year;
+    - yes/no golds: the reply must *open* with the gold word standing alone, and its
+      first sentence must not contain the opposite polarity. "No, ..." credits "no";
+      a refusal that merely mentions the word ("I do not know; there is no
+      information", "No information in the context") or a hedge ("Yes and no") does not;
+    - golds that occur in the `question` (choice questions: "Who is older, Annie Morton
+      or Terry Richardson?"): restating the question contains the gold whichever option
+      the model picks, so the reply must *open* with the gold and not continue with an
+      alternative or a second option ("Terry Richardson or Annie Morton",
+      "Letters to Cleo and Screaming Trees" score 0).
+
+    Remaining limit: a comma list of candidates ("1999, 2000, 2001") still contains
+    the gold. So contains is reported *alongside* EM/F1, never instead, and next to the
+    mean answer length, which exposes that kind of hedging. The guards are
+    conservative: correct answers phrased "..., so the answer is yes" or "The older one
+    is Terry Richardson" score 0 (they still get partial F1).
     An empty gold contains nothing (0.0).
     """
     pred_toks = normalize_answer(pred).split()
@@ -54,4 +97,12 @@ def contains_answer(pred: str, gold: str) -> float:
     n = len(gold_toks)
     if not n:
         return 0.0
-    return float(any(pred_toks[i:i + n] == gold_toks for i in range(len(pred_toks) - n + 1)))
+    if gold_toks[0] in _POLAR and n == 1:
+        return _polar_answer(pred, gold_toks[0])
+    if _occurrences(normalize_answer(question).split(), gold_toks):
+        after = pred_toks[n] if len(pred_toks) > n else None
+        return float(pred_toks[:n] == gold_toks and after not in _ALTERNATIVES | {"and"})
+    return float(any(
+        (i == 0 or pred_toks[i - 1] not in _ALTERNATIVES)
+        and (i + n == len(pred_toks) or pred_toks[i + n] not in _ALTERNATIVES)
+        for i in _occurrences(pred_toks, gold_toks)))
