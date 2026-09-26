@@ -4,7 +4,33 @@
     "candidates": 30,
     "embedder": "all-MiniLM-L6-v2",
     "n_queries": 100,
-    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    "n_docs": 3633,
+    "corpus": "BeIR/nfcorpus: full corpus",
+    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "ci": "95% percentile bootstrap over queries (10k resamples, seed 0)",
+    "provenance": {
+      "git_sha": "5d4cce983f45a48727fc1b99ddfcaaca427540c7",
+      "git_dirty": false,
+      "dirty_files": [],
+      "diff_sha": null,
+      "timestamp": "2026-09-26T07:03:04+00:00",
+      "python": "3.11.3",
+      "platform": "macOS-26.6",
+      "packages": {
+        "faiss-cpu": "1.15.1",
+        "sentence-transformers": "6.1.0",
+        "torch": "2.14.0",
+        "transformers": "5.17.0",
+        "spacy": "3.8.16",
+        "en-core-web-sm": "3.8.0",
+        "rank-bm25": "0.2.2",
+        "numpy": "2.4.6",
+        "networkx": "3.6.1",
+        "datasets": "5.0.1"
+      },
+      "finished": "2026-09-26T07:12:10+00:00",
+      "code_changed_during_run": false
+    }
   },
   "stacks": {
     "Vector": {
@@ -13,23 +39,1622 @@
       "ndcg_fusion": 0.3745,
       "delta_replace": 0.0267,
       "delta_fusion": 0.0231,
-      "rerank_ms_per_query": 755.9
+      "rerank_ms_per_query": 546.0,
+      "n_queries": 100,
+      "ci95": {
+        "ndcg_base": [
+          0.2893,
+          0.4128
+        ],
+        "ndcg_replace": [
+          0.3159,
+          0.4401
+        ],
+        "ndcg_fusion": [
+          0.3106,
+          0.4381
+        ]
+      },
+      "paired": {
+        "delta_replace": {
+          "mean_diff": 0.0267,
+          "lo": 0.0021,
+          "hi": 0.0518,
+          "p_value": 0.0371,
+          "n": 100
+        },
+        "delta_fusion": {
+          "mean_diff": 0.0231,
+          "lo": 0.0072,
+          "hi": 0.0403,
+          "p_value": 0.0074,
+          "n": 100
+        }
+      },
+      "per_query": {
+        "PLAIN-2": {
+          "base": 0.8253,
+          "replace": 0.7468,
+          "fusion": 0.8261
+        },
+        "PLAIN-12": {
+          "base": 0.1318,
+          "replace": 0.0946,
+          "fusion": 0.0473
+        },
+        "PLAIN-23": {
+          "base": 0.3908,
+          "replace": 0.244,
+          "fusion": 0.3996
+        },
+        "PLAIN-33": {
+          "base": 0.2551,
+          "replace": 0.5284,
+          "fusion": 0.4344
+        },
+        "PLAIN-44": {
+          "base": 0.2675,
+          "replace": 0.1297,
+          "fusion": 0.239
+        },
+        "PLAIN-56": {
+          "base": 0.7717,
+          "replace": 0.621,
+          "fusion": 0.7197
+        },
+        "PLAIN-68": {
+          "base": 0.4151,
+          "replace": 0.4129,
+          "fusion": 0.3608
+        },
+        "PLAIN-78": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-91": {
+          "base": 0.3798,
+          "replace": 0.426,
+          "fusion": 0.3824
+        },
+        "PLAIN-102": {
+          "base": 0.2063,
+          "replace": 0.3816,
+          "fusion": 0.2853
+        },
+        "PLAIN-112": {
+          "base": 0.699,
+          "replace": 0.6393,
+          "fusion": 0.6777
+        },
+        "PLAIN-123": {
+          "base": 0.1676,
+          "replace": 0.1441,
+          "fusion": 0.1823
+        },
+        "PLAIN-133": {
+          "base": 0.0804,
+          "replace": 0.2138,
+          "fusion": 0.1335
+        },
+        "PLAIN-143": {
+          "base": 0.7456,
+          "replace": 0.6604,
+          "fusion": 0.7143
+        },
+        "PLAIN-153": {
+          "base": 0.9479,
+          "replace": 0.9479,
+          "fusion": 0.9479
+        },
+        "PLAIN-165": {
+          "base": 0.4755,
+          "replace": 0.5037,
+          "fusion": 0.5102
+        },
+        "PLAIN-175": {
+          "base": 0.2949,
+          "replace": 0.3686,
+          "fusion": 0.3512
+        },
+        "PLAIN-186": {
+          "base": 0.11,
+          "replace": 0.2201,
+          "fusion": 0.2201
+        },
+        "PLAIN-196": {
+          "base": 0.2201,
+          "replace": 0.359,
+          "fusion": 0.3052
+        },
+        "PLAIN-207": {
+          "base": 0.6754,
+          "replace": 0.6332,
+          "fusion": 0.63
+        },
+        "PLAIN-217": {
+          "base": 0.2528,
+          "replace": 0.0,
+          "fusion": 0.11
+        },
+        "PLAIN-227": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-238": {
+          "base": 0.0,
+          "replace": 0.1389,
+          "fusion": 0.0
+        },
+        "PLAIN-248": {
+          "base": 0.3183,
+          "replace": 0.2785,
+          "fusion": 0.3629
+        },
+        "PLAIN-259": {
+          "base": 0.359,
+          "replace": 0.359,
+          "fusion": 0.359
+        },
+        "PLAIN-270": {
+          "base": 0.2895,
+          "replace": 0.2201,
+          "fusion": 0.2201
+        },
+        "PLAIN-280": {
+          "base": 0.312,
+          "replace": 0.3964,
+          "fusion": 0.3341
+        },
+        "PLAIN-291": {
+          "base": 0.469,
+          "replace": 0.4252,
+          "fusion": 0.4374
+        },
+        "PLAIN-307": {
+          "base": 0.8194,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-320": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-332": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "PLAIN-344": {
+          "base": 0.4402,
+          "replace": 0.3327,
+          "fusion": 0.3663
+        },
+        "PLAIN-358": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-371": {
+          "base": 0.1637,
+          "replace": 0.3801,
+          "fusion": 0.3801
+        },
+        "PLAIN-383": {
+          "base": 0.1461,
+          "replace": 0.3392,
+          "fusion": 0.1696
+        },
+        "PLAIN-395": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-407": {
+          "base": 0.6388,
+          "replace": 0.6388,
+          "fusion": 0.6388
+        },
+        "PLAIN-418": {
+          "base": 0.8671,
+          "replace": 0.8671,
+          "fusion": 0.8671
+        },
+        "PLAIN-430": {
+          "base": 0.5758,
+          "replace": 0.5974,
+          "fusion": 0.5974
+        },
+        "PLAIN-441": {
+          "base": 0.7615,
+          "replace": 0.6531,
+          "fusion": 0.7318
+        },
+        "PLAIN-457": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-468": {
+          "base": 0.4261,
+          "replace": 0.3019,
+          "fusion": 0.4214
+        },
+        "PLAIN-478": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-488": {
+          "base": 1.0,
+          "replace": 0.9306,
+          "fusion": 1.0
+        },
+        "PLAIN-499": {
+          "base": 0.1763,
+          "replace": 0.457,
+          "fusion": 0.361
+        },
+        "PLAIN-510": {
+          "base": 0.1513,
+          "replace": 0.0,
+          "fusion": 0.0911
+        },
+        "PLAIN-520": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-531": {
+          "base": 0.4978,
+          "replace": 0.343,
+          "fusion": 0.247
+        },
+        "PLAIN-541": {
+          "base": 0.0955,
+          "replace": 0.1171,
+          "fusion": 0.1171
+        },
+        "PLAIN-551": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-561": {
+          "base": 0.359,
+          "replace": 0.4252,
+          "fusion": 0.4374
+        },
+        "PLAIN-571": {
+          "base": 0.2051,
+          "replace": 0.2438,
+          "fusion": 0.2354
+        },
+        "PLAIN-583": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-593": {
+          "base": 0.4693,
+          "replace": 0.4693,
+          "fusion": 0.4693
+        },
+        "PLAIN-603": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-613": {
+          "base": 0.0851,
+          "replace": 0.2201,
+          "fusion": 0.11
+        },
+        "PLAIN-623": {
+          "base": 0.5068,
+          "replace": 0.3846,
+          "fusion": 0.4085
+        },
+        "PLAIN-634": {
+          "base": 0.1389,
+          "replace": 0.2489,
+          "fusion": 0.2083
+        },
+        "PLAIN-645": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-660": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-671": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-681": {
+          "base": 0.6309,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-691": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-701": {
+          "base": 0.3327,
+          "replace": 0.4125,
+          "fusion": 0.3794
+        },
+        "PLAIN-711": {
+          "base": 0.3479,
+          "replace": 0.5017,
+          "fusion": 0.5737
+        },
+        "PLAIN-721": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-731": {
+          "base": 0.7184,
+          "replace": 0.8572,
+          "fusion": 0.7273
+        },
+        "PLAIN-741": {
+          "base": 0.4441,
+          "replace": 0.5638,
+          "fusion": 0.5175
+        },
+        "PLAIN-751": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-761": {
+          "base": 0.2474,
+          "replace": 0.3937,
+          "fusion": 0.2918
+        },
+        "PLAIN-771": {
+          "base": 0.6364,
+          "replace": 0.7654,
+          "fusion": 0.7039
+        },
+        "PLAIN-782": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-792": {
+          "base": 0.1303,
+          "replace": 0.4935,
+          "fusion": 0.4197
+        },
+        "PLAIN-806": {
+          "base": 0.7702,
+          "replace": 0.9364,
+          "fusion": 0.791
+        },
+        "PLAIN-817": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-827": {
+          "base": 0.6372,
+          "replace": 0.7281,
+          "fusion": 0.7313
+        },
+        "PLAIN-838": {
+          "base": 0.693,
+          "replace": 0.693,
+          "fusion": 0.693
+        },
+        "PLAIN-850": {
+          "base": 0.4986,
+          "replace": 0.7156,
+          "fusion": 0.6208
+        },
+        "PLAIN-872": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-882": {
+          "base": 0.863,
+          "replace": 0.6678,
+          "fusion": 0.7936
+        },
+        "PLAIN-892": {
+          "base": 0.4249,
+          "replace": 0.5353,
+          "fusion": 0.5326
+        },
+        "PLAIN-902": {
+          "base": 0.1391,
+          "replace": 0.5856,
+          "fusion": 0.3633
+        },
+        "PLAIN-913": {
+          "base": 0.785,
+          "replace": 0.8007,
+          "fusion": 0.7917
+        },
+        "PLAIN-924": {
+          "base": 0.7818,
+          "replace": 0.3996,
+          "fusion": 0.7084
+        },
+        "PLAIN-934": {
+          "base": 0.4768,
+          "replace": 0.5559,
+          "fusion": 0.5463
+        },
+        "PLAIN-946": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-956": {
+          "base": 0.6805,
+          "replace": 0.6023,
+          "fusion": 0.767
+        },
+        "PLAIN-966": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-977": {
+          "base": 0.2021,
+          "replace": 0.1815,
+          "fusion": 0.2346
+        },
+        "PLAIN-987": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-997": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1008": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1018": {
+          "base": 0.1642,
+          "replace": 0.29,
+          "fusion": 0.3571
+        },
+        "PLAIN-1028": {
+          "base": 0.0,
+          "replace": 0.301,
+          "fusion": 0.0
+        },
+        "PLAIN-1039": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-1050": {
+          "base": 0.0851,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1066": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1088": {
+          "base": 0.5531,
+          "replace": 0.5531,
+          "fusion": 0.5531
+        },
+        "PLAIN-1098": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1109": {
+          "base": 0.702,
+          "replace": 0.6204,
+          "fusion": 0.6902
+        }
+      }
     },
     "Hybrid": {
-      "ndcg_base": 0.3816,
-      "ndcg_replace": 0.413,
-      "ndcg_fusion": 0.4046,
-      "delta_replace": 0.0314,
-      "delta_fusion": 0.023,
-      "rerank_ms_per_query": 692.1
+      "ndcg_base": 0.3863,
+      "ndcg_replace": 0.4107,
+      "ndcg_fusion": 0.4057,
+      "delta_replace": 0.0245,
+      "delta_fusion": 0.0194,
+      "rerank_ms_per_query": 551.0,
+      "n_queries": 100,
+      "ci95": {
+        "ndcg_base": [
+          0.3219,
+          0.4507
+        ],
+        "ndcg_replace": [
+          0.347,
+          0.4738
+        ],
+        "ndcg_fusion": [
+          0.341,
+          0.4693
+        ]
+      },
+      "paired": {
+        "delta_replace": {
+          "mean_diff": 0.0245,
+          "lo": 0.0019,
+          "hi": 0.0474,
+          "p_value": 0.0376,
+          "n": 100
+        },
+        "delta_fusion": {
+          "mean_diff": 0.0194,
+          "lo": 0.0056,
+          "hi": 0.0345,
+          "p_value": 0.008,
+          "n": 100
+        }
+      },
+      "per_query": {
+        "PLAIN-2": {
+          "base": 0.7854,
+          "replace": 0.7468,
+          "fusion": 0.7893
+        },
+        "PLAIN-12": {
+          "base": 0.1209,
+          "replace": 0.0815,
+          "fusion": 0.1314
+        },
+        "PLAIN-23": {
+          "base": 0.5307,
+          "replace": 0.4312,
+          "fusion": 0.484
+        },
+        "PLAIN-33": {
+          "base": 0.0879,
+          "replace": 0.5284,
+          "fusion": 0.3837
+        },
+        "PLAIN-44": {
+          "base": 0.3002,
+          "replace": 0.126,
+          "fusion": 0.2774
+        },
+        "PLAIN-56": {
+          "base": 0.7172,
+          "replace": 0.6671,
+          "fusion": 0.7172
+        },
+        "PLAIN-68": {
+          "base": 0.5152,
+          "replace": 0.4177,
+          "fusion": 0.4849
+        },
+        "PLAIN-78": {
+          "base": 0.0402,
+          "replace": 0.2548,
+          "fusion": 0.1274
+        },
+        "PLAIN-91": {
+          "base": 0.4514,
+          "replace": 0.4586,
+          "fusion": 0.4523
+        },
+        "PLAIN-102": {
+          "base": 0.2584,
+          "replace": 0.375,
+          "fusion": 0.2621
+        },
+        "PLAIN-112": {
+          "base": 0.5421,
+          "replace": 0.5516,
+          "fusion": 0.5092
+        },
+        "PLAIN-123": {
+          "base": 0.1274,
+          "replace": 0.1441,
+          "fusion": 0.1767
+        },
+        "PLAIN-133": {
+          "base": 0.0,
+          "replace": 0.0842,
+          "fusion": 0.0
+        },
+        "PLAIN-143": {
+          "base": 0.5485,
+          "replace": 0.6561,
+          "fusion": 0.598
+        },
+        "PLAIN-153": {
+          "base": 0.9334,
+          "replace": 0.9479,
+          "fusion": 1.0
+        },
+        "PLAIN-165": {
+          "base": 0.4598,
+          "replace": 0.5037,
+          "fusion": 0.4571
+        },
+        "PLAIN-175": {
+          "base": 0.3512,
+          "replace": 0.3686,
+          "fusion": 0.3512
+        },
+        "PLAIN-186": {
+          "base": 0.11,
+          "replace": 0.2201,
+          "fusion": 0.2201
+        },
+        "PLAIN-196": {
+          "base": 0.4441,
+          "replace": 0.6372,
+          "fusion": 0.6168
+        },
+        "PLAIN-207": {
+          "base": 0.5869,
+          "replace": 0.782,
+          "fusion": 0.6867
+        },
+        "PLAIN-217": {
+          "base": 0.0694,
+          "replace": 0.0,
+          "fusion": 0.0663
+        },
+        "PLAIN-227": {
+          "base": 0.0734,
+          "replace": 0.0948,
+          "fusion": 0.11
+        },
+        "PLAIN-238": {
+          "base": 0.0,
+          "replace": 0.1389,
+          "fusion": 0.0694
+        },
+        "PLAIN-248": {
+          "base": 0.3052,
+          "replace": 0.2758,
+          "fusion": 0.3052
+        },
+        "PLAIN-259": {
+          "base": 0.359,
+          "replace": 0.359,
+          "fusion": 0.359
+        },
+        "PLAIN-270": {
+          "base": 0.1389,
+          "replace": 0.3052,
+          "fusion": 0.1389
+        },
+        "PLAIN-280": {
+          "base": 0.41,
+          "replace": 0.3964,
+          "fusion": 0.3273
+        },
+        "PLAIN-291": {
+          "base": 0.4374,
+          "replace": 0.359,
+          "fusion": 0.4252
+        },
+        "PLAIN-307": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-320": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-332": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "PLAIN-344": {
+          "base": 0.4401,
+          "replace": 0.321,
+          "fusion": 0.3559
+        },
+        "PLAIN-358": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-371": {
+          "base": 0.19,
+          "replace": 0.6199,
+          "fusion": 0.6089
+        },
+        "PLAIN-383": {
+          "base": 0.1696,
+          "replace": 0.3392,
+          "fusion": 0.214
+        },
+        "PLAIN-395": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-407": {
+          "base": 0.6388,
+          "replace": 0.6388,
+          "fusion": 0.6388
+        },
+        "PLAIN-418": {
+          "base": 0.8671,
+          "replace": 0.8671,
+          "fusion": 0.8671
+        },
+        "PLAIN-430": {
+          "base": 0.5974,
+          "replace": 0.5974,
+          "fusion": 0.5974
+        },
+        "PLAIN-441": {
+          "base": 0.904,
+          "replace": 0.7968,
+          "fusion": 0.8799
+        },
+        "PLAIN-457": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-468": {
+          "base": 0.4261,
+          "replace": 0.3019,
+          "fusion": 0.4214
+        },
+        "PLAIN-478": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-488": {
+          "base": 0.9337,
+          "replace": 0.9306,
+          "fusion": 0.9306
+        },
+        "PLAIN-499": {
+          "base": 0.3445,
+          "replace": 0.4413,
+          "fusion": 0.3317
+        },
+        "PLAIN-510": {
+          "base": 0.1171,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-520": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-531": {
+          "base": 0.161,
+          "replace": 0.1763,
+          "fusion": 0.2777
+        },
+        "PLAIN-541": {
+          "base": 0.1303,
+          "replace": 0.4104,
+          "fusion": 0.2312
+        },
+        "PLAIN-551": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-561": {
+          "base": 0.359,
+          "replace": 0.4252,
+          "fusion": 0.4374
+        },
+        "PLAIN-571": {
+          "base": 0.2247,
+          "replace": 0.2438,
+          "fusion": 0.2247
+        },
+        "PLAIN-583": {
+          "base": 0.1389,
+          "replace": 0.2201,
+          "fusion": 0.2201
+        },
+        "PLAIN-593": {
+          "base": 0.4693,
+          "replace": 0.4693,
+          "fusion": 0.4693
+        },
+        "PLAIN-603": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-613": {
+          "base": 0.0851,
+          "replace": 0.2201,
+          "fusion": 0.11
+        },
+        "PLAIN-623": {
+          "base": 0.46,
+          "replace": 0.3223,
+          "fusion": 0.3859
+        },
+        "PLAIN-634": {
+          "base": 0.2337,
+          "replace": 0.3437,
+          "fusion": 0.3223
+        },
+        "PLAIN-645": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-660": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-671": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-681": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-691": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-701": {
+          "base": 0.4125,
+          "replace": 0.6479,
+          "fusion": 0.5685
+        },
+        "PLAIN-711": {
+          "base": 0.359,
+          "replace": 0.359,
+          "fusion": 0.4473
+        },
+        "PLAIN-721": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-731": {
+          "base": 0.7273,
+          "replace": 0.8572,
+          "fusion": 0.7885
+        },
+        "PLAIN-741": {
+          "base": 0.6372,
+          "replace": 0.8604,
+          "fusion": 0.7084
+        },
+        "PLAIN-751": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-761": {
+          "base": 0.2474,
+          "replace": 0.3901,
+          "fusion": 0.2987
+        },
+        "PLAIN-771": {
+          "base": 0.9469,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-782": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-792": {
+          "base": 0.6013,
+          "replace": 0.581,
+          "fusion": 0.6013
+        },
+        "PLAIN-806": {
+          "base": 0.7859,
+          "replace": 1.0,
+          "fusion": 0.9266
+        },
+        "PLAIN-817": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-827": {
+          "base": 0.6379,
+          "replace": 0.6875,
+          "fusion": 0.6379
+        },
+        "PLAIN-838": {
+          "base": 0.8475,
+          "replace": 0.7767,
+          "fusion": 0.7767
+        },
+        "PLAIN-850": {
+          "base": 0.7184,
+          "replace": 0.7846,
+          "fusion": 0.7152
+        },
+        "PLAIN-872": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-882": {
+          "base": 0.863,
+          "replace": 0.6678,
+          "fusion": 0.7936
+        },
+        "PLAIN-892": {
+          "base": 0.6938,
+          "replace": 0.8669,
+          "fusion": 0.8669
+        },
+        "PLAIN-902": {
+          "base": 0.6367,
+          "replace": 0.5856,
+          "fusion": 0.6367
+        },
+        "PLAIN-913": {
+          "base": 0.863,
+          "replace": 0.8007,
+          "fusion": 0.8007
+        },
+        "PLAIN-924": {
+          "base": 0.7818,
+          "replace": 0.3996,
+          "fusion": 0.7084
+        },
+        "PLAIN-934": {
+          "base": 0.6215,
+          "replace": 0.4896,
+          "fusion": 0.5748
+        },
+        "PLAIN-946": {
+          "base": 0.2083,
+          "replace": 0.2048,
+          "fusion": 0.224
+        },
+        "PLAIN-956": {
+          "base": 0.7721,
+          "replace": 0.6659,
+          "fusion": 0.6497
+        },
+        "PLAIN-966": {
+          "base": 0.0,
+          "replace": 0.1815,
+          "fusion": 0.148
+        },
+        "PLAIN-977": {
+          "base": 0.2346,
+          "replace": 0.1413,
+          "fusion": 0.2021
+        },
+        "PLAIN-987": {
+          "base": 0.1672,
+          "replace": 0.2346,
+          "fusion": 0.2021
+        },
+        "PLAIN-997": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1008": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1018": {
+          "base": 0.3783,
+          "replace": 0.5112,
+          "fusion": 0.426
+        },
+        "PLAIN-1028": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1039": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-1050": {
+          "base": 0.0663,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1066": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1088": {
+          "base": 0.5531,
+          "replace": 0.5531,
+          "fusion": 0.5531
+        },
+        "PLAIN-1098": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1109": {
+          "base": 0.657,
+          "replace": 0.6178,
+          "fusion": 0.6505
+        }
+      }
     },
     "Graph": {
-      "ndcg_base": 0.3569,
-      "ndcg_replace": 0.3824,
-      "ndcg_fusion": 0.3785,
-      "delta_replace": 0.0255,
-      "delta_fusion": 0.0215,
-      "rerank_ms_per_query": 710.8
+      "ndcg_base": 0.3606,
+      "ndcg_replace": 0.3838,
+      "ndcg_fusion": 0.3818,
+      "delta_replace": 0.0232,
+      "delta_fusion": 0.0212,
+      "rerank_ms_per_query": 534.5,
+      "n_queries": 100,
+      "ci95": {
+        "ndcg_base": [
+          0.2972,
+          0.4233
+        ],
+        "ndcg_replace": [
+          0.3214,
+          0.4455
+        ],
+        "ndcg_fusion": [
+          0.317,
+          0.4455
+        ]
+      },
+      "paired": {
+        "delta_replace": {
+          "mean_diff": 0.0232,
+          "lo": -0.0013,
+          "hi": 0.0485,
+          "p_value": 0.0668,
+          "n": 100
+        },
+        "delta_fusion": {
+          "mean_diff": 0.0212,
+          "lo": 0.0055,
+          "hi": 0.0379,
+          "p_value": 0.0112,
+          "n": 100
+        }
+      },
+      "per_query": {
+        "PLAIN-2": {
+          "base": 0.8253,
+          "replace": 0.7468,
+          "fusion": 0.8261
+        },
+        "PLAIN-12": {
+          "base": 0.1318,
+          "replace": 0.0946,
+          "fusion": 0.0473
+        },
+        "PLAIN-23": {
+          "base": 0.414,
+          "replace": 0.414,
+          "fusion": 0.414
+        },
+        "PLAIN-33": {
+          "base": 0.2551,
+          "replace": 0.5284,
+          "fusion": 0.4344
+        },
+        "PLAIN-44": {
+          "base": 0.2675,
+          "replace": 0.1297,
+          "fusion": 0.239
+        },
+        "PLAIN-56": {
+          "base": 0.7717,
+          "replace": 0.621,
+          "fusion": 0.7197
+        },
+        "PLAIN-68": {
+          "base": 0.4151,
+          "replace": 0.4129,
+          "fusion": 0.3608
+        },
+        "PLAIN-78": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-91": {
+          "base": 0.3798,
+          "replace": 0.426,
+          "fusion": 0.3824
+        },
+        "PLAIN-102": {
+          "base": 0.1958,
+          "replace": 0.3866,
+          "fusion": 0.3239
+        },
+        "PLAIN-112": {
+          "base": 0.699,
+          "replace": 0.6393,
+          "fusion": 0.6777
+        },
+        "PLAIN-123": {
+          "base": 0.1676,
+          "replace": 0.1441,
+          "fusion": 0.1823
+        },
+        "PLAIN-133": {
+          "base": 0.0804,
+          "replace": 0.2138,
+          "fusion": 0.1335
+        },
+        "PLAIN-143": {
+          "base": 0.7456,
+          "replace": 0.6604,
+          "fusion": 0.7143
+        },
+        "PLAIN-153": {
+          "base": 0.9479,
+          "replace": 0.9479,
+          "fusion": 0.9479
+        },
+        "PLAIN-165": {
+          "base": 0.4755,
+          "replace": 0.5037,
+          "fusion": 0.5102
+        },
+        "PLAIN-175": {
+          "base": 0.0575,
+          "replace": 0.2177,
+          "fusion": 0.2002
+        },
+        "PLAIN-186": {
+          "base": 0.11,
+          "replace": 0.2201,
+          "fusion": 0.2201
+        },
+        "PLAIN-196": {
+          "base": 0.2201,
+          "replace": 0.359,
+          "fusion": 0.3052
+        },
+        "PLAIN-207": {
+          "base": 0.6754,
+          "replace": 0.6332,
+          "fusion": 0.63
+        },
+        "PLAIN-217": {
+          "base": 0.2528,
+          "replace": 0.0,
+          "fusion": 0.11
+        },
+        "PLAIN-227": {
+          "base": 0.2201,
+          "replace": 0.11,
+          "fusion": 0.2201
+        },
+        "PLAIN-238": {
+          "base": 0.0,
+          "replace": 0.1389,
+          "fusion": 0.0
+        },
+        "PLAIN-248": {
+          "base": 0.3183,
+          "replace": 0.2785,
+          "fusion": 0.3629
+        },
+        "PLAIN-259": {
+          "base": 0.359,
+          "replace": 0.359,
+          "fusion": 0.359
+        },
+        "PLAIN-270": {
+          "base": 0.2895,
+          "replace": 0.2201,
+          "fusion": 0.2201
+        },
+        "PLAIN-280": {
+          "base": 0.4545,
+          "replace": 0.3964,
+          "fusion": 0.4886
+        },
+        "PLAIN-291": {
+          "base": 0.469,
+          "replace": 0.4252,
+          "fusion": 0.4374
+        },
+        "PLAIN-307": {
+          "base": 0.8194,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-320": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-332": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "PLAIN-344": {
+          "base": 0.4402,
+          "replace": 0.3327,
+          "fusion": 0.3663
+        },
+        "PLAIN-358": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-371": {
+          "base": 0.1637,
+          "replace": 0.3801,
+          "fusion": 0.3801
+        },
+        "PLAIN-383": {
+          "base": 0.1461,
+          "replace": 0.3392,
+          "fusion": 0.1696
+        },
+        "PLAIN-395": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-407": {
+          "base": 0.6388,
+          "replace": 0.6388,
+          "fusion": 0.6388
+        },
+        "PLAIN-418": {
+          "base": 0.8671,
+          "replace": 0.8671,
+          "fusion": 0.8671
+        },
+        "PLAIN-430": {
+          "base": 0.5758,
+          "replace": 0.5974,
+          "fusion": 0.5974
+        },
+        "PLAIN-441": {
+          "base": 0.7615,
+          "replace": 0.6531,
+          "fusion": 0.7318
+        },
+        "PLAIN-457": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-468": {
+          "base": 0.4492,
+          "replace": 0.3019,
+          "fusion": 0.4319
+        },
+        "PLAIN-478": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-488": {
+          "base": 1.0,
+          "replace": 0.9306,
+          "fusion": 1.0
+        },
+        "PLAIN-499": {
+          "base": 0.2083,
+          "replace": 0.4413,
+          "fusion": 0.2337
+        },
+        "PLAIN-510": {
+          "base": 0.1513,
+          "replace": 0.0,
+          "fusion": 0.0911
+        },
+        "PLAIN-520": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-531": {
+          "base": 0.4978,
+          "replace": 0.343,
+          "fusion": 0.247
+        },
+        "PLAIN-541": {
+          "base": 0.0955,
+          "replace": 0.1171,
+          "fusion": 0.1171
+        },
+        "PLAIN-551": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-561": {
+          "base": 0.359,
+          "replace": 0.4252,
+          "fusion": 0.4374
+        },
+        "PLAIN-571": {
+          "base": 0.2051,
+          "replace": 0.2438,
+          "fusion": 0.2354
+        },
+        "PLAIN-583": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-593": {
+          "base": 0.4693,
+          "replace": 0.4693,
+          "fusion": 0.4693
+        },
+        "PLAIN-603": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-613": {
+          "base": 0.0851,
+          "replace": 0.2201,
+          "fusion": 0.11
+        },
+        "PLAIN-623": {
+          "base": 0.5068,
+          "replace": 0.3846,
+          "fusion": 0.4085
+        },
+        "PLAIN-634": {
+          "base": 0.1389,
+          "replace": 0.2489,
+          "fusion": 0.2083
+        },
+        "PLAIN-645": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-660": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-671": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-681": {
+          "base": 0.6309,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-691": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-701": {
+          "base": 0.3327,
+          "replace": 0.4125,
+          "fusion": 0.3794
+        },
+        "PLAIN-711": {
+          "base": 0.3479,
+          "replace": 0.5017,
+          "fusion": 0.5737
+        },
+        "PLAIN-721": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-731": {
+          "base": 0.7184,
+          "replace": 0.8572,
+          "fusion": 0.7273
+        },
+        "PLAIN-741": {
+          "base": 0.7968,
+          "replace": 0.7968,
+          "fusion": 0.8007
+        },
+        "PLAIN-751": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-761": {
+          "base": 0.2474,
+          "replace": 0.3937,
+          "fusion": 0.2918
+        },
+        "PLAIN-771": {
+          "base": 0.7654,
+          "replace": 0.7654,
+          "fusion": 0.7654
+        },
+        "PLAIN-782": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-792": {
+          "base": 0.1303,
+          "replace": 0.4935,
+          "fusion": 0.4197
+        },
+        "PLAIN-806": {
+          "base": 0.7702,
+          "replace": 0.9364,
+          "fusion": 0.791
+        },
+        "PLAIN-817": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-827": {
+          "base": 0.6372,
+          "replace": 0.7281,
+          "fusion": 0.7313
+        },
+        "PLAIN-838": {
+          "base": 0.693,
+          "replace": 0.693,
+          "fusion": 0.693
+        },
+        "PLAIN-850": {
+          "base": 0.4986,
+          "replace": 0.7156,
+          "fusion": 0.6208
+        },
+        "PLAIN-872": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-882": {
+          "base": 0.8643,
+          "replace": 0.6678,
+          "fusion": 0.8572
+        },
+        "PLAIN-892": {
+          "base": 0.4249,
+          "replace": 0.5353,
+          "fusion": 0.5326
+        },
+        "PLAIN-902": {
+          "base": 0.1391,
+          "replace": 0.5856,
+          "fusion": 0.3633
+        },
+        "PLAIN-913": {
+          "base": 0.785,
+          "replace": 0.8007,
+          "fusion": 0.7917
+        },
+        "PLAIN-924": {
+          "base": 0.7818,
+          "replace": 0.3996,
+          "fusion": 0.7084
+        },
+        "PLAIN-934": {
+          "base": 0.4768,
+          "replace": 0.5559,
+          "fusion": 0.5463
+        },
+        "PLAIN-946": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-956": {
+          "base": 0.6805,
+          "replace": 0.6023,
+          "fusion": 0.767
+        },
+        "PLAIN-966": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-977": {
+          "base": 0.2021,
+          "replace": 0.1815,
+          "fusion": 0.2346
+        },
+        "PLAIN-987": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-997": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1008": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1018": {
+          "base": 0.4085,
+          "replace": 0.5112,
+          "fusion": 0.5252
+        },
+        "PLAIN-1028": {
+          "base": 0.0,
+          "replace": 0.301,
+          "fusion": 0.0
+        },
+        "PLAIN-1039": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "PLAIN-1050": {
+          "base": 0.0851,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1066": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1088": {
+          "base": 0.5531,
+          "replace": 0.5531,
+          "fusion": 0.5531
+        },
+        "PLAIN-1098": {
+          "base": 0.0,
+          "replace": 0.0,
+          "fusion": 0.0
+        },
+        "PLAIN-1109": {
+          "base": 0.702,
+          "replace": 0.6204,
+          "fusion": 0.6902
+        }
+      }
     }
   }
 }
