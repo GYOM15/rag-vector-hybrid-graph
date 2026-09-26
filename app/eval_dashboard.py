@@ -21,9 +21,9 @@ from eval_insights import (
     build_caption,
     fmt_ci,
     is_significant,
+    label_runs,
     provenance_note,
     rerank_caption,
-    run_label,
     throughput_caption,
 )
 
@@ -243,12 +243,10 @@ def render_systems() -> None:
 # --- Answer quality -----------------------------------------------------------
 
 def _answer_runs() -> dict[str, dict]:
-    """Every answer-eval snapshot (`answer_*.json`), labelled by model (+ prompt variant)."""
-    runs = {}
-    for path in sorted(REFERENCE.glob("answer_*.json")):
-        snap = json.loads(path.read_text("utf-8"))
-        runs[run_label(snap, path.stem.removeprefix("answer_"))] = snap
-    return runs
+    """Every answer-eval snapshot (`answer_*.json`), labelled by model (+ prompt variant),
+    one entry per file even when two runs share a label."""
+    return label_runs({path.stem.removeprefix("answer_"): json.loads(path.read_text("utf-8"))
+                       for path in sorted(REFERENCE.glob("answer_*.json"))})
 
 
 def render_answer() -> None:
@@ -273,11 +271,17 @@ def render_answer() -> None:
             if "contains" in v:
                 row |= {"contains": v["contains"],
                         "contains 95% CI": fmt_ci(v.get("ci95", {}).get("contains"))}
+            if "answer_tokens" in v:
+                row["answer tokens"] = v["answer_tokens"]
             table[(model, _short(k))] = row
     st.dataframe(pd.DataFrame(table).T, width="stretch")
     if any("contains" in row for row in table.values()):
-        st.caption("*contains* = the gold answer appears in the generation as whole words: "
-                   "unlike EM/F1 it does not penalize a correct but verbose answer.")
+        st.caption("*contains* = the gold answer appears in the generation as whole words, "
+                   "so a correct but verbose answer is not penalized as by EM/F1. Guards: a "
+                   "yes/no answer must open the reply, the chosen option of a choice question "
+                   "must come first, and a gold next to *or* earns nothing. Limit: a plain list "
+                   "of candidates still contains the gold — read *contains* together with "
+                   "*answer tokens* (mean answer length).")
 
 
 # --- Light evals, runnable live -----------------------------------------------
