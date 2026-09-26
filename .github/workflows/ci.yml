@@ -56,3 +56,9 @@ jobs:
 
       - name: Retrieval regression guard
         run: python -m eval.check_regression
+
+      # Proves the guard can see each stack's own component break: disables Hybrid's
+      # BM25, Graph's query entities and Vector's query encoding in turn, and fails
+      # if check() does not flag the matching stack (a saturated guard would pass).
+      - name: Regression guard self-test (ablations)
+        run: python -m eval.check_regression --self-test
