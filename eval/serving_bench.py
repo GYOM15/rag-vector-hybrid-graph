@@ -18,6 +18,8 @@ from pathlib import Path
 
 import numpy as np
 
+from eval.provenance import run_metadata
+
 ROOT = Path(__file__).resolve().parent.parent
 CONCURRENCY = (1, 2, 4, 8, 16, 32, 64)
 
@@ -116,7 +118,8 @@ def run(base_url: str, api_key: str, model: str, n_prompts: int, max_tokens: int
     sweep = [run_at_concurrency(call, prompts, w) for w in CONCURRENCY]
 
     payload = {"config": {"base_url": base_url, "model": model,
-                          "n_prompts": n_prompts, "max_tokens": max_tokens},
+                          "n_prompts": n_prompts, "max_tokens": max_tokens,
+                          "provenance": run_metadata()},
                "sweep": sweep}
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
