@@ -183,6 +183,13 @@ def test_empty_separator_cuts_character_windows_with_overlap():
     assert [c.text for c in chunks] == ["hello worl", "orld foo b", "o bar baz", "az qux"]
 
 
+def test_empty_separator_emits_no_redundant_trailing_chunk():
+    """Each chunk brings new characters: plain character windows kept going until
+    the last start offset and added "opq", already inside "hijklmnopq"."""
+    chunks = recursive_chunk("abcdefghijklmnopq", max_size=10, overlap=3, separators=[""])
+    assert [c.text for c in chunks] == ["abcdefghij", "hijklmnopq"]
+
+
 # ---------------------------------------------------------------------------
 # Indexing
 # ---------------------------------------------------------------------------
