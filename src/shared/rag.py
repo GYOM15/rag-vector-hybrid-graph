@@ -32,8 +32,17 @@ class BaseRAG:
         self.llm_fn = llm_fn
         self.prompt_template = prompt_template or DEFAULT_PROMPT_TEMPLATE
 
-    def query(self, question: str, k: int = 5) -> dict:
-        """Run the pipeline. Returns {answer, contexts, retrieval_ms, generation_ms, latency_ms}."""
+    def query(
+        self,
+        question: str,
+        k: int = 5,
+        llm_fn: Callable[[str], str] | None = None,
+    ) -> dict:
+        """Run the pipeline. Returns {answer, contexts, retrieval_ms, generation_ms, latency_ms}.
+
+        `llm_fn` overrides the generator for this call only: the app caches ONE set of
+        stacks shared by all its sessions, while each session picks its own LLM backend.
+        """
         start = time.perf_counter()
         contexts = self.retriever.search(question, k=k)
         retrieval_ms = (time.perf_counter() - start) * 1000
@@ -41,7 +50,7 @@ class BaseRAG:
         prompt = build_prompt(question, contexts, self.prompt_template)
 
         gen_start = time.perf_counter()
-        answer = self.llm_fn(prompt)
+        answer = (llm_fn or self.llm_fn)(prompt)
         generation_ms = (time.perf_counter() - gen_start) * 1000
 
         return {

@@ -5,6 +5,8 @@ module stays lightweight even without the `[eval]` extra installed. It is only
 required when RAGAS is actually called.
 """
 
+from collections.abc import Callable
+
 
 def evaluate_rag(
     questions: list[str],
@@ -79,19 +81,25 @@ def evaluate_stacks(
     ground_truths: list[str],
     k: int = 5,
     types: list[str] | None = None,
+    llm_fn: Callable[[str], str] | None = None,
 ) -> dict[str, dict]:
     """Evaluate each stack (generation + latencies + RAGAS), overall and by `types` if provided.
 
-    Returns {stack_name: metrics}; if RAGAS fails (missing key...), only the latencies.
+    `llm_fn` overrides the stacks' generator for this run (the app passes the session's
+    backend). Returns {stack_name: metrics}; if RAGAS fails (no judge key, ragas not
+    installed…), only the latencies + `ragas_error` ("<ExcType>: <message>"), so the
+    caller can say *why*. Raises ValueError if `questions` is empty.
     """
     n = len(questions)
+    if n == 0:
+        raise ValueError("No questions to evaluate.")
     results: dict[str, dict] = {}
 
     for name, rag in stacks.items():
         answers, contexts, latencies = [], [], []
         retrieval = generation = total = 0.0
         for question in questions:
-            r = rag.query(question, k=k)
+            r = rag.query(question, k=k, llm_fn=llm_fn)
             answers.append(r["answer"])
             contexts.append([c["text"] for c in r["contexts"]])
             latencies.append(r["latency_ms"])
@@ -105,8 +113,8 @@ def evaluate_stacks(
             full = evaluate_rag(questions, answers, contexts, ground_truths)
             per_question = full.pop("per_question", []) or []
             metrics = full
-        except Exception:
-            pass  # RAGAS optional: without a judge/key, we keep just the latencies
+        except Exception as exc:  # RAGAS optional: keep the latencies, but record why
+            metrics = {"ragas_error": f"{type(exc).__name__}: {exc}"}
 
         metrics["avg_retrieval_ms"] = round(retrieval / n, 2)
         metrics["avg_generation_ms"] = round(generation / n, 2)
