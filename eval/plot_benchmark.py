@@ -3,7 +3,9 @@
 Reads the committed snapshots eval/reference/beir_{scifact,hotpotqa,nfcorpus}.json (so the
 committed figure can be regenerated from committed data; --scifact/--hotpotqa/--nfcorpus
 override them) and writes docs/benchmark-results.svg. When a snapshot has 95% bootstrap
-CIs ("ci95"), they are drawn as error bars. Requires the [notebooks] extra (matplotlib).
+CIs ("ci95"), they are drawn as error bars; a snapshot without them (an older run) gets
+no error bar and a "no CI" label, not a zero-width interval that would read as
+"no uncertainty". Requires the [notebooks] extra (matplotlib).
 
     python -m eval.plot_benchmark
 """
@@ -48,19 +50,23 @@ def main() -> None:
     ap.add_argument("--output", type=Path, default=ROOT / "docs" / "benchmark-results.svg")
     args = ap.parse_args()
 
-    corpora = []
+    corpora, with_ci = [], []
     ndcg = {k: [] for k in COLORS}
-    err = {k: ([], []) for k in COLORS}  # (below, above) the mean, for yerr
+    err = {k: ([], []) for k in COLORS}  # (below, above) the mean, for yerr; NaN = no CI
     for opt, label, _ in SOURCES:
         data = _load(getattr(args, opt))
+        stacks = data["stacks"].values()
+        with_ci.append(all("ci95" in m for m in stacks))
         corpora.append(label)
         for sname, m in data["stacks"].items():
             kind, mean = _kind(sname), m["ndcg@10"]
-            lo, hi = m.get("ci95", {}).get("ndcg@10", (mean, mean))
+            lo, hi = m.get("ci95", {}).get("ndcg@10", (np.nan, np.nan))
             ndcg[kind].append(mean)
-            err[kind][0].append(max(0.0, mean - lo))
-            err[kind][1].append(max(0.0, hi - mean))
-    has_ci = any(v for below, above in err.values() for v in below + above)
+            err[kind][0].append(max(0.0, mean - lo) if with_ci[-1] else np.nan)
+            err[kind][1].append(max(0.0, hi - mean) if with_ci[-1] else np.nan)
+    has_ci = any(with_ci)
+    if has_ci:  # mixed old/new snapshots: say which corpora have no interval
+        corpora = [c if ci else f"{c}\n(no CI)" for c, ci in zip(corpora, with_ci)]
 
     x = np.arange(len(corpora))
     width = 0.25
@@ -78,7 +84,9 @@ def main() -> None:
     ax.set_xticklabels(corpora)
     ax.set_ylabel("nDCG@10 (higher = better)")
     ax.set_ylim(0, 1)
-    ci_note = "; error bars = 95% bootstrap CI over queries" if has_ci else ""
+    ci_note = ("; no CI in these snapshots" if not has_ci
+               else "; error bars = 95% bootstrap CI over queries"
+               + ("" if all(with_ci) else ", where the snapshot has one"))
     ax.set_title("Retrieval: nDCG@10 by corpus and architecture\n"
                  f"(BEIR benchmarks, human relevance judgments{ci_note})", fontsize=10)
     ax.legend(fontsize=9)
