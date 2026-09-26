@@ -5,12 +5,12 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Environnements / secrets
+# Environments / secrets
 .venv/
 venv/
 .env
 
-# Artefacts de données (régénérés)
+# Data artifacts (regenerated)
 data/corpus/*
 !data/corpus/.gitkeep
 *.faiss
@@ -20,15 +20,16 @@ data/corpus/*
 # macOS
 .DS_Store
 
-# Sorties générées (régénérées par les évals) ; on garde les jeux fixes + baselines
+# Scratch eval outputs (regenerated); keep the fixed sets + baselines.
+# Committed snapshots live in eval/reference/.
 eval/*.json
 !eval/questions.json
 !eval/golden_corpus.json
 !eval/baselines.json
 
-# Fichiers perso (non versionnés)
+# Personal files (not versioned)
 slides_prompts.md
 youtube_metadata.md
 
-# Notebooks pédagogiques FR — gardés en local, hors du repo public (série YouTube)
+# French teaching notebooks — kept local, out of the public repo
 notebooks/
