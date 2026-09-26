@@ -5,72 +5,95 @@
     "embedder": "all-MiniLM-L6-v2",
     "n_queries": 200,
     "k": 10,
-    "repeats": 3
+    "repeats": 3,
+    "provenance": {
+      "git_sha": "5d4cce983f45a48727fc1b99ddfcaaca427540c7",
+      "git_dirty": false,
+      "dirty_files": [],
+      "diff_sha": null,
+      "timestamp": "2026-09-26T06:18:27+00:00",
+      "python": "3.11.3",
+      "platform": "macOS-26.6",
+      "packages": {
+        "faiss-cpu": "1.15.1",
+        "sentence-transformers": "6.1.0",
+        "torch": "2.14.0",
+        "transformers": "5.17.0",
+        "spacy": "3.8.16",
+        "en-core-web-sm": "3.8.0",
+        "rank-bm25": "0.2.2",
+        "numpy": "2.4.6",
+        "networkx": "3.6.1",
+        "datasets": "5.0.1"
+      },
+      "finished": "2026-09-26T06:24:58+00:00",
+      "code_changed_during_run": false
+    }
   },
   "build_seconds": {
-    "shared_embed_faiss": 44.96,
-    "embed": 44.95,
-    "faiss": 0.01,
-    "vector_total": 44.96,
-    "hybrid_total": 63.44,
-    "hybrid_bm25": 18.48,
-    "graph_total": 225.42,
-    "graph_ner_build": 180.42
+    "shared_embed_faiss": 43.04,
+    "embed": 43.02,
+    "faiss": 0.02,
+    "vector_total": 43.04,
+    "hybrid_total": 61.66,
+    "hybrid_bm25": 18.63,
+    "graph_total": 222.22,
+    "graph_ner_build": 179.13
   },
   "build_memory_mb": {
     "faiss_vectors_mb": 8.0,
-    "shared_embed_faiss_peak_mb": 20.4,
+    "shared_embed_faiss_peak_mb": 372.7,
     "hybrid_bm25_peak_mb": 0.0,
-    "graph_peak_mb": 68.8,
-    "process_peak_mb": 603.5
+    "graph_peak_mb": 0.0,
+    "process_peak_mb": 571.2
   },
   "stacks": {
     "vector": {
       "ndcg@10": 0.6484,
       "latency": {
-        "median_ms": 8.71,
-        "p95_ms": 12.01,
-        "p99_ms": 14.99,
-        "mean_ms": 9.15,
+        "median_ms": 7.83,
+        "p95_ms": 8.65,
+        "p99_ms": 9.21,
+        "mean_ms": 7.93,
         "n_calls": 600
       },
       "throughput_qps": {
-        "1": 92.9,
-        "2": 119.9,
-        "4": 123.3,
-        "8": 129.1
+        "1": 124.1,
+        "2": 131.3,
+        "4": 137.9,
+        "8": 137.0
       }
     },
     "hybrid": {
-      "ndcg@10": 0.7108,
+      "ndcg@10": 0.7095,
       "latency": {
-        "median_ms": 16.79,
-        "p95_ms": 24.12,
-        "p99_ms": 27.15,
-        "mean_ms": 17.57,
+        "median_ms": 15.61,
+        "p95_ms": 21.84,
+        "p99_ms": 24.08,
+        "mean_ms": 16.06,
         "n_calls": 600
       },
       "throughput_qps": {
-        "1": 54.8,
-        "2": 58.3,
-        "4": 61.5,
-        "8": 58.4
+        "1": 61.8,
+        "2": 66.3,
+        "4": 67.6,
+        "8": 64.0
       }
     },
     "graph": {
-      "ndcg@10": 0.6426,
+      "ndcg@10": 0.6429,
       "latency": {
-        "median_ms": 13.19,
-        "p95_ms": 18.39,
-        "p99_ms": 23.13,
-        "mean_ms": 13.89,
+        "median_ms": 11.84,
+        "p95_ms": 16.34,
+        "p99_ms": 18.13,
+        "mean_ms": 12.39,
         "n_calls": 600
       },
       "throughput_qps": {
-        "1": 67.4,
-        "2": 84.9,
-        "4": 89.7,
-        "8": 81.9
+        "1": 77.3,
+        "2": 97.7,
+        "4": 102.3,
+        "8": 70.6
       }
     }
   }
