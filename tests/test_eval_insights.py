@@ -105,6 +105,8 @@ def test_provenance_note():
     assert ei.provenance_note({}) == ""
     cfg = {"provenance": {"git_sha": "4308fe0da5bc20b5", "git_dirty": True}}
     assert ei.provenance_note(cfg) == " · code 4308fe0 + uncommitted changes"
+    cfg["provenance"] |= {"git_dirty": False, "code_changed_during_run": True}
+    assert ei.provenance_note(cfg) == " · code 4308fe0 (checkout changed during the run)"
 
 
 def test_label_runs_keeps_every_file_when_labels_collide():

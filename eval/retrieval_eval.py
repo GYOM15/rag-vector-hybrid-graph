@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from eval.provenance import run_metadata  # noqa: E402
+from eval.provenance import finish_metadata, run_metadata  # noqa: E402
 from eval.stats import bootstrap_ci  # noqa: E402
 
 KS = (1, 3, 5, 8, 10)
@@ -126,6 +126,7 @@ def check_golds(n_articles: int, data: list[dict] | None = None) -> list[dict]:
 def run(n_articles: int, output: Path, embedders: list[str]) -> dict:
     from pipeline import assemble_stacks
 
+    provenance = run_metadata()  # the code that runs is the code at the start
     data = _load_questions()
     types = [d.get("type", "?") for d in data]
     cats = sorted(set(types))
@@ -159,7 +160,7 @@ def run(n_articles: int, output: Path, embedders: list[str]) -> dict:
                    "ks": list(KS), "embedders": embedders, "hit_rule": HIT_RULE,
                    "unfindable_golds": [d["question"] for d in unfindable],
                    "ci": "95% percentile bootstrap over questions (10k resamples, seed 0)",
-                   "provenance": run_metadata()},
+                   "provenance": finish_metadata(provenance)},
         "results": results,
     }
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
