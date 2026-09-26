@@ -58,7 +58,8 @@ jobs:
         run: python -m eval.check_regression
 
       # Proves the guard can see each stack's own component break: disables Hybrid's
-      # BM25, Graph's query entities and Vector's query encoding in turn, and fails
-      # if check() does not flag the matching stack (a saturated guard would pass).
+      # BM25, Graph's query entities and Vector's query encoding in turn (whole, then
+      # for a single golden query), and fails if the guard does not flag the matching
+      # stack (a saturated guard, or a mean that absorbs one query, would pass).
       - name: Regression guard self-test (ablations)
         run: python -m eval.check_regression --self-test
