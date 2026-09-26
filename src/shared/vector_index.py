@@ -46,36 +46,50 @@ class FaissIndexer:
         """Number of vectors currently in the index."""
         return self.index.ntotal
 
+    @staticmethod
+    def _paths(path: str) -> tuple[Path, Path, Path]:
+        """Files of the prefix `path`: suffixes are appended, not substituted —
+        with_suffix() would truncate a dotted prefix ("index.v2" -> "index.faiss")."""
+        base = str(path)
+        return Path(base + ".faiss"), Path(base + ".chunks.json"), Path(base + ".meta.json")
+
     def save(self, path: str):
         """Persist the index to disk: {path}.faiss, .chunks.json, .meta.json."""
-        base = Path(path)
-        base.parent.mkdir(parents=True, exist_ok=True)
+        index_path, chunks_path, meta_path = self._paths(path)
+        index_path.parent.mkdir(parents=True, exist_ok=True)
 
-        faiss.write_index(self.index, str(base.with_suffix(".faiss")))
+        faiss.write_index(self.index, str(index_path))
 
-        with open(base.with_suffix(".chunks.json"), "w", encoding="utf-8") as f:
+        with open(chunks_path, "w", encoding="utf-8") as f:
             json.dump(self.chunks, f, ensure_ascii=False)
 
-        with open(base.with_suffix(".meta.json"), "w", encoding="utf-8") as f:
+        with open(meta_path, "w", encoding="utf-8") as f:
             json.dump(self.metadata, f, ensure_ascii=False)
 
     def load(self, path: str):
-        """Reload a saved index (same prefix as save())."""
-        base = Path(path)
+        """Reload a saved index (same prefix as save()).
 
-        index_path = base.with_suffix(".faiss")
-        chunks_path = base.with_suffix(".chunks.json")
-        meta_path = base.with_suffix(".meta.json")
+        Raises ValueError if the three files are not aligned (same number of
+        vectors, chunks and metadata entries) — results are looked up by position.
+        """
+        index_path, chunks_path, meta_path = self._paths(path)
 
         for p in (index_path, chunks_path, meta_path):
             if not p.exists():
                 raise FileNotFoundError(f"Required file not found: {p}")
 
-        self.index = faiss.read_index(str(index_path))
-        self.dimension = self.index.d
+        index = faiss.read_index(str(index_path))
 
         with open(chunks_path, encoding="utf-8") as f:
-            self.chunks = json.load(f)
+            chunks = json.load(f)
 
         with open(meta_path, encoding="utf-8") as f:
-            self.metadata = json.load(f)
+            metadata = json.load(f)
+
+        if not index.ntotal == len(chunks) == len(metadata):
+            raise ValueError(
+                f"Misaligned index files for {path!r}: {index.ntotal} vectors, "
+                f"{len(chunks)} chunks, {len(metadata)} metadata entries."
+            )
+        self.index, self.chunks, self.metadata = index, chunks, metadata
+        self.dimension = index.d

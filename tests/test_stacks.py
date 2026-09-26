@@ -37,7 +37,7 @@ def test_rrf_combines_across_lists():
     # 5 is first in both rankings -> best combined score.
     fused = reciprocal_rank_fusion([[5, 1, 2], [5, 3, 4]])
     assert max(fused, key=fused.get) == 5
-    assert fused[5] == 2 / 60  # 1/(60+0) counted twice
+    assert fused[5] == 2 / 61  # 1/(60+1) counted twice (1-based ranks, standard RRF)
 
 
 def test_rrf_empty():
@@ -45,7 +45,7 @@ def test_rrf_empty():
 
 
 def test_rrf_k_parameter():
-    assert reciprocal_rank_fusion([[7]], rrf_k=9)[7] == 1 / 9
+    assert reciprocal_rank_fusion([[7]], rrf_k=9)[7] == 1 / 10  # 1/(rrf_k + rank 1)
 
 
 # ---------------------------------------------------------------------------
@@ -86,6 +86,18 @@ def test_tokenize_removes_stopwords():
 def test_tokenize_stems_plurals():
     assert tokenize("plants") == tokenize("plant")
     assert tokenize("diseases") == tokenize("disease")
+
+
+def test_tokenize_keeps_non_ascii_words_whole():
+    # An ASCII-only pattern cut "café" into a bogus "caf" token.
+    assert tokenize("café") == ["café"]
+    assert tokenize("Zürich München") == tokenize("zürich münchen")
+    assert "caf" not in tokenize("un café noir")
+
+
+def test_tokenize_normalizes_unicode_and_drops_underscores():
+    assert tokenize("cafe\u0301") == tokenize("café")  # decomposed accent (NFD) == NFC
+    assert tokenize("foo_bar") == tokenize("foo bar")  # underscore is a separator
 
 
 # ---------------------------------------------------------------------------

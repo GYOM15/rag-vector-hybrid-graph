@@ -40,12 +40,13 @@ class CrossEncoderReranker:
         scores = _model(self.model_name).predict([(query, c["text"]) for c in candidates])
         ce_order = sorted(range(len(candidates)), key=lambda i: scores[i], reverse=True)
         if mode == "fusion":
+            # 1-based ranks, as in standard RRF: base rank = input position + 1.
             ce_rank = [0] * len(candidates)
-            for rank, i in enumerate(ce_order):
+            for rank, i in enumerate(ce_order, start=1):
                 ce_rank[i] = rank
             order = sorted(
                 range(len(candidates)),
-                key=lambda i: 1.0 / (rrf_k + i) + 1.0 / (rrf_k + ce_rank[i]),
+                key=lambda i: 1.0 / (rrf_k + i + 1) + 1.0 / (rrf_k + ce_rank[i]),
                 reverse=True,
             )
         else:

@@ -44,8 +44,18 @@ def test_default_mode_is_replace(monkeypatch):
 def test_fusion_blends_base_rank(monkeypatch):
     _patch(monkeypatch, _SCORES)
     out = CrossEncoderReranker().rerank("q", _CANDS, top_k=4, mode="fusion", rrf_k=1)
-    # the base rank lifts 'b' ahead of 'd' (which the cross-encoder alone placed above)
+    # 1-based ranks, rrf_k=1: a=1/2+1/2, c=1/4+1/3, b=1/3+1/5, d=1/5+1/4
+    # -> the base rank lifts 'b' ahead of 'd' (which the cross-encoder alone placed above)
     assert [c["text"] for c in out] == ["a", "c", "b", "d"]
+
+
+def test_fusion_uses_one_based_ranks(monkeypatch):
+    # Base order x, y, p, q, r; cross-encoder order p, q, y, r, x. With rrf_k=5 and
+    # 1-based ranks: y = 1/7 + 1/8 > x = 1/6 + 1/10 (0-based ranks would flip them).
+    cands = [{"text": t} for t in ("x", "y", "p", "q", "r")]
+    _patch(monkeypatch, [0.1, 0.7, 0.9, 0.8, 0.5])
+    out = CrossEncoderReranker().rerank("q", cands, top_k=5, mode="fusion", rrf_k=5)
+    assert [c["text"] for c in out] == ["p", "y", "x", "q", "r"]
 
 
 def test_fusion_differs_from_replace(monkeypatch):

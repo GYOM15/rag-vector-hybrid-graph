@@ -4,13 +4,17 @@
 2. Entities of the *query* (spaCy) -> matching graph nodes.
 3. Linked chunks: mentioning those entities (MENTIONS) or neighboring entities
    (RELATED_TO, 1 hop, weighted more lightly).
-Score = vector similarity + entity overlap weighted by **IDF**
+Every candidate (vector seed or entity-linked chunk) gets the same score:
+its *real* cosine similarity + _GRAPH_WEIGHT * entity overlap weighted by **IDF**
 (rare entities count more -> neutralizes "Plant", "Role", etc.),
 **normalized by the chunk's entity richness**: without it, a "hub" document
 (e.g. the "June" page citing dozens of countries) accumulates a huge additive
-boost and displaces the real chunks as the corpus grows. The
-sqrt(num entities) normalization — analogous to BM25 length normalization — favors
-*focused* chunks and lets vector similarity decide.
+boost and displaces the real chunks as the corpus grows. The power-law
+normalization (num entities ** 0.75 by default) — analogous to BM25 length
+normalization — favors *focused* chunks and lets vector similarity decide.
+Chunks reached only through the graph need their own cosine (not 0): otherwise they
+barely enter the top-k and the top-10 changes with k. With max(_VEC_SEEDS, k) seeds,
+the result is then exactly the top-k of that score over the whole corpus.
 Falls back to pure vector if the query has no known entity.
 """
 
@@ -30,7 +34,8 @@ _GRAPH_WEIGHT = 0.3      # weight of the graph signal vs vector similarity
 
 # Normalization of the entity boost by chunk richness: we divide by f(num entities).
 # "none" = naive version ("hub" documents rich in entities grab the boost and
-# displace focused chunks). sqrt (default) = analogous to BM25 length normalization.
+# displace focused chunks). The power laws (sqrt, p75 = default) are analogous to
+# BM25 length normalization.
 # Single knob, swept on a *held-out* split (cf. eval/sweep_entity_norm.py) — not
 # tuned on the test set. All forms are >= 1 for n >= 1 (never any amplification).
 _ENTITY_NORMS = {
@@ -45,8 +50,9 @@ _DEFAULT_ENTITY_NORM = "p75"  # chosen by held-out sweep (eval/sweep_entity_norm
 
 
 class GraphRetriever:
-    """Entity local search: vector seeds + entity-linked chunks,
-    scored by vector similarity + IDF-weighted entity overlap."""
+    """Entity local search: vector seeds + entity-linked chunks, all scored by
+    cosine similarity + IDF-weighted entity overlap (normalized by `entity_norm`,
+    p75 by default)."""
 
     def __init__(self, indexer: FaissIndexer, embedding_model: EmbeddingModel, graph,
                  entity_norm: str = _DEFAULT_ENTITY_NORM):
@@ -55,17 +61,25 @@ class GraphRetriever:
         self.graph = graph
         self._idf = self._compute_idf()
         self._chunk_n_entities = self._count_chunk_entities()
-        self._norm = _ENTITY_NORMS.get(entity_norm, _ENTITY_NORMS[_DEFAULT_ENTITY_NORM])
+        if entity_norm not in _ENTITY_NORMS:
+            raise ValueError(
+                f"Unknown entity_norm {entity_norm!r}; expected one of {list(_ENTITY_NORMS)}."
+            )
+        self._norm = _ENTITY_NORMS[entity_norm]
 
     def search(self, query: str, k: int = 5) -> list[dict]:
         if self.indexer.size == 0:
             return []
 
-        scored = dict(self._vector_seeds(query, max(_VEC_SEEDS, k)))  # vector base
+        query_emb = self._encode_query(query)
+        scored = dict(self._vector_seeds(query_emb, max(_VEC_SEEDS, k)))  # vector base
+        candidates = self._entity_candidates(query)
+        # Chunks reached only through the graph get their real cosine too (uniform score).
+        scored.update(self._cosines(query_emb, [i for i, _, _ in candidates if i not in scored]))
         shared: dict[int, set] = {}
 
-        for chunk_idx, entities, boost in self._entity_candidates(query):
-            scored[chunk_idx] = scored.get(chunk_idx, 0.0) + _GRAPH_WEIGHT * boost
+        for chunk_idx, entities, boost in candidates:
+            scored[chunk_idx] += _GRAPH_WEIGHT * boost
             shared.setdefault(chunk_idx, set()).update(entities)
 
         top = sorted(scored.items(), key=lambda kv: kv[1], reverse=True)[:k]
@@ -134,13 +148,25 @@ class GraphRetriever:
         return [(idx, ents, boost / self._norm(self._chunk_n_entities.get(idx, 1) or 1))
                 for idx, (boost, ents) in contributions.items()]
 
-    def _vector_seeds(self, query: str, n: int) -> list[tuple[int, float]]:
-        """(idx, cosine similarity) of the n nearest chunks."""
+    def _encode_query(self, query: str) -> np.ndarray:
+        """L2-normalized query embedding, shape (1, dimension) — computed once per search."""
         query_emb = np.array([self.embedding_model.encode_query(query)], dtype=np.float32)
         faiss.normalize_L2(query_emb)
+        return query_emb
+
+    def _vector_seeds(self, query_emb: np.ndarray, n: int) -> list[tuple[int, float]]:
+        """(idx, cosine similarity) of the n nearest chunks."""
         n = min(n, self.indexer.size)
         scores, indices = self.indexer.index.search(query_emb, n)
         return [(int(i), float(s)) for s, i in zip(scores[0], indices[0]) if i != -1]
+
+    def _cosines(self, query_emb: np.ndarray, indices: list[int]) -> dict[int, float]:
+        """Exact cosine of arbitrary chunks: the index stores L2-normalized vectors
+        (IndexFlatIP), so a dot product with the normalized query is the cosine."""
+        if not indices:
+            return {}
+        vectors = self.indexer.index.reconstruct_batch(np.asarray(indices, dtype=np.int64))
+        return {idx: float(s) for idx, s in zip(indices, vectors @ query_emb[0])}
 
     def _build_result(self, idx: int, score: float, shared_entities: set | None) -> dict:
         metadata = dict(self.indexer.metadata[idx])
