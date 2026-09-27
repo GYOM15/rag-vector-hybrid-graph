@@ -9,8 +9,8 @@ its *real* cosine similarity + _GRAPH_WEIGHT * entity overlap weighted by **IDF*
 (rare entities count more -> neutralizes "Plant", "Role", etc.),
 **normalized by the chunk's entity richness**: without it, a "hub" document
 (e.g. the "June" page citing dozens of countries) accumulates a huge additive
-boost and displaces the real chunks as the corpus grows. The power-law
-normalization (num entities ** 0.75 by default) — analogous to BM25 length
+boost and displaces the real chunks as the corpus grows. Dividing the boost by the
+number of entities (linear normalization by default) — analogous to BM25 length
 normalization — favors *focused* chunks and lets vector similarity decide.
 Chunks reached only through the graph need their own cosine (not 0): otherwise they
 barely enter the top-k and the top-10 changes with k. With max(_VEC_SEEDS, k) seeds,
@@ -34,8 +34,8 @@ _GRAPH_WEIGHT = 0.3      # weight of the graph signal vs vector similarity
 
 # Normalization of the entity boost by chunk richness: we divide by f(num entities).
 # "none" = naive version ("hub" documents rich in entities grab the boost and
-# displace focused chunks). The power laws (sqrt, p75 = default) are analogous to
-# BM25 length normalization.
+# displace focused chunks). The power laws (sqrt, p75, linear = default) are analogous
+# to BM25 length normalization.
 # Single knob, swept on a *held-out* split (cf. eval/sweep_entity_norm.py) — not
 # tuned on the test set. All forms are >= 1 for n >= 1 (never any amplification).
 _ENTITY_NORMS = {
@@ -46,13 +46,15 @@ _ENTITY_NORMS = {
     "p75": lambda n: n ** 0.75,
     "linear": lambda n: float(n),
 }
-_DEFAULT_ENTITY_NORM = "p75"  # chosen by held-out sweep (eval/sweep_entity_norm.py)
+# Chosen by the held-out sweep (eval/sweep_entity_norm.py). p75 won before the scoring
+# fix; once entity-only chunks got their real cosine, linear edged it on validation.
+_DEFAULT_ENTITY_NORM = "linear"
 
 
 class GraphRetriever:
     """Entity local search: vector seeds + entity-linked chunks, all scored by
     cosine similarity + IDF-weighted entity overlap (normalized by `entity_norm`,
-    p75 by default)."""
+    linear by default)."""
 
     def __init__(self, indexer: FaissIndexer, embedding_model: EmbeddingModel, graph,
                  entity_norm: str = _DEFAULT_ENTITY_NORM):

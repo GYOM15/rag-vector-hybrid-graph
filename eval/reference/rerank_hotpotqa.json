@@ -4,32 +4,1657 @@
     "candidates": 30,
     "embedder": "all-MiniLM-L6-v2",
     "n_queries": 100,
-    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    "n_docs": 4937,
+    "corpus": "HotpotQA distractor (validation): union of the 10 paragraphs of the first 500 questions",
+    "reranker": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "ci": "95% percentile bootstrap over queries (10k resamples, seed 0)",
+    "provenance": {
+      "git_sha": "5d4cce983f45a48727fc1b99ddfcaaca427540c7",
+      "git_dirty": false,
+      "dirty_files": [],
+      "diff_sha": null,
+      "timestamp": "2026-09-26T07:12:13+00:00",
+      "python": "3.11.3",
+      "platform": "macOS-26.6",
+      "packages": {
+        "faiss-cpu": "1.15.1",
+        "sentence-transformers": "6.1.0",
+        "torch": "2.14.0",
+        "transformers": "5.17.0",
+        "spacy": "3.8.16",
+        "en-core-web-sm": "3.8.0",
+        "rank-bm25": "0.2.2",
+        "numpy": "2.4.6",
+        "networkx": "3.6.1",
+        "datasets": "5.0.1"
+      },
+      "finished": "2026-09-26T07:18:10+00:00",
+      "code_changed_during_run": false
+    }
   },
   "stacks": {
     "Vector": {
-      "ndcg_base": 0.7893,
-      "ndcg_replace": 0.8539,
-      "ndcg_fusion": 0.8227,
-      "delta_replace": 0.0646,
-      "delta_fusion": 0.0334,
-      "rerank_ms_per_query": 1702.2
+      "ndcg_base": 0.7466,
+      "ndcg_replace": 0.8241,
+      "ndcg_fusion": 0.7929,
+      "delta_replace": 0.0776,
+      "delta_fusion": 0.0463,
+      "rerank_ms_per_query": 346.5,
+      "n_queries": 100,
+      "ci95": {
+        "ndcg_base": [
+          0.7011,
+          0.791
+        ],
+        "ndcg_replace": [
+          0.7876,
+          0.859
+        ],
+        "ndcg_fusion": [
+          0.7526,
+          0.8312
+        ]
+      },
+      "paired": {
+        "delta_replace": {
+          "mean_diff": 0.0776,
+          "lo": 0.0477,
+          "hi": 0.1091,
+          "p_value": 0.0001,
+          "n": 100
+        },
+        "delta_fusion": {
+          "mean_diff": 0.0463,
+          "lo": 0.0274,
+          "hi": 0.0663,
+          "p_value": 0.0001,
+          "n": 100
+        }
+      },
+      "per_query": {
+        "5a8b57f25542995d1e6f1371": {
+          "base": 0.3869,
+          "replace": 0.3869,
+          "fusion": 0.3869
+        },
+        "5a8c7595554299585d9e36b6": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.6131
+        },
+        "5a85ea095542994775f606a8": {
+          "base": 0.6934,
+          "replace": 0.9197,
+          "fusion": 0.6934
+        },
+        "5adbf0a255429947ff17385a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8e3ea95542995a26add48d": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5abd94525542992ac4f382d2": {
+          "base": 0.6131,
+          "replace": 0.9197,
+          "fusion": 0.8175
+        },
+        "5a85b2d95542997b5ce40028": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a87ab905542996e4f3088c1": {
+          "base": 0.8772,
+          "replace": 0.6934,
+          "fusion": 0.6934
+        },
+        "5a7bbb64554299042af8f7cc": {
+          "base": 0.2641,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a8db19d5542994ba4e3dd00": {
+          "base": 0.6131,
+          "replace": 1.0,
+          "fusion": 0.8175
+        },
+        "5a7166395542994082a3e814": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a877e5d5542993e715abf7d": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab3b0bf5542992ade7c6e39": {
+          "base": 0.2641,
+          "replace": 0.3869,
+          "fusion": 0.3066
+        },
+        "5ab56e32554299637185c594": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab6d09255429954757d337d": {
+          "base": 0.4911,
+          "replace": 0.511,
+          "fusion": 0.5
+        },
+        "5a75e05c55429976ec32bc5f": {
+          "base": 0.7977,
+          "replace": 1.0,
+          "fusion": 0.8316
+        },
+        "5ab3e45655429976abd1bcd4": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.7904
+        },
+        "5ab29c24554299449642c932": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae0d4c9554299603e418468": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a8133725542995ce29dcbdb": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.8772
+        },
+        "5ae7a8175542993210983ed8": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae6050f55429929b0807a5e": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5adddccd5542997dc7907069": {
+          "base": 0.8175,
+          "replace": 0.8066,
+          "fusion": 0.8175
+        },
+        "5ae2070a5542994d89d5b313": {
+          "base": 0.8503,
+          "replace": 0.6934,
+          "fusion": 0.8772
+        },
+        "5ae22b8d554299234fd0440f": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a722b8655429971e9dc9329": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5adf37a95542995ec70e8f97": {
+          "base": 0.5641,
+          "replace": 0.6131,
+          "fusion": 0.7904
+        },
+        "5abd259d55429924427fcf1a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a828c8355429966c78a6a50": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5a8a3e745542996c9b8d5e70": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5ac23ff0554299636651994d": {
+          "base": 1.0,
+          "replace": 0.9197,
+          "fusion": 1.0
+        },
+        "5ae4a3265542995ad6573de5": {
+          "base": 0.9197,
+          "replace": 0.8772,
+          "fusion": 0.8772
+        },
+        "5ae0361155429925eb1afc2c": {
+          "base": 0.8316,
+          "replace": 0.6934,
+          "fusion": 0.8772
+        },
+        "5abc0a5d5542993f40c73c64": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7cc50e554299452d57ba3e": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 1.0
+        },
+        "5abf63f15542997ec76fd3ea": {
+          "base": 0.5438,
+          "replace": 0.511,
+          "fusion": 0.5912
+        },
+        "5a8ef2a75542995a26add583": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a80721b554299485f5985ef": {
+          "base": 0.6131,
+          "replace": 0.8066,
+          "fusion": 0.6131
+        },
+        "5ab51dae5542991779162d82": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7571135542992d0ec05f98": {
+          "base": 0.9197,
+          "replace": 0.8175,
+          "fusion": 0.9197
+        },
+        "5a7a0e1e5542990783324e1a": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5a74106b55429979e288289e": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a79311755429970f5fffe67": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ab2d3df554299194fa9352c": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a760ab65542994ccc918697": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a7d54165542995f4f402256": {
+          "base": 0.8066,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5ab859a955429934fafe6d7b": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5add61d65542995b365fab21": {
+          "base": 0.2641,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a8e068b5542995085b37384": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5abbf698554299114383a0b5": {
+          "base": 0.9197,
+          "replace": 0.8503,
+          "fusion": 0.9197
+        },
+        "5a8e1027554299653c1aa15f": {
+          "base": 0.2372,
+          "replace": 0.3618,
+          "fusion": 0.3816
+        },
+        "5ab84bf555429916710eb01f": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a77724455429972597f153e": {
+          "base": 1.0,
+          "replace": 0.8316,
+          "fusion": 0.8772
+        },
+        "5a87c13f5542996e4f30890c": {
+          "base": 0.2372,
+          "replace": 0.9197,
+          "fusion": 0.7977
+        },
+        "5ab96ab755429970cfb8eacd": {
+          "base": 0.8066,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5a8a43eb5542996c9b8d5e82": {
+          "base": 0.6131,
+          "replace": 0.8175,
+          "fusion": 0.6131
+        },
+        "5ae73acb5542991e8301cc07": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7320565542991f9a20c61d": {
+          "base": 0.8503,
+          "replace": 0.9197,
+          "fusion": 0.8772
+        },
+        "5ae32e125542991a06ce9946": {
+          "base": 0.3869,
+          "replace": 0.511,
+          "fusion": 0.3869
+        },
+        "5adc53f75542996e6852530a": {
+          "base": 0.5438,
+          "replace": 0.5912,
+          "fusion": 0.5438
+        },
+        "5a8b20335542996c9b8d5fb3": {
+          "base": 0.4486,
+          "replace": 0.6934,
+          "fusion": 0.525
+        },
+        "5a85fb085542994775f606de": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a7be2595542997c3ec972ac": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a77152355429966f1a36c2e": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a8f4c8d554299458435d5a3": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a80840f554299485f59863b": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8361b65542992ef85e22a0": {
+          "base": 0.6131,
+          "replace": 1.0,
+          "fusion": 0.7904
+        },
+        "5ae7ba7a5542993210983f12": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ac2acff55429921a00ab02b": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5aba7cfe554299232ef4a2fd": {
+          "base": 0.8175,
+          "replace": 0.8175,
+          "fusion": 0.8175
+        },
+        "5ae5aba0554299546bf82f17": {
+          "base": 0.5912,
+          "replace": 0.5912,
+          "fusion": 0.5912
+        },
+        "5ae1f4cb554299234fd0436d": {
+          "base": 0.8066,
+          "replace": 0.8316,
+          "fusion": 0.8503
+        },
+        "5ae7e1fc55429952e35ea9cc": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae37c765542992f92d822d4": {
+          "base": 0.3869,
+          "replace": 0.8772,
+          "fusion": 0.5803
+        },
+        "5ae33c4d5542992f92d82262": {
+          "base": 0.6131,
+          "replace": 0.9197,
+          "fusion": 0.8066
+        },
+        "5a77cb335542997042120b3a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8979f4554299669944a52e": {
+          "base": 0.7977,
+          "replace": 0.7977,
+          "fusion": 0.8175
+        },
+        "5a713ea95542994082a3e6e4": {
+          "base": 0.6131,
+          "replace": 1.0,
+          "fusion": 0.8175
+        },
+        "5a78bd9b554299078472774a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7625e8554299109176e66a": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.7904
+        },
+        "5ae2dd2055429928c423950d": {
+          "base": 0.8772,
+          "replace": 0.8316,
+          "fusion": 0.8772
+        },
+        "5abdf12255429976d4830a2f": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a88658955429938390d3f47": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a86ebac55429960ec39b6d6": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5aba5d2e55429901930fa799": {
+          "base": 1.0,
+          "replace": 0.8316,
+          "fusion": 0.9197
+        },
+        "5ae5736e5542990ba0bbb2b3": {
+          "base": 1.0,
+          "replace": 0.9197,
+          "fusion": 1.0
+        },
+        "5ae005b555429942ec259bec": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a7759fc5542993569682d60": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a835478554299123d8c20ed": {
+          "base": 0.8175,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5aba749055429901930fa7d8": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5abfb3425542990832d3a1c0": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ac3165c5542995ef918c10a": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ae53b545542990ba0bbb23c": {
+          "base": 0.3066,
+          "replace": 0.7977,
+          "fusion": 0.6131
+        },
+        "5ae224da554299234fd043ee": {
+          "base": 0.6934,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5ae2b770554299495565db0f": {
+          "base": 0.6131,
+          "replace": 0.9197,
+          "fusion": 0.8066
+        },
+        "5a80b3a9554299485f5986cc": {
+          "base": 0.7904,
+          "replace": 0.525,
+          "fusion": 0.5912
+        },
+        "5a8e0a005542995085b373a1": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ac1b8ee5542994d76dccedc": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5adccd795542990d50227d2c": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a84c4135542994c784dda31": {
+          "base": 0.7977,
+          "replace": 0.6131,
+          "fusion": 0.7977
+        }
+      }
     },
     "Hybrid": {
-      "ndcg_base": 0.8063,
-      "ndcg_replace": 0.86,
-      "ndcg_fusion": 0.8269,
-      "delta_replace": 0.0537,
-      "delta_fusion": 0.0206,
-      "rerank_ms_per_query": 677.7
+      "ndcg_base": 0.7677,
+      "ndcg_replace": 0.8479,
+      "ndcg_fusion": 0.8152,
+      "delta_replace": 0.0802,
+      "delta_fusion": 0.0474,
+      "rerank_ms_per_query": 366.3,
+      "n_queries": 100,
+      "ci95": {
+        "ndcg_base": [
+          0.7249,
+          0.8091
+        ],
+        "ndcg_replace": [
+          0.8137,
+          0.8814
+        ],
+        "ndcg_fusion": [
+          0.7777,
+          0.8513
+        ]
+      },
+      "paired": {
+        "delta_replace": {
+          "mean_diff": 0.0802,
+          "lo": 0.0482,
+          "hi": 0.1144,
+          "p_value": 0.0001,
+          "n": 100
+        },
+        "delta_fusion": {
+          "mean_diff": 0.0474,
+          "lo": 0.025,
+          "hi": 0.0715,
+          "p_value": 0.0002,
+          "n": 100
+        }
+      },
+      "per_query": {
+        "5a8b57f25542995d1e6f1371": {
+          "base": 0.2372,
+          "replace": 0.9197,
+          "fusion": 0.6241
+        },
+        "5a8c7595554299585d9e36b6": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a85ea095542994775f606a8": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5adbf0a255429947ff17385a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8e3ea95542995a26add48d": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5abd94525542992ac4f382d2": {
+          "base": 0.8066,
+          "replace": 0.9197,
+          "fusion": 0.8316
+        },
+        "5a85b2d95542997b5ce40028": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a87ab905542996e4f3088c1": {
+          "base": 0.9197,
+          "replace": 0.6934,
+          "fusion": 0.6934
+        },
+        "5a7bbb64554299042af8f7cc": {
+          "base": 0.3869,
+          "replace": 1.0,
+          "fusion": 0.8772
+        },
+        "5a8db19d5542994ba4e3dd00": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7166395542994082a3e814": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a877e5d5542993e715abf7d": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab3b0bf5542992ade7c6e39": {
+          "base": 0.5714,
+          "replace": 0.9197,
+          "fusion": 0.8503
+        },
+        "5ab56e32554299637185c594": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab6d09255429954757d337d": {
+          "base": 0.4911,
+          "replace": 0.511,
+          "fusion": 0.4911
+        },
+        "5a75e05c55429976ec32bc5f": {
+          "base": 0.8175,
+          "replace": 1.0,
+          "fusion": 0.8772
+        },
+        "5ab3e45655429976abd1bcd4": {
+          "base": 0.7904,
+          "replace": 0.7904,
+          "fusion": 0.7904
+        },
+        "5ab29c24554299449642c932": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5ae0d4c9554299603e418468": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a8133725542995ce29dcbdb": {
+          "base": 0.8503,
+          "replace": 0.9197,
+          "fusion": 0.8772
+        },
+        "5ae7a8175542993210983ed8": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae6050f55429929b0807a5e": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5adddccd5542997dc7907069": {
+          "base": 0.8066,
+          "replace": 0.8066,
+          "fusion": 0.8066
+        },
+        "5ae2070a5542994d89d5b313": {
+          "base": 0.4825,
+          "replace": 0.6934,
+          "fusion": 0.6509
+        },
+        "5ae22b8d554299234fd0440f": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a722b8655429971e9dc9329": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5adf37a95542995ec70e8f97": {
+          "base": 0.3066,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5abd259d55429924427fcf1a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a828c8355429966c78a6a50": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5a8a3e745542996c9b8d5e70": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5ac23ff0554299636651994d": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5ae4a3265542995ad6573de5": {
+          "base": 0.6509,
+          "replace": 0.8503,
+          "fusion": 0.8772
+        },
+        "5ae0361155429925eb1afc2c": {
+          "base": 0.8503,
+          "replace": 0.6934,
+          "fusion": 0.8772
+        },
+        "5abc0a5d5542993f40c73c64": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7cc50e554299452d57ba3e": {
+          "base": 0.6934,
+          "replace": 0.9197,
+          "fusion": 0.6934
+        },
+        "5abf63f15542997ec76fd3ea": {
+          "base": 0.6241,
+          "replace": 0.511,
+          "fusion": 0.4825
+        },
+        "5a8ef2a75542995a26add583": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a80721b554299485f5985ef": {
+          "base": 0.7904,
+          "replace": 0.8066,
+          "fusion": 0.7977
+        },
+        "5ab51dae5542991779162d82": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7571135542992d0ec05f98": {
+          "base": 0.6131,
+          "replace": 0.7977,
+          "fusion": 0.8066
+        },
+        "5a7a0e1e5542990783324e1a": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5a74106b55429979e288289e": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a79311755429970f5fffe67": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ab2d3df554299194fa9352c": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a760ab65542994ccc918697": {
+          "base": 0.6131,
+          "replace": 0.8772,
+          "fusion": 0.8066
+        },
+        "5a7d54165542995f4f402256": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab859a955429934fafe6d7b": {
+          "base": 0.6131,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5add61d65542995b365fab21": {
+          "base": 0.6131,
+          "replace": 0.8066,
+          "fusion": 0.6131
+        },
+        "5a8e068b5542995085b37384": {
+          "base": 0.6241,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5abbf698554299114383a0b5": {
+          "base": 0.9197,
+          "replace": 0.8503,
+          "fusion": 0.8772
+        },
+        "5a8e1027554299653c1aa15f": {
+          "base": 0.4838,
+          "replace": 0.3618,
+          "fusion": 0.3816
+        },
+        "5ab84bf555429916710eb01f": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a77724455429972597f153e": {
+          "base": 0.3066,
+          "replace": 0.8316,
+          "fusion": 0.5714
+        },
+        "5a87c13f5542996e4f30890c": {
+          "base": 0.4228,
+          "replace": 0.9197,
+          "fusion": 0.6509
+        },
+        "5ab96ab755429970cfb8eacd": {
+          "base": 0.7977,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5a8a43eb5542996c9b8d5e82": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ae73acb5542991e8301cc07": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7320565542991f9a20c61d": {
+          "base": 0.8772,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5ae32e125542991a06ce9946": {
+          "base": 0.2641,
+          "replace": 0.3066,
+          "fusion": 0.3066
+        },
+        "5adc53f75542996e6852530a": {
+          "base": 0.4228,
+          "replace": 0.5912,
+          "fusion": 0.4685
+        },
+        "5a8b20335542996c9b8d5fb3": {
+          "base": 0.5714,
+          "replace": 0.6934,
+          "fusion": 0.6053
+        },
+        "5a85fb085542994775f606de": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a7be2595542997c3ec972ac": {
+          "base": 0.5706,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5a77152355429966f1a36c2e": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a8f4c8d554299458435d5a3": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a80840f554299485f59863b": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8361b65542992ef85e22a0": {
+          "base": 0.7904,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5ae7ba7a5542993210983f12": {
+          "base": 0.8772,
+          "replace": 0.6131,
+          "fusion": 0.7977
+        },
+        "5ac2acff55429921a00ab02b": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5aba7cfe554299232ef4a2fd": {
+          "base": 0.8066,
+          "replace": 0.8175,
+          "fusion": 0.8066
+        },
+        "5ae5aba0554299546bf82f17": {
+          "base": 0.525,
+          "replace": 0.5912,
+          "fusion": 0.4825
+        },
+        "5ae1f4cb554299234fd0436d": {
+          "base": 0.9197,
+          "replace": 0.7904,
+          "fusion": 0.8316
+        },
+        "5ae7e1fc55429952e35ea9cc": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae37c765542992f92d822d4": {
+          "base": 0.3869,
+          "replace": 0.8772,
+          "fusion": 0.5803
+        },
+        "5ae33c4d5542992f92d82262": {
+          "base": 0.8503,
+          "replace": 0.9197,
+          "fusion": 0.8503
+        },
+        "5a77cb335542997042120b3a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8979f4554299669944a52e": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.7977
+        },
+        "5a713ea95542994082a3e6e4": {
+          "base": 1.0,
+          "replace": 0.8772,
+          "fusion": 1.0
+        },
+        "5a78bd9b554299078472774a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7625e8554299109176e66a": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.7904
+        },
+        "5ae2dd2055429928c423950d": {
+          "base": 0.9197,
+          "replace": 0.8316,
+          "fusion": 0.9197
+        },
+        "5abdf12255429976d4830a2f": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a88658955429938390d3f47": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a86ebac55429960ec39b6d6": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5aba5d2e55429901930fa799": {
+          "base": 0.9197,
+          "replace": 0.8316,
+          "fusion": 0.8503
+        },
+        "5ae5736e5542990ba0bbb2b3": {
+          "base": 1.0,
+          "replace": 0.9197,
+          "fusion": 1.0
+        },
+        "5ae005b555429942ec259bec": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a7759fc5542993569682d60": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a835478554299123d8c20ed": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5aba749055429901930fa7d8": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5abfb3425542990832d3a1c0": {
+          "base": 0.6131,
+          "replace": 0.8772,
+          "fusion": 0.8503
+        },
+        "5ac3165c5542995ef918c10a": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ae53b545542990ba0bbb23c": {
+          "base": 0.6131,
+          "replace": 0.7977,
+          "fusion": 0.7904
+        },
+        "5ae224da554299234fd043ee": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae2b770554299495565db0f": {
+          "base": 0.8316,
+          "replace": 0.9197,
+          "fusion": 0.8772
+        },
+        "5a80b3a9554299485f5986cc": {
+          "base": 0.8175,
+          "replace": 0.525,
+          "fusion": 0.5912
+        },
+        "5a8e0a005542995085b373a1": {
+          "base": 0.6131,
+          "replace": 0.8503,
+          "fusion": 0.6131
+        },
+        "5ac1b8ee5542994d76dccedc": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5adccd795542990d50227d2c": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a84c4135542994c784dda31": {
+          "base": 0.8066,
+          "replace": 0.6131,
+          "fusion": 0.7904
+        }
+      }
     },
     "Graph": {
-      "ndcg_base": 0.7687,
-      "ndcg_replace": 0.8555,
-      "ndcg_fusion": 0.8151,
-      "delta_replace": 0.0868,
-      "delta_fusion": 0.0464,
-      "rerank_ms_per_query": 1122.3
+      "ndcg_base": 0.7445,
+      "ndcg_replace": 0.8354,
+      "ndcg_fusion": 0.8024,
+      "delta_replace": 0.0909,
+      "delta_fusion": 0.0579,
+      "rerank_ms_per_query": 338.1,
+      "n_queries": 100,
+      "ci95": {
+        "ndcg_base": [
+          0.7042,
+          0.7848
+        ],
+        "ndcg_replace": [
+          0.8015,
+          0.8693
+        ],
+        "ndcg_fusion": [
+          0.7652,
+          0.8391
+        ]
+      },
+      "paired": {
+        "delta_replace": {
+          "mean_diff": 0.0909,
+          "lo": 0.0608,
+          "hi": 0.1217,
+          "p_value": 0.0001,
+          "n": 100
+        },
+        "delta_fusion": {
+          "mean_diff": 0.0579,
+          "lo": 0.0375,
+          "hi": 0.0801,
+          "p_value": 0.0001,
+          "n": 100
+        }
+      },
+      "per_query": {
+        "5a8b57f25542995d1e6f1371": {
+          "base": 0.5714,
+          "replace": 0.9197,
+          "fusion": 0.6509
+        },
+        "5a8c7595554299585d9e36b6": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.6131
+        },
+        "5a85ea095542994775f606a8": {
+          "base": 0.6934,
+          "replace": 0.9197,
+          "fusion": 0.6934
+        },
+        "5adbf0a255429947ff17385a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8e3ea95542995a26add48d": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5abd94525542992ac4f382d2": {
+          "base": 0.7904,
+          "replace": 0.9197,
+          "fusion": 0.8175
+        },
+        "5a85b2d95542997b5ce40028": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a87ab905542996e4f3088c1": {
+          "base": 0.8772,
+          "replace": 0.6934,
+          "fusion": 0.6934
+        },
+        "5a7bbb64554299042af8f7cc": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a8db19d5542994ba4e3dd00": {
+          "base": 0.3869,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5a7166395542994082a3e814": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a877e5d5542993e715abf7d": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab3b0bf5542992ade7c6e39": {
+          "base": 0.5912,
+          "replace": 0.9197,
+          "fusion": 0.8503
+        },
+        "5ab56e32554299637185c594": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab6d09255429954757d337d": {
+          "base": 0.525,
+          "replace": 0.511,
+          "fusion": 0.525
+        },
+        "5a75e05c55429976ec32bc5f": {
+          "base": 0.8503,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ab3e45655429976abd1bcd4": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.7904
+        },
+        "5ab29c24554299449642c932": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae0d4c9554299603e418468": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a8133725542995ce29dcbdb": {
+          "base": 0.6934,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5ae7a8175542993210983ed8": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae6050f55429929b0807a5e": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5adddccd5542997dc7907069": {
+          "base": 0.8175,
+          "replace": 0.8066,
+          "fusion": 0.8175
+        },
+        "5ae2070a5542994d89d5b313": {
+          "base": 0.8772,
+          "replace": 0.6934,
+          "fusion": 0.8772
+        },
+        "5ae22b8d554299234fd0440f": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a722b8655429971e9dc9329": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5adf37a95542995ec70e8f97": {
+          "base": 0.5641,
+          "replace": 0.6131,
+          "fusion": 0.7904
+        },
+        "5abd259d55429924427fcf1a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a828c8355429966c78a6a50": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5a8a3e745542996c9b8d5e70": {
+          "base": 1.0,
+          "replace": 0.9197,
+          "fusion": 1.0
+        },
+        "5ac23ff0554299636651994d": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5ae4a3265542995ad6573de5": {
+          "base": 0.6934,
+          "replace": 0.8772,
+          "fusion": 0.6934
+        },
+        "5ae0361155429925eb1afc2c": {
+          "base": 0.8316,
+          "replace": 0.6934,
+          "fusion": 0.8772
+        },
+        "5abc0a5d5542993f40c73c64": {
+          "base": 0.6241,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5a7cc50e554299452d57ba3e": {
+          "base": 0.6934,
+          "replace": 0.9197,
+          "fusion": 0.6934
+        },
+        "5abf63f15542997ec76fd3ea": {
+          "base": 0.5013,
+          "replace": 0.511,
+          "fusion": 0.4825
+        },
+        "5a8ef2a75542995a26add583": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a80721b554299485f5985ef": {
+          "base": 0.6131,
+          "replace": 0.8066,
+          "fusion": 0.6131
+        },
+        "5ab51dae5542991779162d82": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7571135542992d0ec05f98": {
+          "base": 0.9197,
+          "replace": 0.8175,
+          "fusion": 0.9197
+        },
+        "5a7a0e1e5542990783324e1a": {
+          "base": 0.8772,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5a74106b55429979e288289e": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a79311755429970f5fffe67": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ab2d3df554299194fa9352c": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a760ab65542994ccc918697": {
+          "base": 0.6131,
+          "replace": 0.8772,
+          "fusion": 0.8066
+        },
+        "5a7d54165542995f4f402256": {
+          "base": 0.8066,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5ab859a955429934fafe6d7b": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5add61d65542995b365fab21": {
+          "base": 0.2641,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a8e068b5542995085b37384": {
+          "base": 0.7977,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5abbf698554299114383a0b5": {
+          "base": 0.9197,
+          "replace": 0.8503,
+          "fusion": 0.9197
+        },
+        "5a8e1027554299653c1aa15f": {
+          "base": 0.2372,
+          "replace": 0.3618,
+          "fusion": 0.2044
+        },
+        "5ab84bf555429916710eb01f": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a77724455429972597f153e": {
+          "base": 1.0,
+          "replace": 0.8316,
+          "fusion": 0.8772
+        },
+        "5a87c13f5542996e4f30890c": {
+          "base": 0.389,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5ab96ab755429970cfb8eacd": {
+          "base": 0.8316,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8a43eb5542996c9b8d5e82": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ae73acb5542991e8301cc07": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7320565542991f9a20c61d": {
+          "base": 0.6241,
+          "replace": 0.9197,
+          "fusion": 0.6934
+        },
+        "5ae32e125542991a06ce9946": {
+          "base": 0.6131,
+          "replace": 0.511,
+          "fusion": 0.5714
+        },
+        "5adc53f75542996e6852530a": {
+          "base": 0.5706,
+          "replace": 0.5912,
+          "fusion": 0.5438
+        },
+        "5a8b20335542996c9b8d5fb3": {
+          "base": 0.6241,
+          "replace": 0.6934,
+          "fusion": 0.6934
+        },
+        "5a85fb085542994775f606de": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5a7be2595542997c3ec972ac": {
+          "base": 0.6934,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5a77152355429966f1a36c2e": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a8f4c8d554299458435d5a3": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5a80840f554299485f59863b": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8361b65542992ef85e22a0": {
+          "base": 0.6131,
+          "replace": 1.0,
+          "fusion": 0.7904
+        },
+        "5ae7ba7a5542993210983f12": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ac2acff55429921a00ab02b": {
+          "base": 0.3869,
+          "replace": 0.6131,
+          "fusion": 0.3869
+        },
+        "5aba7cfe554299232ef4a2fd": {
+          "base": 0.511,
+          "replace": 0.8175,
+          "fusion": 0.5912
+        },
+        "5ae5aba0554299546bf82f17": {
+          "base": 0.5912,
+          "replace": 0.5912,
+          "fusion": 0.5912
+        },
+        "5ae1f4cb554299234fd0436d": {
+          "base": 0.8066,
+          "replace": 0.8316,
+          "fusion": 0.8503
+        },
+        "5ae7e1fc55429952e35ea9cc": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5ae37c765542992f92d822d4": {
+          "base": 0.7904,
+          "replace": 0.8772,
+          "fusion": 0.8316
+        },
+        "5ae33c4d5542992f92d82262": {
+          "base": 0.9197,
+          "replace": 0.9197,
+          "fusion": 0.9197
+        },
+        "5a77cb335542997042120b3a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a8979f4554299669944a52e": {
+          "base": 0.7977,
+          "replace": 0.7977,
+          "fusion": 0.8175
+        },
+        "5a713ea95542994082a3e6e4": {
+          "base": 0.6131,
+          "replace": 1.0,
+          "fusion": 0.8503
+        },
+        "5a78bd9b554299078472774a": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a7625e8554299109176e66a": {
+          "base": 0.6131,
+          "replace": 0.7904,
+          "fusion": 0.7904
+        },
+        "5ae2dd2055429928c423950d": {
+          "base": 0.8772,
+          "replace": 0.8316,
+          "fusion": 0.8772
+        },
+        "5abdf12255429976d4830a2f": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a88658955429938390d3f47": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a86ebac55429960ec39b6d6": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5aba5d2e55429901930fa799": {
+          "base": 1.0,
+          "replace": 0.8316,
+          "fusion": 0.9197
+        },
+        "5ae5736e5542990ba0bbb2b3": {
+          "base": 0.7904,
+          "replace": 0.9197,
+          "fusion": 0.8316
+        },
+        "5ae005b555429942ec259bec": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5a7759fc5542993569682d60": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a835478554299123d8c20ed": {
+          "base": 0.5803,
+          "replace": 1.0,
+          "fusion": 0.8772
+        },
+        "5aba749055429901930fa7d8": {
+          "base": 0.8772,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5abfb3425542990832d3a1c0": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ac3165c5542995ef918c10a": {
+          "base": 0.3066,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ae53b545542990ba0bbb23c": {
+          "base": 0.6131,
+          "replace": 0.7977,
+          "fusion": 0.7977
+        },
+        "5ae224da554299234fd043ee": {
+          "base": 0.9197,
+          "replace": 1.0,
+          "fusion": 0.9197
+        },
+        "5ae2b770554299495565db0f": {
+          "base": 0.8316,
+          "replace": 0.9197,
+          "fusion": 0.8503
+        },
+        "5a80b3a9554299485f5986cc": {
+          "base": 0.6131,
+          "replace": 0.525,
+          "fusion": 0.5912
+        },
+        "5a8e0a005542995085b373a1": {
+          "base": 0.6131,
+          "replace": 0.6131,
+          "fusion": 0.6131
+        },
+        "5ac1b8ee5542994d76dccedc": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5adccd795542990d50227d2c": {
+          "base": 1.0,
+          "replace": 1.0,
+          "fusion": 1.0
+        },
+        "5a84c4135542994c784dda31": {
+          "base": 0.7977,
+          "replace": 0.6131,
+          "fusion": 0.7977
+        }
+      }
     }
   }
 }

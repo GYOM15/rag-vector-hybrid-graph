@@ -1,13 +1,16 @@
-"""Plot the retrieval comparison per embedder from retrieval_results.json.
+"""Plot the retrieval comparison per embedder from a retrieval_eval snapshot.
 
-Generates docs/retrieval-embedders.svg: overall MRR (bars grouped by architecture,
-one cluster per embedder) + Vector hit@k curves (embedder effect).
-Requires the [notebooks] extra (matplotlib).
+Reads eval/reference/retrieval_results.json (--input overrides it) and writes
+docs/retrieval-embedders.svg: overall MRR (bars grouped by architecture, one cluster per
+embedder, with 95% bootstrap CIs when the snapshot has them) + Vector hit@k curves
+(embedder effect). Requires the [notebooks] extra (matplotlib).
 
     python -m eval.plot_retrieval
 """
 
+import argparse
 import json
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -31,7 +34,15 @@ def _kind(name: str) -> str:
 
 
 def main() -> None:
-    data = json.loads((ROOT / "eval" / "retrieval_results.json").read_text("utf-8"))
+    ap = argparse.ArgumentParser(description="MRR per embedder × architecture + Vector hit@k.")
+    ap.add_argument("--input", type=Path,
+                    default=ROOT / "eval" / "reference" / "retrieval_results.json")
+    ap.add_argument("--output", type=Path, default=ROOT / "docs" / "retrieval-embedders.svg")
+    args = ap.parse_args()
+    if not args.input.exists():
+        sys.exit(f"❌ missing snapshot {args.input} — run eval.retrieval_eval, or pass --input")
+
+    data = json.loads(args.input.read_text("utf-8"))
     embedders = data["config"]["embedders"]
     ks = data["config"]["ks"]
     results = data["results"]
@@ -43,15 +54,27 @@ def main() -> None:
 
     x = np.arange(len(embedders))
     width = 0.25
+    overall = {s: [results[e]["stacks"][s]["overall"] for e in embedders] for s in stacks}
+    has_ci = any("mrr_ci95" in o for rows in overall.values() for o in rows)
     for i, (s, k) in enumerate(zip(stacks, kinds)):
-        vals = [results[e]["stacks"][s]["overall"]["mrr"] for e in embedders]
-        bars = ax1.bar(x + (i - 1) * width, vals, width, label=SHORT[k], color=COLORS[k])
-        ax1.bar_label(bars, fmt="%.2f", fontsize=8, padding=2)
+        vals = [o["mrr"] for o in overall[s]]
+        bounds = [o.get("mrr_ci95", (o["mrr"], o["mrr"])) for o in overall[s]]
+        yerr = np.array([[max(0.0, v - lo) for v, (lo, _) in zip(vals, bounds)],
+                         [max(0.0, hi - v) for v, (_, hi) in zip(vals, bounds)]])
+        bars = ax1.bar(x + (i - 1) * width, vals, width, label=SHORT[k], color=COLORS[k],
+                       yerr=yerr if has_ci else None, capsize=3,
+                       error_kw={"elinewidth": 1, "ecolor": "#334155"})
+        if has_ci:  # inside the bar: above it, the label would sit on the error bar
+            ax1.bar_label(bars, fmt="%.2f", fontsize=7, label_type="center", rotation=90,
+                          color="white")
+        else:
+            ax1.bar_label(bars, fmt="%.2f", fontsize=8, padding=2)
     ax1.set_xticks(x)
     ax1.set_xticklabels(labels, fontsize=9)
     ax1.set_ylabel("MRR (overall)")
-    ax1.set_ylim(0, 1)
-    ax1.set_title("MRR by embedder and architecture")
+    ax1.set_ylim(0, 1.05)
+    ax1.set_title("MRR by embedder and architecture"
+                  + ("\n(error bars = 95% bootstrap CI)" if has_ci else ""))
     ax1.legend(fontsize=8)
     ax1.grid(axis="y", alpha=0.3)
 
@@ -70,12 +93,11 @@ def main() -> None:
 
     n_q = data["config"].get("n_questions", "?")
     n_art = data["config"].get("n_articles", "?")
-    fig.suptitle(f"The embedding model changes retrieval ({n_q} questions, {n_art} articles)",
+    fig.suptitle(f"Retrieval by embedding model ({n_q} questions, {n_art} articles)",
                  fontsize=12)
     fig.tight_layout()
-    out = ROOT / "docs" / "retrieval-embedders.svg"
-    fig.savefig(out, bbox_inches="tight")
-    print(f"✅ {out}")
+    fig.savefig(args.output, bbox_inches="tight")
+    print(f"✅ {args.output}")
 
 
 if __name__ == "__main__":

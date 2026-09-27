@@ -23,14 +23,14 @@
     {
         "question": "When did Zimbabwe gain independence?",
         "type": "keyword",
-        "gold": "Zimbabwe",
+        "gold": "Zimbabwe gains full independence",
         "title": "April",
         "ground_truth": "On April 18, 1980"
     },
     {
         "question": "When did Sierra Leone become a republic?",
         "type": "keyword",
-        "gold": "Sierra Leone",
+        "gold": "Sierra Leone becomes a republic",
         "title": "April",
         "ground_truth": "On April 19, 1971"
     },

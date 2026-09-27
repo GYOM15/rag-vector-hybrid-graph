@@ -2,9 +2,9 @@
   "config": {
     "dataset": "hotpotqa-distractor",
     "provider": "ollama",
-    "model": "llama3.2:1b",
-    "prompt": "default",
-    "prompt_template": "Answer the question based ONLY on the following context.\nIf the context does not contain enough information, say \"I don't have enough information to answer this question.\"\n\nContext:\n{context}\n\nQuestion: {question}\n\nAnswer:",
+    "model": "qwen2.5:1.5b",
+    "prompt": "short",
+    "prompt_template": "Answer the question based ONLY on the following context.\nReply with the shortest possible answer: a few words, a name, a date, or yes/no. Do not explain.\nIf the context does not contain the answer, reply \"unknown\".\n\nContext:\n{context}\n\nQuestion: {question}\n\nAnswer:",
     "k": 10,
     "decoding": "greedy (temperature 0)",
     "n_docs": 991,
@@ -13,11 +13,11 @@
     "contains_rule": "normalized gold as a contiguous whole-token run of the normalized answer, not next to 'or'/'nor'/'vs'; yes/no golds: the reply opens with the gold word alone and its first sentence lacks the opposite; golds named in the question: the reply opens with the gold, not followed by 'or'/'and'",
     "ci": "95% percentile bootstrap over questions (10k resamples, seed 0)",
     "provenance": {
-      "git_sha": "5d4cce983f45a48727fc1b99ddfcaaca427540c7",
+      "git_sha": "1ad9654ed5c0906b264dc947becbe3822d822b61",
       "git_dirty": false,
       "dirty_files": [],
       "diff_sha": null,
-      "timestamp": "2026-09-26T07:19:25+00:00",
+      "timestamp": "2026-09-26T10:18:26+00:00",
       "python": "3.11.3",
       "platform": "macOS-26.6",
       "packages": {
@@ -32,17 +32,17 @@
         "networkx": "3.6.1",
         "datasets": "5.0.1"
       },
-      "finished": "2026-09-26T07:36:47+00:00",
+      "finished": "2026-09-26T10:33:46+00:00",
       "code_changed_during_run": false
     }
   },
   "stacks": {
     "Stack 1 — Vector (FAISS)": {
       "ndcg@10": 0.7893,
-      "em": 0.02,
-      "f1": 0.0799,
-      "contains": 0.21,
-      "answer_tokens": 16.91,
+      "em": 0.4,
+      "f1": 0.4786,
+      "contains": 0.42,
+      "answer_tokens": 1.88,
       "n_queries": 100,
       "ci95": {
         "ndcg@10": [
@@ -50,29 +50,29 @@
           0.8304
         ],
         "em": [
-          0.0,
-          0.05
+          0.31,
+          0.5
         ],
         "f1": [
-          0.0468,
-          0.1184
+          0.3884,
+          0.5715
         ],
         "contains": [
-          0.13,
-          0.29
+          0.33,
+          0.52
         ],
         "answer_tokens": [
-          14.8398,
-          19.16
+          1.6,
+          2.25
         ]
       }
     },
     "Stack 2 — Hybrid (BM25 + RRF)": {
       "ndcg@10": 0.8062,
-      "em": 0.03,
-      "f1": 0.0894,
-      "contains": 0.19,
-      "answer_tokens": 18.01,
+      "em": 0.41,
+      "f1": 0.4988,
+      "contains": 0.44,
+      "answer_tokens": 2.02,
       "n_queries": 100,
       "ci95": {
         "ndcg@10": [
@@ -80,29 +80,29 @@
           0.8416
         ],
         "em": [
-          0.0,
-          0.07
+          0.32,
+          0.51
         ],
         "f1": [
-          0.0516,
-          0.1328
+          0.4072,
+          0.5919
         ],
         "contains": [
-          0.12,
-          0.27
+          0.34,
+          0.54
         ],
         "answer_tokens": [
-          15.69,
-          20.6
+          1.68,
+          2.43
         ]
       }
     },
     "Stack 3 — Graph (networkx)": {
       "ndcg@10": 0.7857,
-      "em": 0.01,
-      "f1": 0.0563,
-      "contains": 0.17,
-      "answer_tokens": 18.93,
+      "em": 0.38,
+      "f1": 0.4743,
+      "contains": 0.4,
+      "answer_tokens": 1.86,
       "n_queries": 100,
       "ci95": {
         "ndcg@10": [
@@ -110,20 +110,20 @@
           0.8233
         ],
         "em": [
-          0.0,
-          0.03
+          0.29,
+          0.48
         ],
         "f1": [
-          0.0309,
-          0.0872
+          0.3834,
+          0.5674
         ],
         "contains": [
-          0.1,
-          0.25
+          0.31,
+          0.5
         ],
         "answer_tokens": [
-          16.1698,
-          22.1902
+          1.56,
+          2.23
         ]
       }
     }
@@ -131,47 +131,47 @@
   "paired_metric": "f1",
   "paired": {
     "Hybrid-Vector": {
-      "mean_diff": 0.0095,
-      "lo": -0.0075,
-      "hi": 0.0289,
-      "p_value": 0.3454,
+      "mean_diff": 0.0201,
+      "lo": -0.0422,
+      "hi": 0.0839,
+      "p_value": 0.5403,
       "n": 100
     },
     "Graph-Vector": {
-      "mean_diff": -0.0236,
-      "lo": -0.0495,
-      "hi": -0.0048,
-      "p_value": 0.0089,
+      "mean_diff": -0.0043,
+      "lo": -0.0596,
+      "hi": 0.05,
+      "p_value": 0.8727,
       "n": 100
     },
     "Graph-Hybrid": {
-      "mean_diff": -0.0331,
-      "lo": -0.0671,
-      "hi": -0.0056,
-      "p_value": 0.0245,
+      "mean_diff": -0.0244,
+      "lo": -0.094,
+      "hi": 0.0439,
+      "p_value": 0.5008,
       "n": 100
     }
   },
   "paired_contains": {
     "Hybrid-Vector": {
-      "mean_diff": -0.02,
-      "lo": -0.07,
-      "hi": 0.03,
-      "p_value": 0.7379,
+      "mean_diff": 0.02,
+      "lo": -0.05,
+      "hi": 0.09,
+      "p_value": 0.7716,
       "n": 100
     },
     "Graph-Vector": {
-      "mean_diff": -0.04,
-      "lo": -0.1,
-      "hi": 0.01,
-      "p_value": 0.2872,
+      "mean_diff": -0.02,
+      "lo": -0.08,
+      "hi": 0.03,
+      "p_value": 0.739,
       "n": 100
     },
     "Graph-Hybrid": {
-      "mean_diff": -0.02,
-      "lo": -0.09,
-      "hi": 0.05,
-      "p_value": 0.7882,
+      "mean_diff": -0.04,
+      "lo": -0.12,
+      "hi": 0.03,
+      "p_value": 0.4301,
       "n": 100
     }
   },
@@ -182,12 +182,12 @@
       "gold": "yes",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ed Wood (film)",
             "Ed Wood",
@@ -202,12 +202,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.4556,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ed Wood (film)",
             "Woodson, Arkansas",
@@ -222,12 +222,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.6509,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ed Wood (film)",
             "Ed Wood",
@@ -249,12 +249,12 @@
       "gold": "Chief of Protocol",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "United States ambassador",
           "ndcg@10": 0.8175,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Kiss and Tell (1945 film)",
             "A Kiss for Corliss",
@@ -269,12 +269,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Secretary of State for Constitutional Affairs",
           "ndcg@10": 0.6131,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.2222,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 6.0,
           "retrieved": [
             "Kiss and Tell (1945 film)",
             "A Kiss for Corliss",
@@ -289,12 +289,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "United States ambassador",
           "ndcg@10": 0.8175,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Kiss and Tell (1945 film)",
             "A Kiss for Corliss",
@@ -316,12 +316,12 @@
       "gold": "Animorphs",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Animorphs",
           "ndcg@10": 0.6934,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Victoria Hanley",
             "Animorphs",
@@ -336,12 +336,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Animorphs",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Animorphs",
             "Victoria Hanley",
@@ -356,12 +356,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Animorphs",
           "ndcg@10": 0.6934,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Victoria Hanley",
             "Animorphs",
@@ -383,12 +383,12 @@
       "gold": "no",
       "stacks": {
         "Vector": {
-          "answer": "Yes, the Laleli Mosque and the Esma Sultan Mansion are located in the same neighborhood, Ortaköy neighborhood of Istanbul, Turkey.",
+          "answer": "unknown",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 17.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Esma Sultan Mansion",
             "Laleli Mosque",
@@ -403,12 +403,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Yes, the Laleli Mosque and the Esma Sultan Mansion are located in the same neighborhood, specifically in the Ortaköy neighborhood of Istanbul, Turkey.",
+          "answer": "unknown",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 19.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Esma Sultan Mansion",
             "Laleli Mosque",
@@ -423,12 +423,12 @@
           ]
         },
         "Graph": {
-          "answer": "Yes, the Laleli Mosque and the Esma Sultan Mansion are located in the same neighborhood, specifically in the Ortaköy neighborhood of Istanbul, Turkey.",
+          "answer": "unknown",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 19.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Laleli Mosque",
             "Esma Sultan Mansion",
@@ -450,12 +450,12 @@
       "gold": "Greenwich Village, New York City",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the director of the film \"Big Stone Gap\".",
+          "answer": "New York City",
           "ndcg@10": 0.6131,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.75,
           "contains": 0.0,
-          "answer_tokens": 20.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Big Stone Gap (film)",
             "Innerspace",
@@ -470,12 +470,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the director of \"Big Stone Gap\" or any specific New York city.",
+          "answer": "New York City",
           "ndcg@10": 0.6131,
           "em": 0.0,
-          "f1": 0.2,
+          "f1": 0.75,
           "contains": 0.0,
-          "answer_tokens": 25.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Big Stone Gap (film)",
             "I Love NY (2015 film)",
@@ -490,12 +490,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the film \"Big Stone Gap\" and its production, but does not mention the director or their location.",
+          "answer": "New York City",
           "ndcg@10": 0.6131,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.75,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Big Stone Gap (film)",
             "Kingston Morning",
@@ -517,12 +517,12 @@
       "gold": "YG Entertainment",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific South Korean boy group that released the debut album \"2014 S/S\".",
+          "answer": "YG Entertainment",
           "ndcg@10": 0.7977,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 25.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2014 S/S",
             "BTS discography",
@@ -537,12 +537,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific South Korean boy group that released the debut album \"2014 S/S\".",
+          "answer": "YG Entertainment",
           "ndcg@10": 0.8175,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 25.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2014 S/S",
             "Seventeen discography",
@@ -557,12 +557,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific South Korean boy group that 2014 S/S is the debut album of.",
+          "answer": "YG Entertainment",
           "ndcg@10": 0.7977,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 26.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2014 S/S",
             "BTS discography",
@@ -584,12 +584,12 @@
       "gold": "Eenasul Fateh",
       "stacks": {
         "Vector": {
-          "answer": "Based on the context, I don't have enough information to answer this question.",
+          "answer": "Aladin",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 12.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Eenasul Fateh",
             "Management consulting",
@@ -604,12 +604,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Aladin",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Eenasul Fateh",
             "Management consulting",
@@ -624,12 +624,12 @@
           ]
         },
         "Graph": {
-          "answer": "Based on the context, I don't have enough information to answer this question.",
+          "answer": "Aladin",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 12.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Eenasul Fateh",
             "Management consulting",
@@ -651,12 +651,12 @@
       "gold": "3,677 seated",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Androscoggin Bank Colisée, which is a different arena from the Lewiston Maineiacs.",
+          "answer": "1,400",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Lewiston Maineiacs",
             "Dwyer Arena",
@@ -671,12 +671,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Robert and Concetta Dwyer Arena, the Androscoggin Bank Colisée, the Robins Center, and the Arena of Khazan, but does not mention the Lewiston Maineiacs or their arena.",
+          "answer": "1,400",
           "ndcg@10": 0.6241,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 37.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Dwyer Arena",
             "Lewiston Maineiacs",
@@ -691,12 +691,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Androscoggin Bank Colisée, which is a different arena from the Lewiston Maineiacs.",
+          "answer": "1,400",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Lewiston Maineiacs",
             "Dwyer Arena",
@@ -718,12 +718,12 @@
       "gold": "Terry Richardson",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Annie Morton",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Kenton Richardson",
             "Annie Morton",
@@ -738,12 +738,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Terry Richardson",
           "ndcg@10": 0.7904,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Annie Morton",
             "Kenton Richardson",
@@ -758,12 +758,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Terry Richardson",
           "ndcg@10": 0.6131,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Annie Morton",
             "Lady Gaga x Terry Richardson",
@@ -785,12 +785,12 @@
       "gold": "yes",
       "stacks": {
         "Vector": {
-          "answer": "Yes, Local H and For Against are both from the United States.",
+          "answer": "yes",
           "ndcg@10": 0.8175,
-          "em": 0.0,
-          "f1": 0.1667,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 11.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Local H",
             "Mendocino County GMO Ban",
@@ -805,12 +805,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Yes, both Local H and For Against are from the United States.",
+          "answer": "Yes.",
           "ndcg@10": 0.8503,
-          "em": 0.0,
-          "f1": 0.1667,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 11.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Local H",
             "Mendocino County GMO Ban",
@@ -825,12 +825,12 @@
           ]
         },
         "Graph": {
-          "answer": "Yes, both Local H and For Against are from the United States.",
+          "answer": "Yes.",
           "ndcg@10": 0.6241,
-          "em": 0.0,
-          "f1": 0.1667,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 11.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Mendocino County GMO Ban",
             "Local H",
@@ -852,12 +852,12 @@
       "gold": "Kansas Song",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific university or its main campus location.",
+          "answer": "Kansas Song",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 21.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Kansas Song",
             "University of Kansas",
@@ -872,12 +872,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific university or its main campus location.",
+          "answer": "Kansas Song",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 21.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "University of Kansas",
             "Kansas Song",
@@ -892,12 +892,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific university or its main campus location.",
+          "answer": "Kansas Song",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 21.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Kansas Song",
             "University of Kansas",
@@ -959,12 +959,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "The Family Man",
             "David Weissman",
@@ -986,12 +986,12 @@
       "gold": "1999",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Guns N' Roses, Arnold Schwarzenegger, and other related topics, but does not mention a specific movie or year.",
+          "answer": "1999",
           "ndcg@10": 0.2641,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 31.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Arnold Schwarzenegger filmography",
             "Guns N' Roses discography",
@@ -1006,12 +1006,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "1999",
           "ndcg@10": 0.6053,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Arnold Schwarzenegger filmography",
             "Oh My God (Guns N' Roses song)",
@@ -1026,12 +1026,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention a specific movie that Guns N' Roses performed a promo for starring Arnold Schwarzenegger as a former New York Police detective.",
+          "answer": "1999",
           "ndcg@10": 0.5912,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 32.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Arnold Schwarzenegger filmography",
             "Oh My God (Guns N' Roses song)",
@@ -1053,12 +1053,12 @@
       "gold": "no",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question with certainty. While the Random House Tower is mentioned as a location for the book publisher Random House, and 888 7th Avenue is a modern office skyscraper, there is no direct information linking these two buildings to real estate use.",
+          "answer": "unknown",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.0435,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 45.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Random House Tower",
             "888 7th Avenue",
@@ -1073,12 +1073,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided only mentions the Random House Tower and 888 7th Avenue as buildings in New York City, but does not provide any information about their use for real estate.",
+          "answer": "No.",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 38.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Random House Tower",
             "Villard (imprint)",
@@ -1093,12 +1093,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question with certainty. While the Random House Tower is mentioned as a location for the book publisher Random House, and 888 7th Avenue is a modern office skyscraper, there is no direct information linking these two buildings to real estate use.",
+          "answer": "unknown",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.0435,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 45.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Random House Tower",
             "888 7th Avenue",
@@ -1120,12 +1120,12 @@
       "gold": "from 1986 to 2013",
       "stacks": {
         "Vector": {
-          "answer": "The football manager who recruited David Beckham managed Manchester United during the 1990s.",
+          "answer": "1995–96",
           "ndcg@10": 0.511,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 11.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ernest Mangnall",
             "Matt Busby",
@@ -1140,12 +1140,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The football manager who recruited David Beckham managed Manchester United during the 2009-2010 season.",
+          "answer": "1945–1969",
           "ndcg@10": 0.5,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 12.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ernest Mangnall",
             "Matt Busby",
@@ -1160,12 +1160,12 @@
           ]
         },
         "Graph": {
-          "answer": "The football manager who recruited David Beckham managed Manchester United during the 1995-96 season.",
+          "answer": "1945–1969",
           "ndcg@10": 0.5438,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 12.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ernest Mangnall",
             "Matt Busby",
@@ -1187,12 +1187,12 @@
       "gold": "9,984",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the population of Brown State Fishing Lake or any other location.",
+          "answer": "United States",
           "ndcg@10": 0.8066,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Brown State Fishing Lake",
             "Fishing Lake",
@@ -1207,12 +1207,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Brown State Fishing Lake in Kansas, but does not mention the country in which it is located.",
+          "answer": "unknown",
           "ndcg@10": 0.8066,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 30.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Brown State Fishing Lake",
             "Neosho State Fishing Lake",
@@ -1227,12 +1227,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the population of the country where Brown State Fishing Lake is located.",
+          "answer": "United States",
           "ndcg@10": 0.8503,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Brown State Fishing Lake",
             "Fishing Lake",
@@ -1254,12 +1254,12 @@
       "gold": "the North Atlantic Conference",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "America East",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Vermont Catamounts men's soccer",
             "Vermont Catamounts men's ice hockey",
@@ -1274,12 +1274,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "America East Conference",
           "ndcg@10": 0.7904,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.3333,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Vermont Catamounts men's soccer",
             "Vermont Catamounts men's ice hockey",
@@ -1294,12 +1294,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "America East",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Vermont Catamounts men's soccer",
             "Vermont Catamounts men's ice hockey",
@@ -1321,12 +1321,12 @@
       "gold": "yes",
       "stacks": {
         "Vector": {
-          "answer": "Yes, both Giuseppe Verdi and Ambroise Thomas were opera composers.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.1818,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 10.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Giuseppe Verdi",
             "Ambroise Thomas",
@@ -1341,12 +1341,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Yes, both Giuseppe Verdi and Ambroise Thomas were opera composers.",
+          "answer": "yes",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.1818,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 10.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Giuseppe Verdi",
             "Ambroise Thomas",
@@ -1361,12 +1361,12 @@
           ]
         },
         "Graph": {
-          "answer": "Yes, both Giuseppe Verdi and Ambroise Thomas were opera composers.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.1818,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 10.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Giuseppe Verdi",
             "Ambroise Thomas",
@@ -1388,12 +1388,12 @@
       "gold": "1969 until 1974",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "1961-1969",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Roger O. Egeberg",
             "Robert Hormats",
@@ -1408,12 +1408,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "1969-1977",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Roger O. Egeberg",
             "Steven K. Galson",
@@ -1428,12 +1428,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "1969-1977",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Roger O. Egeberg",
             "Robert Hormats",
@@ -1455,12 +1455,12 @@
       "gold": "Robert Erskine Childers DSC",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Henry Roth",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Robert Erskine Childers",
             "Erskine Barton Childers",
@@ -1475,12 +1475,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Henry Roth",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Robert Erskine Childers",
             "Erskine Barton Childers",
@@ -1495,12 +1495,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Robert Erskine Childers",
           "ndcg@10": 0.6934,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.8571,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Erskine Barton Childers",
             "Henry Roth",
@@ -1522,12 +1522,12 @@
       "gold": "Pedro Rodríguez",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Pedro Rodríguez",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Formula One drivers from Mexico",
             "Sergio Pérez",
@@ -1542,12 +1542,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Pedro Rodríguez",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Formula One drivers from Mexico",
             "Sergio Pérez",
@@ -1562,12 +1562,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Pedro Rodríguez",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Formula One drivers from Mexico",
             "Sergio Pérez",
@@ -1589,12 +1589,12 @@
       "gold": "Sonic",
       "stacks": {
         "Vector": {
-          "answer": "This singer of A Rather Blustery Day also voiced Tigger.",
+          "answer": "Jim Cummings",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Jim Cummings",
             "Kate Higgins",
@@ -1609,12 +1609,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "This singer of A Rather Blustery Day also voiced Pete.",
+          "answer": "Jim Cummings",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Jim Cummings",
             "A Rather Blustery Day",
@@ -1629,12 +1629,12 @@
           ]
         },
         "Graph": {
-          "answer": "This singer of A Rather Blustery Day also voiced Tigger.",
+          "answer": "Jim Cummings",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Jim Cummings",
             "Kate Higgins",
@@ -1656,12 +1656,12 @@
       "gold": "keyboard function keys",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "iSight iMac G5",
           "ndcg@10": 0.8175,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Apple Remote",
             "Apple Remote Desktop",
@@ -1676,12 +1676,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "iSight iMac G5",
           "ndcg@10": 0.7977,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Apple Remote",
             "Siri Remote",
@@ -1696,12 +1696,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Apple TV",
           "ndcg@10": 0.8175,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Apple Remote",
             "Siri Remote",
@@ -1723,12 +1723,12 @@
       "gold": "Badly Drawn Boy",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the discographies and performances of Badly Drawn Boy and Wolf Alice, but does not mention their performances or the number of instruments used in each act.",
+          "answer": "Badly Drawn Boy",
           "ndcg@10": 0.8503,
-          "em": 0.0,
-          "f1": 0.1463,
-          "contains": 0.0,
-          "answer_tokens": 38.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Wolf Alice",
             "The Hour of Bewilderbeast",
@@ -1743,12 +1743,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the information provided, it appears that Badly Drawn Boy has a higher instrument to person ratio compared to Wolf Alice. According to the sources, Badly Drawn Boy has 18 tracks on their album \"The Hour of Bewilderbeast\", with several of these tracks featuring accompaniment by members of the British indie rock bands Alfie and Doves. In contrast, Wolf Alice has 3 instrumental tracks on their album \"Under an Hour\", which suggests that they have a lower instrument to person ratio.",
+          "answer": "Wolf Alice",
           "ndcg@10": 0.525,
           "em": 0.0,
-          "f1": 0.0769,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 75.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "The Hour of Bewilderbeast",
             "About a Boy (soundtrack)",
@@ -1763,12 +1763,12 @@
           ]
         },
         "Graph": {
-          "answer": "Based on the provided context, I don't have enough information to answer this question. The context only discusses the discographies and performances of Badly Drawn Boy and Wolf Alice, but does not provide any information about their performances or the number of instruments used in each act.",
+          "answer": "Badly Drawn Boy",
           "ndcg@10": 0.8772,
-          "em": 0.0,
-          "f1": 0.1304,
-          "contains": 0.0,
-          "answer_tokens": 43.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Wolf Alice",
             "The Hour of Bewilderbeast",
@@ -1790,12 +1790,12 @@
       "gold": "World's Best Goalkeeper",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Peter Schmeichel",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Kasper Schmeichel",
             "Kasper Hvidt",
@@ -1810,12 +1810,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "According to the context, the father of Kasper Schmeichel voted to be by the IFFHS in 1992 was Peter Schmeichel, Kasper's father.",
+          "answer": "Peter Schmeichel",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 19.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Kasper Schmeichel",
             "Peter Schmeichel",
@@ -1830,12 +1830,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Peter Schmeichel",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Kasper Schmeichel",
             "Kasper Hvidt",
@@ -1857,12 +1857,12 @@
       "gold": "Barton Lee Hazlewood",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Lee Hazlewood, Roald Dahl",
           "ndcg@10": 0.6131,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5714,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 4.0,
           "retrieved": [
             "These Boots Are Made for Walkin'",
             "Boots (EP)",
@@ -1877,12 +1877,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Lee Hazlewood, James A. Shoulders",
           "ndcg@10": 0.3869,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5714,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 4.0,
           "retrieved": [
             "Boots (EP)",
             "These Boots Are Made for Walkin'",
@@ -1897,12 +1897,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Lee Hazlewood, Roald Dahl",
           "ndcg@10": 0.3869,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5714,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 4.0,
           "retrieved": [
             "Boots (EP)",
             "These Boots Are Made for Walkin'",
@@ -1924,12 +1924,12 @@
       "gold": "1838",
       "stacks": {
         "Vector": {
-          "answer": "The 2011–12 VCU Rams men's basketball team, led by third year head coach Shaka Smart, represented Virginia Commonwealth University, which was founded in 1838.",
+          "answer": "1838",
           "ndcg@10": 0.5641,
-          "em": 0.0,
-          "f1": 0.0833,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 23.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "2009–10 VCU Rams men's basketball team",
             "2011–12 VCU Rams men's basketball team",
@@ -1944,12 +1944,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The 2011–12 VCU Rams men's basketball team, led by third-year head coach Shaka Smart, represented Virginia Commonwealth University.",
+          "answer": "1924",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 17.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "2011–12 VCU Rams men's basketball team",
             "2015–16 VCU Rams men's basketball team",
@@ -1964,12 +1964,12 @@
           ]
         },
         "Graph": {
-          "answer": "The 2011–12 VCU Rams men's basketball team, led by third year head coach Shaka Smart, represented Virginia Commonwealth University, which was founded in 1838.",
+          "answer": "1838",
           "ndcg@10": 0.5641,
-          "em": 0.0,
-          "f1": 0.0833,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 23.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "2009–10 VCU Rams men's basketball team",
             "2011–12 VCU Rams men's basketball team",
@@ -1991,12 +1991,12 @@
       "gold": "yes",
       "stacks": {
         "Vector": {
-          "answer": "No, both Dictyosperma and Huernia are not described as a genus.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 10.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Dictyosperma",
             "Huernia",
@@ -2011,12 +2011,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the provided context, it appears that both Dictyosperma and Huernia are described as genera, not species.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 17.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Dictyosperma",
             "Huernia",
@@ -2031,12 +2031,12 @@
           ]
         },
         "Graph": {
-          "answer": "No, both Dictyosperma and Huernia are not described as a genus.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 10.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Dictyosperma",
             "Huernia",
@@ -2058,12 +2058,12 @@
       "gold": "Henry J. Kaiser",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Yes.",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Henry J. Kaiser",
             "Kaiser Shipyards",
@@ -2078,12 +2078,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Henry J. Kaiser",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Henry J. Kaiser",
             "Kaiser Shipyards",
@@ -2098,12 +2098,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Henry J. Kaiser",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Henry J. Kaiser",
             "Kaiser Shipyards",
@@ -2125,12 +2125,12 @@
       "gold": "Arena of Khazan",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Arena of Khazan",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Tunnels &amp; Trolls",
             "Ken St. Andre",
@@ -2145,12 +2145,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention a specific adventure in \"Tunnels and Trolls\".",
+          "answer": "Crusaders of Khazan",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.6667,
           "contains": 0.0,
-          "answer_tokens": 20.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Tunnels &amp; Trolls",
             "Ken St. Andre",
@@ -2165,12 +2165,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Arena of Khazan",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Tunnels &amp; Trolls",
             "Arena of Khazan",
@@ -2192,12 +2192,12 @@
       "gold": "2000",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the release date of Poison's album \"Shut Up, Make Love\".",
+          "answer": "2000",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 23.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Shut Up, Make Love",
             "Poison (American band)",
@@ -2212,12 +2212,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the release date of Poison's album \"Shut Up, Make Love\".",
+          "answer": "2000",
           "ndcg@10": 0.8772,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 23.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Shut Up, Make Love",
             "Be the One (Poison song)",
@@ -2232,12 +2232,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the release date of Poison's album \"Shut Up, Make Love\".",
+          "answer": "2000",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 23.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Shut Up, Make Love",
             "Be the One (Poison song)",
@@ -2259,12 +2259,12 @@
       "gold": "Fujioka, Gunma",
       "stacks": {
         "Vector": {
-          "answer": "Buck-Tick is a Japanese rock band, formed in Fujioka, Gunma in 1983.",
+          "answer": "Japan",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.3077,
-          "contains": 1.0,
-          "answer_tokens": 11.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Hayden (musician)",
             "Atsushi Sakurai",
@@ -2279,12 +2279,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Buck-Tick, the Japanese rock band, hails from Fujioka, Gunma.",
+          "answer": "Japan",
           "ndcg@10": 0.6509,
           "em": 0.0,
-          "f1": 0.4,
-          "contains": 1.0,
-          "answer_tokens": 8.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Atsushi Sakurai",
             "Hayden (musician)",
@@ -2299,12 +2299,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only mentions Buck-Tick's formation in Fujioka, Gunma, Japan, but does not provide any information about their connection to Canada.",
+          "answer": "Japan",
           "ndcg@10": 0.6934,
           "em": 0.0,
-          "f1": 0.129,
-          "contains": 1.0,
-          "answer_tokens": 29.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Atsushi Sakurai",
             "Buck-Tick",
@@ -2393,12 +2393,12 @@
       "gold": "no",
       "stacks": {
         "Vector": {
-          "answer": "No, Freakonomics and In the Realm of the Hackers are not both American documentaries.",
+          "answer": "yes",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.1538,
-          "contains": 1.0,
-          "answer_tokens": 12.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Freakonomics (film)",
             "Freakonomics Radio",
@@ -2413,12 +2413,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "No, Freakonomics and In the Realm of the Hackers are not both American documentaries.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.1538,
-          "contains": 1.0,
-          "answer_tokens": 12.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Freakonomics (film)",
             "In the Realm of the Hackers",
@@ -2433,12 +2433,12 @@
           ]
         },
         "Graph": {
-          "answer": "No, Freakonomics and In the Realm of the Hackers are not both American documentaries.",
+          "answer": "yes",
           "ndcg@10": 0.8772,
           "em": 0.0,
-          "f1": 0.1538,
-          "contains": 1.0,
-          "answer_tokens": 12.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Freakonomics (film)",
             "Freakonomics Radio",
@@ -2460,12 +2460,12 @@
       "gold": "Letters to Cleo",
       "stacks": {
         "Vector": {
-          "answer": "Screaming Trees had more members than Letters to Cleo.",
+          "answer": "Screaming Trees",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.5,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Screaming Trees",
             "Screaming Trees discography",
@@ -2480,12 +2480,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Screaming Trees had more members than Letters to Cleo.",
+          "answer": "Screaming Trees",
           "ndcg@10": 0.6934,
           "em": 0.0,
-          "f1": 0.5,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Screaming Trees discography",
             "Screaming Trees",
@@ -2500,12 +2500,12 @@
           ]
         },
         "Graph": {
-          "answer": "According to the text, Screaming Trees had more members than Letters to Cleo.",
+          "answer": "Screaming Trees",
           "ndcg@10": 0.6934,
           "em": 0.0,
-          "f1": 0.4,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 12.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Screaming Trees discography",
             "Letters to Cleo",
@@ -2527,12 +2527,12 @@
       "gold": "October 1922",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.5438,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Kerensky–Krasnov uprising",
             "Battle of Romanovka",
@@ -2547,12 +2547,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.6241,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Kerensky–Krasnov uprising",
             "Socialist Revolutionary Party",
@@ -2567,12 +2567,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides a brief overview of Alexander Kerensky's life and the Russian Civil War, but it does not mention the specific outcome of the civil war.",
+          "answer": "unknown",
           "ndcg@10": 0.5438,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 32.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Kerensky–Krasnov uprising",
             "Battle of Romanovka",
@@ -2594,12 +2594,12 @@
       "gold": "2000",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "2000",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Seven Brief Lessons on Physics",
             "Chiara Nappi",
@@ -2614,12 +2614,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Carlo Rovelli, an Italian physicist, and his work, but does not mention his work or publications after 2000.",
+          "answer": "2000",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0625,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 31.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Seven Brief Lessons on Physics",
             "Chiara Nappi",
@@ -2634,12 +2634,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only mentions Carlo Rovelli, an Italian physicist, and his work, but does not provide any information about his work in France.",
+          "answer": "2000",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 30.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Seven Brief Lessons on Physics",
             "Chiara Nappi",
@@ -2661,12 +2661,12 @@
       "gold": "World War II",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "World War I",
           "ndcg@10": 0.7904,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.6667,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Livesey Hall War Memorial",
             "Alamein Memorial",
@@ -2681,12 +2681,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "World War II",
           "ndcg@10": 0.8316,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Livesey Hall War Memorial",
             "Rainham War Memorial",
@@ -2701,12 +2701,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "World War I",
           "ndcg@10": 0.7904,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.6667,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Livesey Hall War Memorial",
             "Alamein Memorial",
@@ -2728,12 +2728,12 @@
       "gold": "no",
       "stacks": {
         "Vector": {
-          "answer": "Yes, both Elko Regional Airport and Gerald R. Ford International Airport are located in Michigan.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 15.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Gerald R. Ford International Airport",
             "Elko Regional Airport",
@@ -2748,12 +2748,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Yes, both Elko Regional Airport and Gerald R. Ford International Airport are located in Michigan.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 15.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Gerald R. Ford International Airport",
             "Elko Regional Airport",
@@ -2768,12 +2768,12 @@
           ]
         },
         "Graph": {
-          "answer": "Yes, both Elko Regional Airport and Gerald R. Ford International Airport are located in Michigan.",
+          "answer": "Yes.",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 15.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Gerald R. Ford International Airport",
             "Elko Regional Airport",
@@ -2795,12 +2795,12 @@
       "gold": "New York City",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Ralph Hefferline's biography and his work as a psychology professor, but it does not mention the specific university he taught at.",
+          "answer": "New York City",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 33.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Ralph Hefferline",
             "E. Mavis Hetherington",
@@ -2815,12 +2815,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "New York City",
           "ndcg@10": 0.8066,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Ralph Hefferline",
             "E. Mavis Hetherington",
@@ -2835,12 +2835,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Ralph Hefferline's biography and his work as a psychology professor, but it does not mention the specific university he taught at.",
+          "answer": "New York City",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 33.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Ralph Hefferline",
             "E. Mavis Hetherington",
@@ -2862,12 +2862,12 @@
       "gold": "Scotch Collie",
       "stacks": {
         "Vector": {
-          "answer": "The Manchester Terrier's ancestors include Gordon and Irish Setters.",
+          "answer": "Scotch Collie",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 8.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Scotch Collie",
             "English Setter",
@@ -2882,12 +2882,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The answer is the Scotch Collie. According to the text, the Scotch Collie's ancestors include both the long-haired (Rough) Collie and the short-haired (Smooth) Collie, which are both related to the Gordon and Irish Setters.",
+          "answer": "Scotch Collie",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.1333,
-          "contains": 0.0,
-          "answer_tokens": 28.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Scotch Collie",
             "English Setter",
@@ -2902,12 +2902,12 @@
           ]
         },
         "Graph": {
-          "answer": "The Manchester Terrier's ancestors include Gordon and Irish Setters.",
+          "answer": "Scotch Collie",
           "ndcg@10": 0.8772,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 8.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Scotch Collie",
             "English Setter",
@@ -2929,12 +2929,12 @@
       "gold": "Mumbai",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context does not mention where Sachin Warrier worked as a software engineer.",
+          "answer": "Kochi",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 20.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Sachin Bansal",
             "Sachin Warrier",
@@ -2949,12 +2949,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context does not provide information about Sachin Warrier's current or past employment, or the specific company he worked for.",
+          "answer": "Chennai",
           "ndcg@10": 0.6241,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 27.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Sachin Bansal",
             "Sachin Warrier",
@@ -2969,12 +2969,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the company that Sachin Warrier worked for as a software engineer.",
+          "answer": "Kochi",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 23.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Sachin Warrier",
             "Sachin Bansal",
@@ -2996,12 +2996,12 @@
       "gold": "1962",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "1962",
           "ndcg@10": 0.7977,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "I&quot;s",
             "The Kindaichi Case Files",
@@ -3016,12 +3016,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "1962",
           "ndcg@10": 0.7904,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "I&quot;s",
             "The Kindaichi Case Files",
@@ -3036,12 +3036,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "1962",
           "ndcg@10": 0.8175,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "I&quot;s",
             "The Kindaichi Case Files",
@@ -3063,12 +3063,12 @@
       "gold": "sovereignty",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Giuseppe Arimondi's life and the First Italo-Ethiopian War, but does not mention the outcome of the battle in which he lost his life.",
+          "answer": "Ethiopia's sovereignty.",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 34.0,
+          "f1": 0.6667,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Giuseppe Arimondi",
             "First Italo-Ethiopian War",
@@ -3083,12 +3083,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention Giuseppe Arimondi or the battle in which he lost his life, and it does not provide any information about the outcome of the battle or its significance for Ethiopia.",
+          "answer": "Ethiopia's sovereignty.",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 40.0,
+          "f1": 0.6667,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Battle of Adwa",
             "Giuseppe Arimondi",
@@ -3103,12 +3103,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text provided does not mention the Battle of Adwa or Giuseppe Arimondi's role in it, nor does it provide any context about the outcome of the battle.",
+          "answer": "Ethiopia's sovereignty.",
           "ndcg@10": 0.8772,
           "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 33.0,
+          "f1": 0.6667,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Battle of Adwa",
             "First Italo-Ethiopian War",
@@ -3130,12 +3130,12 @@
       "gold": "Nelson Rockefeller",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Nelson Rockefeller",
           "ndcg@10": 0.6131,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Alfred Balk",
             "Robert R. Hood",
@@ -3150,12 +3150,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Nelson Rockefeller",
           "ndcg@10": 0.7977,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Alfred Balk",
             "Executive Order 10925",
@@ -3170,12 +3170,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Nelson Rockefeller",
           "ndcg@10": 0.7977,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Alfred Balk",
             "Cynthia Hogan",
@@ -3197,12 +3197,12 @@
       "gold": "Yellowcraig",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Yellowcraigs",
           "ndcg@10": 0.8066,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Dirleton Castle",
             "Lothian and Borders",
@@ -3217,12 +3217,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Yellowcraigs",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Dirleton Castle",
             "Lothian and Borders",
@@ -3237,12 +3237,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Yellowcraigs",
           "ndcg@10": 0.8066,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Dirleton Castle",
             "Lothian and Borders",
@@ -3264,12 +3264,12 @@
       "gold": "Phil Spector",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the box sets and albums mentioned, but it does not mention the song or the writer.",
+          "answer": "Quincy Jones",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 27.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Back to Mono (1958–1969)",
             "Legend (film score)",
@@ -3284,12 +3284,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The writer of the song that was inspired by words on a tombstone and was the first track on the box set Back to Mono is Phil Spector.",
+          "answer": "Phil Spector",
           "ndcg@10": 0.8175,
-          "em": 0.0,
-          "f1": 0.16,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 23.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Back to Mono (1958–1969)",
             "Mono Masters",
@@ -3304,12 +3304,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the box sets and albums mentioned, but it does not mention the song or the writer.",
+          "answer": "Quincy Jones",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 27.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Back to Mono (1958–1969)",
             "Legend (film score)",
@@ -3331,12 +3331,12 @@
       "gold": "Organizations could come together to address global issues",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.2641,
           "em": 0.0,
-          "f1": 0.1176,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Mikhail Suslov",
             "Andrei Kirilenko (politician)",
@@ -3351,12 +3351,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.6131,
           "em": 0.0,
-          "f1": 0.1176,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Mikhail Gorbachev",
             "Mikhail Suslov",
@@ -3371,12 +3371,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "unknown",
           "ndcg@10": 0.2641,
           "em": 0.0,
-          "f1": 0.1176,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Mikhail Suslov",
             "Andrei Kirilenko (politician)",
@@ -3398,12 +3398,12 @@
       "gold": "yes",
       "stacks": {
         "Vector": {
-          "answer": "Based on the context, it appears that Ferocactus is a type of plant, specifically a genus of large barrel-shaped cacti.",
+          "answer": "yes",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 17.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ferocactus",
             "Silene",
@@ -3418,12 +3418,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. Ferocactus is a genus of large barrel-shaped cacti, while Silene is a genus of flowering plants in the family Caryophyllaceae. They are two distinct types of plants with different characteristics and classifications.",
+          "answer": "yes",
           "ndcg@10": 0.6241,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 38.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Silene menziesii",
             "Silene",
@@ -3438,12 +3438,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the genus Silene, which includes various species of flowering plants, and Ferocactus, which is a genus of cacti. There is no mention of Ferocactus being a type of plant, let alone a specific genus within the plant kingdom.",
+          "answer": "yes",
           "ndcg@10": 0.7977,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 47.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Silene",
             "Silene stenophylla",
@@ -3465,12 +3465,12 @@
       "gold": "English Electric Canberra",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Canberra",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "English Electric Canberra",
             "South West Pacific theatre of World War II",
@@ -3485,12 +3485,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Canberra",
           "ndcg@10": 0.8772,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "English Electric Canberra",
             "South West Pacific theatre of World War II",
@@ -3505,12 +3505,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Canberra",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "English Electric Canberra",
             "South West Pacific theatre of World War II",
@@ -3532,12 +3532,12 @@
       "gold": "2009 Big 12 Conference",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "2014",
           "ndcg@10": 0.2372,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "2011 Colorado Buffaloes football team",
             "2014–15 Colorado Buffaloes men's basketball team",
@@ -3552,12 +3552,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The 14th season for the Big 12 Conference as part of the NCAA Division that the Colorado Buffaloes played in with a record of 2-6 in conference play was the 2009 season.",
+          "answer": "2009 Big 12 Conference",
           "ndcg@10": 0.4911,
-          "em": 0.0,
-          "f1": 0.2667,
-          "contains": 0.0,
-          "answer_tokens": 26.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 4.0,
           "retrieved": [
             "2011 Colorado Buffaloes football team",
             "2014 Colorado Buffaloes football team",
@@ -3572,12 +3572,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "2015",
           "ndcg@10": 0.2641,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "2011 Colorado Buffaloes football team",
             "2014–15 Colorado Buffaloes men's basketball team",
@@ -3599,12 +3599,12 @@
       "gold": "1,462",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Carrefour",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Euromarché",
             "Carrefour",
@@ -3619,12 +3619,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Carrefour",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Euromarché",
             "Carrefour",
@@ -3639,12 +3639,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Carrefour",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Euromarché",
             "Carrefour",
@@ -3666,12 +3666,12 @@
       "gold": "Indianapolis Motor Speedway",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Indianapolis Motor Speedway, the Lean Horse Ultramarathon, the Subway 400, the Carolina Dodge Dealers 400, the Orange County Fair Speedway, and the Allison Transmission, but none of these tracks are located in the Midwest.",
+          "answer": "Indianapolis Motor Speedway",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.1333,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 42.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "1957 Indianapolis 500",
             "Indianapolis Motor Speedway",
@@ -3686,12 +3686,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Darlington Raceway",
           "ndcg@10": 0.5,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Carolina Dodge Dealers 400",
             "Subway 400",
@@ -3706,12 +3706,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Indianapolis Motor Speedway, the Lean Horse Ultramarathon, the Subway 400, the Carolina Dodge Dealers 400, the Orange County Fair Speedway, and the Allison Transmission, but none of these tracks are located in the Midwest.",
+          "answer": "Indianapolis Motor Speedway",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.1333,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 42.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "1957 Indianapolis 500",
             "Indianapolis Motor Speedway",
@@ -3733,12 +3733,12 @@
       "gold": "Rome",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only mentions that Franco Corelli starred in a film based on an opera by Giacomo Puccini, but it does not specify which opera or film.",
+          "answer": "New York City",
           "ndcg@10": 0.2372,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 33.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Festival Puccini",
             "Gianni Schicchi",
@@ -3753,12 +3753,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only mentions Franco Corelli, who was an Italian tenor, but does not provide any information about him starring in a film based on an opera by Giacomo Puccini.",
+          "answer": "New York City",
           "ndcg@10": 0.4685,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 35.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Festival Puccini",
             "La Bohème (1988 film)",
@@ -3773,12 +3773,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only mentions Franco Corelli, but it does not provide any information about a film based on an opera by Giacomo Puccini.",
+          "answer": "Rome",
           "ndcg@10": 0.389,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 29.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Festival Puccini",
             "Gianni Schicchi",
@@ -3800,10 +3800,10 @@
       "gold": "Max Martin, Savan Kotecha and Ilya Salmanzadeh",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Max Martin, Savan Kotecha, Ilya Salmanzadeh, and Tove Lo",
           "ndcg@10": 0.8066,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.875,
           "contains": 0.0,
           "answer_tokens": 9.0,
           "retrieved": [
@@ -3820,12 +3820,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Savan Kotecha, Ilya Salmanzadeh, Tove Lo, Max Martin, and Ali Payami",
           "ndcg@10": 0.7904,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.7778,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 11.0,
           "retrieved": [
             "Delirium (Ellie Goulding album)",
             "Delirium World Tour",
@@ -3840,10 +3840,10 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Savan Kotecha, Ilya Salmanzadeh, Max Martin, and Ali Payami",
           "ndcg@10": 0.8316,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.875,
           "contains": 0.0,
           "answer_tokens": 9.0,
           "retrieved": [
@@ -3867,12 +3867,12 @@
       "gold": "Marion, South Australia",
       "stacks": {
         "Vector": {
-          "answer": "Based on the provided context, the Australian city that founded in 1838 and contains a boarding school opened by a Prime Minister of Australia and named after a school in London of the same name is Marion, South Australia.",
+          "answer": "Marion, South Australia",
           "ndcg@10": 0.8772,
-          "em": 0.0,
-          "f1": 0.1667,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 33.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Westminster School, Adelaide",
             "High Commission of Australia, London",
@@ -3887,12 +3887,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the context, the Australian city that founded in 1838 and contains a boarding school opened by a Prime Minister of Australia and named after a school in London of the same name is Marion, South Australia.",
+          "answer": "Marion, South Australia",
           "ndcg@10": 0.8066,
-          "em": 0.0,
-          "f1": 0.1714,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 32.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Westminster School, Adelaide",
             "PNG solution",
@@ -3907,12 +3907,12 @@
           ]
         },
         "Graph": {
-          "answer": "Based on the provided context, the answer is Adelaide.",
+          "answer": "Adelaide",
           "ndcg@10": 0.7904,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 7.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Westminster School, Adelaide",
             "High Commission of Australia, London",
@@ -3934,12 +3934,12 @@
       "gold": "Drifting",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Drifting",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "D1NZ",
             "Drifting (motorsport)",
@@ -3954,12 +3954,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "drifting",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Drifting (motorsport)",
             "D1NZ",
@@ -3974,12 +3974,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Drifting",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "D1NZ",
             "Drifting (motorsport)",
@@ -4001,12 +4001,12 @@
       "gold": "Keith Bostic",
       "stacks": {
         "Vector": {
-          "answer": "Based on the information provided, I don't have enough information to answer this question.",
+          "answer": "Jerry Glanville",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 13.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Keith Bostic (American football)",
             "Keith Bostic",
@@ -4021,12 +4021,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the information provided, Jerry Glanville was born on October 14, 1941, and Keith Bostic was born on January 17, 1961. Therefore, Jerry Glanville is younger than Keith Bostic.",
+          "answer": "Jerry Glanville",
           "ndcg@10": 0.8772,
           "em": 0.0,
-          "f1": 0.129,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Keith Bostic (American football)",
             "Keith Bostic",
@@ -4041,12 +4041,12 @@
           ]
         },
         "Graph": {
-          "answer": "Based on the information provided, I don't have enough information to answer this question.",
+          "answer": "Jerry Glanville",
           "ndcg@10": 0.6509,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 13.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Keith Bostic",
             "Keith Bostic (American football)",
@@ -4068,12 +4068,12 @@
       "gold": "35,124",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The question asks about the population of the city in which Kirton End is located, but the provided sources only mention Kirton End as a hamlet in the civil parish of Kirton in the Boston district of Lincolnshire, England. There is no information about the city in which Kirton End is located.",
+          "answer": "261",
           "ndcg@10": 0.5641,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 53.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Kirton, Nottinghamshire",
             "Kirton End",
@@ -4088,12 +4088,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The question asks about the population of the city in which Kirton End is located, but the provided sources only mention the population of Kirton in Nottinghamshire and Suffolk. There is no information about the population of the city in which Kirton End is located.",
+          "answer": "261",
           "ndcg@10": 0.4413,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 47.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Kirton, Nottinghamshire",
             "Kirton, Suffolk",
@@ -4108,12 +4108,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the villages of Kirton in Lincolnshire, Nottinghamshire, Suffolk, and North Kansas City, Missouri, but does not mention Kirton End or its location.",
+          "answer": "261",
           "ndcg@10": 0.8316,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 35.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Kirton End",
             "Kirton, Nottinghamshire",
@@ -4135,12 +4135,12 @@
       "gold": "no",
       "stacks": {
         "Vector": {
-          "answer": "Based on the provided context, it appears that both Cypress and Ajuga genera are mentioned.",
+          "answer": "yes",
           "ndcg@10": 0.5438,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 14.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ajugeae",
             "Cypress-pine",
@@ -4155,12 +4155,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the provided context, it appears that both Cypress and Ajuga genera are mentioned. However, I don't have enough information to answer this question definitively.",
+          "answer": "yes",
           "ndcg@10": 0.4118,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 25.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ajugeae",
             "Cypress-pine",
@@ -4175,12 +4175,12 @@
           ]
         },
         "Graph": {
-          "answer": "Based on the provided context, it appears that both Cypress and Ajuga genera are mentioned. However, the question asks for a single answer. Since the question is ambiguous and does not specify which Cypress or Ajuga genus is being referred to, I will provide a general answer.\n\nAjuga is a genus of 40 species annual and perennial herbaceous flowering plants in the mint family Lamiaceae, with most species native to Europe, Asia, and Africa. Cypress, on the other hand, is a genus of coniferous trees in the cypress family Cupressaceae.\n\nWithout more specific information, it is not possible to determine which genus is being referred to. If you could provide more context or clarify which Cypress or Ajuga genus you are referring to, I would be happy to try and assist you further.",
+          "answer": "yes",
           "ndcg@10": 0.5706,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 123.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Ajugeae",
             "Cypress-pine",
@@ -4202,12 +4202,12 @@
       "gold": "shortest player ever to play in the National Basketball Association",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Charlotte Hornets' history, including their relocation, name changes, and roster, but it does not mention the player's name or any specific accomplishments.",
+          "answer": "Muggsy Bogues",
           "ndcg@10": 0.4486,
           "em": 0.0,
-          "f1": 0.0455,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 35.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2014–15 Charlotte Hornets season",
             "Charlotte Hornets",
@@ -4222,12 +4222,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Charlotte Hornets' history, including their relocation, name changes, and roster, but it does not mention the former NBA player who was a member of the team during their 1992-93 season and was head coach for the WNBA team Charlotte Sting.",
+          "answer": "Muggsy Bogues",
           "ndcg@10": 0.5803,
           "em": 0.0,
-          "f1": 0.0678,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 50.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2014–15 Charlotte Hornets season",
             "Muggsy Bogues",
@@ -4242,12 +4242,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Muggsy Bogues",
           "ndcg@10": 0.6241,
           "em": 0.0,
-          "f1": 0.1111,
+          "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2014–15 Charlotte Hornets season",
             "Muggsy Bogues",
@@ -4269,12 +4269,12 @@
       "gold": "Ronald Shusett",
       "stacks": {
         "Vector": {
-          "answer": "The film that has a score composed by Jerry Goldsmith is \"Innerspace\".",
+          "answer": "Paul Verhoeven",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 10.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Legend (film score)",
             "Alien (soundtrack)",
@@ -4289,12 +4289,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The film that has a score composed by Jerry Goldsmith is \"Total Recall\" (1990).",
+          "answer": "Joe Dante",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 12.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Legend (film score)",
             "Alien (soundtrack)",
@@ -4309,12 +4309,12 @@
           ]
         },
         "Graph": {
-          "answer": "The film that has a score composed by Jerry Goldsmith is \"L.A. Confidential\".",
+          "answer": "Joe Dante",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 11.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Legend (film score)",
             "Alien (soundtrack)",
@@ -4336,12 +4336,12 @@
       "gold": "Adeline Virginia Woolf",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Virginia Woolf",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.8,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Virginia Woolf",
             "Orlando: A Biography",
@@ -4356,12 +4356,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Virginia Woolf",
           "ndcg@10": 0.8772,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.8,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Emma Bull",
             "Jane Marcus",
@@ -4376,12 +4376,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Virginia Woolf",
           "ndcg@10": 0.6934,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.8,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Orlando: A Biography",
             "Emma Bull",
@@ -4403,12 +4403,12 @@
       "gold": "821",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "7734",
           "ndcg@10": 0.7904,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "What Are Little Boys Made Of?",
             "Pretty Little Dutch Girl",
@@ -4423,12 +4423,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "7734",
           "ndcg@10": 0.7904,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "What Are Little Boys Made Of?",
             "Pretty Little Dutch Girl",
@@ -4443,12 +4443,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "7734",
           "ndcg@10": 0.7904,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "What Are Little Boys Made Of?",
             "Pretty Little Dutch Girl",
@@ -4470,12 +4470,12 @@
       "gold": "more than 70 countries",
       "stacks": {
         "Vector": {
-          "answer": "According to the context, Scott Parkin has been a vocal critic of Exxonmobil and Halliburton, which have operations in more than 70 countries.",
+          "answer": "unknown",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.32,
-          "contains": 1.0,
-          "answer_tokens": 21.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Scott Parkin",
             "Halliburton",
@@ -4490,12 +4490,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Scott Parkin has been a vocal critic of Exxonmobil and Halliburton, both of which have operations in more than 70 countries.",
+          "answer": "unknown",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.3333,
-          "contains": 1.0,
-          "answer_tokens": 20.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Scott Parkin",
             "Mobil Producing Nigeria",
@@ -4510,12 +4510,12 @@
           ]
         },
         "Graph": {
-          "answer": "According to the context, Scott Parkin has been a vocal critic of Exxonmobil and Halliburton, which have operations in more than 70 countries.",
+          "answer": "3200",
           "ndcg@10": 0.8772,
           "em": 0.0,
-          "f1": 0.32,
-          "contains": 1.0,
-          "answer_tokens": 21.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Scott Parkin",
             "Mobil Producing Nigeria",
@@ -4537,12 +4537,12 @@
       "gold": "Charmed",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only mentions Rose McGowan's roles in the TV series \"Charmed\" and the film \"Heathers\", but not her role in the WB supernatural drama series \"Jawbreaker\".",
+          "answer": "Charmed",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0606,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 32.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Jawbreaker (film)",
             "Rose McGowan",
@@ -4557,12 +4557,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only mentions Rose McGowan's roles in \"Charmed\" and \"Safe Harbor\", but not \"Jawbreaker\".",
+          "answer": "Charmed",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0833,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 23.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Jawbreaker (film)",
             "Rose McGowan",
@@ -4577,12 +4577,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only mentions that Rose McGowan played the role of Paige Matthews in the WB supernatural drama series \"Charmed\", but it does not provide any information about her role in \"Jawbreaker\".",
+          "answer": "Charmed",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0513,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 38.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Jawbreaker (film)",
             "Rose McGowan",
@@ -4604,12 +4604,12 @@
       "gold": "International Boxing Hall of Fame",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "IBF",
           "ndcg@10": 0.7977,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Vince Phillips",
             "Jeff Malcolm",
@@ -4624,12 +4624,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "International Boxing Hall of Fame (IBHOF)",
           "ndcg@10": 0.8316,
           "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "f1": 0.9091,
+          "contains": 1.0,
+          "answer_tokens": 6.0,
           "retrieved": [
             "Vince Phillips",
             "Jeff Malcolm",
@@ -4644,12 +4644,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "IBF",
           "ndcg@10": 0.7977,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Vince Phillips",
             "Jeff Malcolm",
@@ -4671,12 +4671,12 @@
       "gold": "Usher",
       "stacks": {
         "Vector": {
-          "answer": "The singer who's song was released as the lead single from the album \"Confessions\" and that had popular song stuck behind for eight consecutive weeks is Usher.",
+          "answer": "Usher",
           "ndcg@10": 0.8316,
-          "em": 0.0,
-          "f1": 0.08,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Yeah! (Usher song)",
             "Be the One (Poison song)",
@@ -4691,12 +4691,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The singer who's song was released as the lead single from the album \"Confessions\" and that had popular song stuck behind for eight consecutive weeks is Usher.",
+          "answer": "Usher",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.08,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Yeah! (Usher song)",
             "I Don't Wanna Know",
@@ -4711,12 +4711,12 @@
           ]
         },
         "Graph": {
-          "answer": "The singer who's song was released as the lead single from the album \"Confessions\" and that had popular song stuck behind for eight consecutive weeks is Usher.",
+          "answer": "Usher",
           "ndcg@10": 0.8316,
-          "em": 0.0,
-          "f1": 0.08,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Yeah! (Usher song)",
             "Be the One (Poison song)",
@@ -4738,12 +4738,12 @@
       "gold": "Bill Murray",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Brian Doyle-Murray",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "The Hard Easy (film)",
             "The Hard Easy (Adventure Time)",
@@ -4758,12 +4758,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the context, I don't have enough information to answer this question.",
+          "answer": "Jake",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 12.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "The Hard Easy (Adventure Time)",
             "Brother from Another Series",
@@ -4778,12 +4778,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Brian Doyle-Murray",
           "ndcg@10": 0.3869,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "The Hard Easy (film)",
             "The Hard Easy (Adventure Time)",
@@ -4805,12 +4805,12 @@
       "gold": "Carabao Cup",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the 2017-18 season of Wigan Athletic F.C. and does not mention the FA Cup.",
+          "answer": "Carabao Cup",
           "ndcg@10": 0.8175,
-          "em": 0.0,
-          "f1": 0.0714,
-          "contains": 0.0,
-          "answer_tokens": 26.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2017–18 Wigan Athletic F.C. season",
             "2006–07 Wigan Athletic F.C. season",
@@ -4825,12 +4825,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the 2017-18 season of Wigan Athletic F.C. and does not mention the league cup.",
+          "answer": "Carabao Cup",
           "ndcg@10": 0.8066,
-          "em": 0.0,
-          "f1": 0.0714,
-          "contains": 0.0,
-          "answer_tokens": 26.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2017–18 Wigan Athletic F.C. season",
             "2006–07 Wigan Athletic F.C. season",
@@ -4845,12 +4845,12 @@
           ]
         },
         "Graph": {
-          "answer": "The 2017–18 Wigan Athletic F.C. season will be a year in which the team competes in the FA Cup, EFL Cup, and EFL Trophy.",
+          "answer": "Carabao Cup",
           "ndcg@10": 0.511,
-          "em": 0.0,
-          "f1": 0.0909,
-          "contains": 0.0,
-          "answer_tokens": 20.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "2006–07 Wigan Athletic F.C. season",
             "2007–08 Wigan Athletic F.C. season",
@@ -4872,12 +4872,12 @@
       "gold": "Teen Titans Go!",
       "stacks": {
         "Vector": {
-          "answer": "The answer to the question is \"Teen Titans\".",
+          "answer": "Teen Titans Go!",
           "ndcg@10": 0.5912,
-          "em": 0.0,
-          "f1": 0.4444,
-          "contains": 0.0,
-          "answer_tokens": 6.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Tara Strong filmography",
             "Tara Strong",
@@ -4892,12 +4892,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The answer to the question is \"Teen Titans Go!\".",
+          "answer": "Teen Titans Go!",
           "ndcg@10": 0.525,
-          "em": 0.0,
-          "f1": 0.6,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 7.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Teen Titans (season 1)",
             "List of Teen Titans Go! episodes",
@@ -4912,12 +4912,12 @@
           ]
         },
         "Graph": {
-          "answer": "The answer to the question is \"Teen Titans\".",
+          "answer": "Teen Titans Go!",
           "ndcg@10": 0.5912,
-          "em": 0.0,
-          "f1": 0.4444,
-          "contains": 0.0,
-          "answer_tokens": 6.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Tara Strong filmography",
             "Tara Strong",
@@ -4939,12 +4939,12 @@
       "gold": "276,170 inhabitants",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context does not provide information about the city where the 122nd SS-Standarte was formed in 2014.",
+          "answer": "Strasbourg",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 23.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "122nd SS-Standarte",
             "122d Fighter Squadron",
@@ -4959,12 +4959,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the 122nd SS-Standarte, its formation, and its location, but does not mention the city where it was formed in 2014.",
+          "answer": "Strasbourg",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 32.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "122nd SS-Standarte",
             "Strasbourg",
@@ -4979,12 +4979,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context does not provide information about the city where the 122nd SS-Standarte was formed in 2014.",
+          "answer": "Strasbourg",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 23.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "122nd SS-Standarte",
             "122d Fighter Squadron",
@@ -5006,12 +5006,12 @@
       "gold": "orange",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific color of clothing that people of the Netherlands wear during Oranjegekte or Koningsdag.",
+          "answer": "Orange",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 27.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Oranjegekte",
             "Koningsdag",
@@ -5026,12 +5026,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific color of clothing that people of the Netherlands wear during Oranjegekte or Koningsdag.",
+          "answer": "Orange",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 27.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Oranjegekte",
             "Koningsdag",
@@ -5046,12 +5046,12 @@
           ]
         },
         "Graph": {
-          "answer": "According to the context, people of the Netherlands wear orange clothing, specifically orange T-shirts, caps, and scarves, as well as decorate their homes, cars, and other public spaces in orange.",
+          "answer": "Orange",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.069,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 28.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Oranjegekte",
             "Koningsdag",
@@ -5073,12 +5073,12 @@
       "gold": "Tromeo and Juliet",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the 1996 American independent transgressive romantic comedy film \"Tromeo and Juliet\" and its loose adaptation \"Romeo × Juliet\", but not about a 1996 loose adaptation of William Shakespeare's \"Romeo & Juliet\" written by James Gunn.",
+          "answer": "Tromeo and Juliet",
           "ndcg@10": 0.5714,
-          "em": 0.0,
-          "f1": 0.1224,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 46.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Romeo + Juliet",
             "Tromeo and Juliet",
@@ -5093,12 +5093,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Tromeo and Juliet",
           "ndcg@10": 0.5714,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Romeo + Juliet",
             "Tromeo and Juliet",
@@ -5113,12 +5113,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Romeo and Juliet",
           "ndcg@10": 0.8066,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.6667,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Tromeo and Juliet",
             "Romeo + Juliet",
@@ -5140,12 +5140,12 @@
       "gold": "William Jefferson Clinton",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Bill Clinton",
           "ndcg@10": 0.7977,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.4,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Robert Suettinger",
             "Robert Barton",
@@ -5160,12 +5160,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Arkansas",
           "ndcg@10": 0.8316,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Robert Suettinger",
             "Director of the Defense Intelligence Agency",
@@ -5180,12 +5180,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Bill Clinton",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.4,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Robert Suettinger",
             "Peter W. Smith",
@@ -5274,12 +5274,12 @@
       "gold": "Ann",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the actress Sela Ward, her birth name, and her profession, but does not mention her middle name.",
+          "answer": "Ward",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 30.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Bobbi Bacha",
             "Suburban Madness",
@@ -5294,12 +5294,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the actress Sela Ward, her roles, and her background, but does not mention her middle name.",
+          "answer": "Ryman",
           "ndcg@10": 0.8503,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Bobbi Bacha",
             "Suburban Madness",
@@ -5314,12 +5314,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the actress Sela Ward, her birth name, and her profession, but does not mention her middle name.",
+          "answer": "Ward",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 30.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Bobbi Bacha",
             "Suburban Madness",
@@ -5341,12 +5341,12 @@
       "gold": "Apalachees",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The provided context does not mention which tribe of indigenous people Alvaro Mexia had a diplomatic mission with.",
+          "answer": "Ais",
           "ndcg@10": 0.8316,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 25.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Alvaro Mexia",
             "Amaruk Kayshapanta",
@@ -5361,12 +5361,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the tribe of indigenous people that Alvaro Mexia had a diplomatic mission with.",
+          "answer": "Ais",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 25.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Alvaro Mexia",
             "Diplomatic mission",
@@ -5381,12 +5381,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The provided context does not mention which tribe of indigenous people Alvaro Mexia had a diplomatic mission with.",
+          "answer": "Ais",
           "ndcg@10": 0.8503,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 25.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Alvaro Mexia",
             "Amaruk Kayshapanta",
@@ -5408,12 +5408,12 @@
       "gold": "British",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "British",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Edmund Leach",
             "Alfred Gell",
@@ -5428,12 +5428,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "British",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Edmund Leach",
             "Alfred Gell",
@@ -5448,12 +5448,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. Alfred Gell and Edmund Leach were British social anthropologists, but I couldn't find any information that suggests they were from a specific nationality other than British.",
+          "answer": "British",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0571,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 34.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Edmund Leach",
             "Alfred Gell",
@@ -5475,12 +5475,12 @@
       "gold": "1865",
       "stacks": {
         "Vector": {
-          "answer": "The King who made the 1925 Birthday Honours was King George V.",
+          "answer": "1865",
           "ndcg@10": 0.7904,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 10.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "1925 Birthday Honours",
             "1951 Birthday Honours",
@@ -5495,12 +5495,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context does not provide information about the birth year of the King who made the 1925 Birthday Honours.",
+          "answer": "1865",
           "ndcg@10": 0.6131,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 24.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "1925 Birthday Honours",
             "1951 Birthday Honours",
@@ -5515,12 +5515,12 @@
           ]
         },
         "Graph": {
-          "answer": "The King who made the 1925 Birthday Honours was King George V.",
+          "answer": "1865",
           "ndcg@10": 0.7904,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 10.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "1925 Birthday Honours",
             "1951 Birthday Honours",
@@ -5542,12 +5542,12 @@
       "gold": "Newport",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the town of Lempster in Sullivan County, New Hampshire, and does not mention the county seat of the county where East Lempster is located.",
+          "answer": "Dover",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 35.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "East Lempster, New Hampshire",
             "Lempster, New Hampshire",
@@ -5562,12 +5562,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the towns and cities in New Hampshire, but does not mention the county where East Lempster is located.",
+          "answer": "Dover, New Hampshire",
           "ndcg@10": 0.9197,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 30.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "East Lempster, New Hampshire",
             "Lempster, New Hampshire",
@@ -5582,12 +5582,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the location of East Lempster, New Hampshire, and other counties in New Hampshire, but does not mention the county seat of Sullivan County, where East Lempster is located.",
+          "answer": "Dover",
           "ndcg@10": 0.8772,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 40.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "East Lempster, New Hampshire",
             "Lempster, New Hampshire",
@@ -5609,12 +5609,12 @@
       "gold": "Bob Seger",
       "stacks": {
         "Vector": {
-          "answer": "The Rock singer's stage name was Bob Seger.",
+          "answer": "Bob Seger",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.4444,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 7.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Against the Wind (album)",
             "Bob Seger",
@@ -5629,12 +5629,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Bob Seger",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Against the Wind (album)",
             "Bob Seger",
@@ -5649,12 +5649,12 @@
           ]
         },
         "Graph": {
-          "answer": "The Rock singer Robert C Seger's stage name was Bob Seger.",
+          "answer": "Bob Seger",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.3333,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 10.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Against the Wind (album)",
             "Bob Seger",
@@ -5676,12 +5676,12 @@
       "gold": "Conscription",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific way of filling armed forces vacancies that Rostker v. Goldberg held to be constitutional.",
+          "answer": "men only",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Rostker v. Goldberg",
             "David Waksberg",
@@ -5696,12 +5696,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the context of Rostker v. Goldberg, including the Russian Civil War, the history of the Selective Service System, and the background of the case, but it does not mention the specific way of filling armed forces vacancies that was held to be constitutional by the Supreme Court.",
+          "answer": "men only",
           "ndcg@10": 0.7977,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 53.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Rostker v. Goldberg",
             "Russian Civil War",
@@ -5716,12 +5716,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the specific way of filling armed forces vacancies that Rostker v. Goldberg held to be constitutional.",
+          "answer": "men only",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Rostker v. Goldberg",
             "David Waksberg",
@@ -5743,12 +5743,12 @@
       "gold": "Mondelez International, Inc.",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Mondelez International",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.8,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Handi-Snacks",
             "Mondelez International",
@@ -5763,12 +5763,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Mondelez International",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.8,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Handi-Snacks",
             "Mondelez International",
@@ -5783,12 +5783,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Mondelez International",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.8,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Handi-Snacks",
             "Mondelez International",
@@ -5810,12 +5810,12 @@
       "gold": "Monica Lewinsky",
       "stacks": {
         "Vector": {
-          "answer": "The name of the woman from the book \"Their Lives: The Women Targeted by the Clinton Machine\" who was also a former White House intern is Monica Lewinsky.",
+          "answer": "Monica Lewinsky",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.1667,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 22.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Their Lives",
             "Monica Lewinsky",
@@ -5830,12 +5830,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The name of the woman from the book \"Their Lives: The Women Targeted by the Clinton Machine\" who was also a former White House intern is Monica Lewinsky.",
+          "answer": "Monica Lewinsky",
           "ndcg@10": 0.9197,
-          "em": 0.0,
-          "f1": 0.1667,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 22.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Their Lives",
             "The White House Doctor",
@@ -5850,12 +5850,12 @@
           ]
         },
         "Graph": {
-          "answer": "The name of the woman from the book \"Their Lives: The Women Targeted by the Clinton Machine\" who was also a former White House intern is Monica Lewinsky.",
+          "answer": "Monica Lewinsky",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.1667,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 22.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Their Lives",
             "Monica Lewinsky",
@@ -5877,12 +5877,12 @@
       "gold": "April 1, 1949",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "April 1, 1949",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Paul Manafort",
             "Trump campaign–Russian meeting",
@@ -5897,12 +5897,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "April 1, 1949",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Paul Manafort",
             "Trump campaign–Russian meeting",
@@ -5917,12 +5917,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "April 1, 1949",
           "ndcg@10": 0.8066,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Paul Manafort",
             "Donald Trump presidential campaign, 2000",
@@ -5944,12 +5944,12 @@
       "gold": "1866",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The context does not provide information about the publication year of the novel that Lourenço Mutarelli based \"Nina\" on.",
+          "answer": "1970",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 25.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Lourenço Mutarelli",
             "The Birds on the Trees",
@@ -5964,12 +5964,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the publication year of the novel that Lourenço Mutarelli based \"Nina\" on.",
+          "answer": "1970",
           "ndcg@10": 0.8175,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 24.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Lourenço Mutarelli",
             "The Birds on the Trees",
@@ -5984,12 +5984,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context only provides information about Lourenço Mutarelli's works, such as his plays, books, and films, but does not mention the publication year of the novel that he based \"Nina\" on.",
+          "answer": "1970",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 37.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Lourenço Mutarelli",
             "The Birds on the Trees",
@@ -6011,12 +6011,12 @@
       "gold": "Canary Islands, Spain",
       "stacks": {
         "Vector": {
-          "answer": "Teide National Park and Garajonay National Park are located in the Canary Islands, Spain.",
+          "answer": "Teide National Park: Tenerife, Canary Islands, Spain\nGarajonay National Park: La Gomera, Canary Islands, Spain",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.375,
+          "f1": 0.3333,
           "contains": 1.0,
-          "answer_tokens": 13.0,
+          "answer_tokens": 15.0,
           "retrieved": [
             "Garajonay National Park",
             "Teide National Park",
@@ -6031,12 +6031,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Teide National Park and Garajonay National Park are located in the Canary Islands, Spain.",
+          "answer": "Teide National Park: Tenerife, Canary Islands, Spain\nGarajonay National Park: La Gomera, Canary Islands, Spain",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.375,
+          "f1": 0.3333,
           "contains": 1.0,
-          "answer_tokens": 13.0,
+          "answer_tokens": 15.0,
           "retrieved": [
             "Garajonay National Park",
             "Teide National Park",
@@ -6051,12 +6051,12 @@
           ]
         },
         "Graph": {
-          "answer": "Teide National Park and Garajonay National Park are located in the Canary Islands, Spain.",
+          "answer": "Teide National Park: Tenerife, Canary Islands, Spain\nGarajonay National Park: La Gomera, Canary Islands, Spain",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.375,
+          "f1": 0.3333,
           "contains": 1.0,
-          "answer_tokens": 13.0,
+          "answer_tokens": 15.0,
           "retrieved": [
             "Garajonay National Park",
             "Teide National Park",
@@ -6078,12 +6078,12 @@
       "gold": "250 million",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Roald Dahl's life, works, and various collections, but it does not mention the sales figures for his variation on a popular anecdote.",
+          "answer": "250 million",
           "ndcg@10": 0.8175,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 34.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Roald Dahl",
             "The Best of Roald Dahl",
@@ -6098,12 +6098,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Roald Dahl's life, works, and various collections, but does not mention the sales figures for his variation on a popular anecdote.",
+          "answer": "250 million",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 33.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Roald Dahl",
             "Mrs. Bixby and the Colonel's Coat",
@@ -6118,12 +6118,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about Roald Dahl's life, works, and various collections, but it does not mention the sales figures for his variation on a popular anecdote.",
+          "answer": "250 million",
           "ndcg@10": 0.5803,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 34.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "The Best of Roald Dahl",
             "Roald Dahl",
@@ -6145,12 +6145,12 @@
       "gold": "director",
       "stacks": {
         "Vector": {
-          "answer": "Based on the context, Chris Menges and Aram Avakian share the occupation of cinematographer and film director.",
+          "answer": "cinematographer",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.125,
-          "contains": 1.0,
-          "answer_tokens": 15.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Chris Menges",
             "Aram Avakian",
@@ -6165,12 +6165,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the context, Chris Menges and Aram Avakian share the occupation of cinematographer and film director.",
+          "answer": "cinematographer",
           "ndcg@10": 1.0,
           "em": 0.0,
-          "f1": 0.125,
-          "contains": 1.0,
-          "answer_tokens": 15.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Chris Menges",
             "Aram Avakian",
@@ -6185,12 +6185,12 @@
           ]
         },
         "Graph": {
-          "answer": "Based on the context, Chris Menges and Aram Avakian share the occupation of being film editors and directors.",
+          "answer": "cinematographer",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 16.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Chris Menges",
             "Aram Avakian",
@@ -6212,12 +6212,12 @@
       "gold": "The Conversation",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "The Conversation",
           "ndcg@10": 0.6131,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Andrew Jaspan",
             "Brad Parscale",
@@ -6232,12 +6232,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "The Conversation",
           "ndcg@10": 0.6131,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Andrew Jaspan",
             "State media",
@@ -6252,12 +6252,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "The Conversation",
           "ndcg@10": 0.6131,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Andrew Jaspan",
             "Brad Parscale",
@@ -6279,12 +6279,12 @@
       "gold": "John Waters",
       "stacks": {
         "Vector": {
-          "answer": "The 18th Independent Spirit Awards were hosted by John Waters.",
+          "answer": "John Waters",
           "ndcg@10": 0.6131,
-          "em": 0.0,
-          "f1": 0.3636,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "18th Independent Spirit Awards",
             "32nd Independent Spirit Awards",
@@ -6299,7 +6299,7 @@
           ]
         },
         "Hybrid": {
-          "answer": "John Waters.",
+          "answer": "John Waters",
           "ndcg@10": 0.7904,
           "em": 1.0,
           "f1": 1.0,
@@ -6319,12 +6319,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "John Waters",
           "ndcg@10": 0.3066,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 9.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Independent Spirit Award for Best Cinematography",
             "Independent Spirit Award for Best Editing",
@@ -6346,12 +6346,12 @@
       "gold": "Las Vegas Strip in Paradise",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Las Vegas, Nevada.",
           "ndcg@10": 0.4838,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Inside the Mind of Bill Cosby",
             "Disco Bill",
@@ -6366,12 +6366,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Flamingo Hotel in Las Vegas, Nevada.",
           "ndcg@10": 0.7904,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5455,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 6.0,
           "retrieved": [
             "Why Is There Air?",
             "Inside the Mind of Bill Cosby",
@@ -6386,12 +6386,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Flamingo Hotel in Las Vegas, Nevada.",
           "ndcg@10": 0.7977,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5455,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 6.0,
           "retrieved": [
             "Why Is There Air?",
             "Inside the Mind of Bill Cosby",
@@ -6413,12 +6413,12 @@
       "gold": "no",
       "stacks": {
         "Vector": {
-          "answer": "No, the drinks Gibson and Zurracapote do not both contain gin. According to the sources, Gibson is a mixed drink made with gin and vermouth, while Zurracapote is a Spanish alcoholic mixed drink made with red wine, fruit, sugar, and cinnamon.",
+          "answer": "No.",
           "ndcg@10": 0.6934,
-          "em": 0.0,
-          "f1": 0.0526,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 37.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Phillips Distilling Company",
             "Gibson (cocktail)",
@@ -6433,12 +6433,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Based on the context, I don't have enough information to answer this question. The text only mentions the Gibson, a mixed drink made with gin and vermouth, but does not provide any information about Zurracapote, a Spanish alcoholic mixed drink made with red wine, fruit, sugar, and cinnamon.",
+          "answer": "No.",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 43.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Gibson (cocktail)",
             "Zurracapote",
@@ -6453,12 +6453,12 @@
           ]
         },
         "Graph": {
-          "answer": "No, the drinks Gibson and Zurracapote do not both contain gin. According to the sources provided, the Gibson is a mixed drink made with gin and vermouth, while Zurracapote is a Spanish alcoholic mixed drink made with red wine, fruit, sugar, and cinnamon.",
+          "answer": "unknown",
           "ndcg@10": 0.9197,
           "em": 0.0,
-          "f1": 0.0513,
-          "contains": 1.0,
-          "answer_tokens": 38.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Gibson (cocktail)",
             "Phillips Distilling Company",
@@ -6480,12 +6480,12 @@
       "gold": "March and April",
       "stacks": {
         "Vector": {
-          "answer": "The London International Documentary Festival (LIDF) is held in March and April every year.",
+          "answer": "April",
           "ndcg@10": 0.7977,
           "em": 0.0,
-          "f1": 0.375,
-          "contains": 1.0,
-          "answer_tokens": 13.0,
+          "f1": 0.5,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "London International Documentary Festival",
             "Docville",
@@ -6500,12 +6500,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "The London International Documentary Festival (LIDF) is held in March and April every year.",
+          "answer": "April",
           "ndcg@10": 0.8772,
           "em": 0.0,
-          "f1": 0.375,
-          "contains": 1.0,
-          "answer_tokens": 13.0,
+          "f1": 0.5,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "London International Documentary Festival",
             "Docville",
@@ -6520,12 +6520,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The context provided does not mention the London International Documentary Festival, the International Documentary Film Festival Docville, or the New Haven Documentary Film Festival, which are all mentioned in other contexts.",
+          "answer": "April",
           "ndcg@10": 0.8503,
           "em": 0.0,
-          "f1": 0.0,
+          "f1": 0.5,
           "contains": 0.0,
-          "answer_tokens": 36.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "London International Documentary Festival",
             "Docville",
@@ -6547,12 +6547,12 @@
       "gold": "Fairfax County",
       "stacks": {
         "Vector": {
-          "answer": "Tysons Galleria is located in Fairfax County.",
+          "answer": "Fairfax County",
           "ndcg@10": 0.7904,
-          "em": 0.0,
-          "f1": 0.4444,
+          "em": 1.0,
+          "f1": 1.0,
           "contains": 1.0,
-          "answer_tokens": 7.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Tysons Galleria",
             "Tysons, Virginia",
@@ -6567,12 +6567,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "Tysons Galleria is located in Fairfax County.",
+          "answer": "Virginia",
           "ndcg@10": 0.8175,
           "em": 0.0,
-          "f1": 0.4444,
-          "contains": 1.0,
-          "answer_tokens": 7.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Tysons Galleria",
             "Tysons, Virginia",
@@ -6587,12 +6587,12 @@
           ]
         },
         "Graph": {
-          "answer": "Tysons Galleria is located in Fairfax County.",
+          "answer": "Virginia",
           "ndcg@10": 0.6131,
           "em": 0.0,
-          "f1": 0.4444,
-          "contains": 1.0,
-          "answer_tokens": 7.0,
+          "f1": 0.0,
+          "contains": 0.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Tysons Galleria",
             "Tysons, Virginia",
@@ -6614,12 +6614,12 @@
       "gold": "IT products and services",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Soft drinks",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 2.0,
           "retrieved": [
             "Bordan Tkachuk",
             "Jim Lentz",
@@ -6634,12 +6634,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Insurtech",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Bordan Tkachuk",
             "Jonathan Michael Ansell",
@@ -6654,12 +6654,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Viglen",
           "ndcg@10": 0.6131,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Bordan Tkachuk",
             "Jim Lentz",
@@ -6681,12 +6681,12 @@
       "gold": "Levni Yilmaz",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Pamela B. Green",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Pamela B. Green",
             "Lev Yilmaz",
@@ -6701,12 +6701,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Pamela B. Green",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Pamela B. Green",
             "Lev Yilmaz",
@@ -6721,12 +6721,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question.",
+          "answer": "Pamela B. Green",
           "ndcg@10": 1.0,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 9.0,
+          "answer_tokens": 3.0,
           "retrieved": [
             "Pamela B. Green",
             "Lev Yilmaz",
@@ -6748,12 +6748,12 @@
       "gold": "Beijing",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Moroccan ambassador to China, the Rabat-Salé-Kénitra administrative region, and other locations, but does not mention the city where the ambassador is based.",
+          "answer": "Beijing",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 33.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Moroccan Ambassador to China",
             "Rabat",
@@ -6768,12 +6768,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The context does not provide information about the location of the ambassador of the Rabat-Salé-Kénitra administrative region to China.",
+          "answer": "Beijing",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 24.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Moroccan Ambassador to China",
             "Rabat",
@@ -6788,12 +6788,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text only provides information about the Moroccan ambassador to China, the location of the Wolong Special Administrative Region in China, and other geographical and administrative details, but does not mention the Rabat-Salé-Kénitra administrative region or its ambassador.",
+          "answer": "Beijing",
           "ndcg@10": 1.0,
-          "em": 0.0,
-          "f1": 0.0,
-          "contains": 0.0,
-          "answer_tokens": 42.0,
+          "em": 1.0,
+          "f1": 1.0,
+          "contains": 1.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Moroccan Ambassador to China",
             "Rabat",
@@ -6815,12 +6815,12 @@
       "gold": "no",
       "stacks": {
         "Vector": {
-          "answer": "I don't have enough information to answer this question. The text provides information about Yingkou and Fuding, but it does not explicitly state whether they are the same level of city.",
+          "answer": "unknown",
           "ndcg@10": 0.8175,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Yingkou",
             "Roman Catholic Diocese of Yingkou",
@@ -6835,12 +6835,12 @@
           ]
         },
         "Hybrid": {
-          "answer": "I don't have enough information to answer this question. The text provides information about Yingkou and Fuding, but it does not explicitly state whether they are the same level of city.",
+          "answer": "unknown",
           "ndcg@10": 0.8066,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Yingkou",
             "Yingkou East Railway Station",
@@ -6855,12 +6855,12 @@
           ]
         },
         "Graph": {
-          "answer": "I don't have enough information to answer this question. The text provides information about Yingkou and Fuding, but it does not explicitly state whether they are the same level of city.",
+          "answer": "unknown",
           "ndcg@10": 0.8175,
           "em": 0.0,
           "f1": 0.0,
           "contains": 0.0,
-          "answer_tokens": 29.0,
+          "answer_tokens": 1.0,
           "retrieved": [
             "Yingkou",
             "Roman Catholic Diocese of Yingkou",
