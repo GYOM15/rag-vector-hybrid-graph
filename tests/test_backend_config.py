@@ -303,6 +303,10 @@ def test_public_preset_on_the_wire_carries_only_the_visitors_key(monkeypatch):
             return False
 
     def fake_urlopen(request, timeout=None):
+        # urllib stores header names capitalized ("User-agent"). Groq and Together answer
+        # urllib's default agent with a 403 before checking the key, so it must be ours.
+        user_agent = request.get_header("User-agent") or ""
+        assert user_agent and not user_agent.startswith("Python-urllib")
         sent.append((request.full_url, request.get_header("Authorization")))
         return _Response()
 
