@@ -11,99 +11,135 @@
 ![BM25](https://img.shields.io/badge/Lexical-BM25%20%2B%20RRF-1D9E75)
 ![networkx](https://img.shields.io/badge/Graph-networkx-2C5BB4)
 ![spaCy](https://img.shields.io/badge/NER-spaCy-09A3D5?logo=spacy&logoColor=white)
-![RAGAS](https://img.shields.io/badge/Eval-RAGAS-E8543F)
 ![Ollama](https://img.shields.io/badge/LLM-Ollama-000000?logo=ollama&logoColor=white)
 ![vLLM](https://img.shields.io/badge/Serving-vLLM-FDB515)
-![Ray](https://img.shields.io/badge/Scaling-Ray-028CF0)
 ![Streamlit](https://img.shields.io/badge/App-Streamlit-FF4B4B?logo=streamlit&logoColor=white)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![CI](https://github.com/gyom15/rag-vector-hybrid-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/gyom15/rag-vector-hybrid-graph/actions)
+[![CI](https://github.com/GYOM15/rag-vector-hybrid-graph/actions/workflows/ci.yml/badge.svg)](https://github.com/GYOM15/rag-vector-hybrid-graph/actions)
 [![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph)
 
-[**🔗 Live demo**](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph) · [Architecture](#architecture) · [Quickstart](#quickstart) · [Evaluation](#evaluation) · [Roadmap](#roadmap)
+[**Live demo**](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph) · [Contents](#contents)
 
 </div>
 
 ---
 
-A **full-stack benchmark** of three **Retrieval-Augmented Generation** architectures —
-**Vector · Hybrid · Graph** — on the **same corpus, chunking, prompt and LLM**, so the
-comparison is fair (only the *retriever* changes). The same pipeline is then measured
-**at every layer**: retrieval, reranking, answer quality, systems performance, and **GPU serving**.
-
-| Stack | Retrieval | What it adds |
-|------|-----------|--------------|
-| **Vector** | dense similarity (FAISS) | semantic meaning |
-| **Hybrid** | vector + BM25, fused by **RRF** | exact keywords (dates, names, codes) |
-| **Graph** | spaCy NER → entity graph (networkx) + **local-search** (query entities via MENTIONS/RELATED_TO, IDF-weighted) | relational / multi-hop |
-
-## Highlights
-
-**🔗 [Live demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph)** — the 3 retrievers side by side + an in-app evaluation dashboard, on a free CPU Space.
-
-> Not just a retrieval comparison — the same pipeline is benchmarked **end to end**, from retrieval to GPU serving.
-
-- **Fair by construction** — same corpus, chunking, prompt and LLM; *only the retriever changes*.
-- **Hybrid (BM25 + dense + RRF) is the robust winner** across 3 BEIR corpora (SciFact / HotpotQA / NFCorpus).
-- **Debugged the Graph at scale** — found *why* it failed (entity-hub pollution), fixed it with a principled normalization, exponent chosen on a **held-out split** (never on test).
-- **Reranking doesn't generalize** — *replace* vs *fuse* flips by dataset; measured, with the rule for when to use which.
-- **Reader quality > size** — a 1.5B *instruct* model (Qwen2.5) reads a distractor correctly where a 3B (Llama-3.2) misreads it — shown **live**.
-- **The generator is the bottleneck** end-to-end — better retrieval ≠ better answers without a capable reader.
-- **Deployed & measured on a GPU** — Qwen2.5-7B served with **vLLM** on an AWS A10G; continuous batching scaled throughput **~38×** on one GPU (→ 1,138 tok/s), with **Prometheus + Grafana** observability.
-- **Built like production** — deterministic (temp 0), a **regression guard in CI** (nDCG gate), honest negative results, and an **audit** that re-ran every claim and corrected two overstatements.
+A benchmark of three retrieval-augmented generation (RAG) architectures — **Vector**,
+**Hybrid** and **Graph** — built so that **only the retriever changes**: same corpus,
+chunking, embeddings, prompt and LLM. The same pipeline is then measured at every layer:
+retrieval quality (BEIR SciFact and NFCorpus, HotpotQA), reranking, end-to-end answers,
+CPU systems cost, and GPU serving with vLLM. Reported numbers come from committed JSON
+snapshots: post-audit snapshots carry the git SHA of the code that produced them, and all
+but the tuning sweep and the CPU benchmark carry 95% confidence intervals. Pre-audit
+figures, kept for the story and not re-run, are marked †.
 
 ## Contents
 
-- [Architecture](#architecture) — the 3 retrievers, controlled variables
-- [Quickstart](#quickstart) — install · run · reproduce the eval
-- [Evaluation](#evaluation)
-  - [Diagnosing & fixing the graph at scale](#diagnosing-and-fixing-the-graphs-failure-at-scale) — the diagnose → fix → held-out story
-  - [Performance & systems](#performance--systems) — build cost, latency p95/p99, throughput, Pareto
-  - [Serving & observability](#serving--observability-deployed-on-aws) — vLLM on GPU, ~38× throughput, Grafana
-  - [Reranking](#reranking--does-it-help-and-how-should-you-do-it) — does it help, and *how*? (replace vs fuse)
-- [Roadmap](#roadmap) · [Tests](#tests) · [Data](#data) · [License](#license)
+- [Key results](#key-results)
+- [Live demo](#live-demo)
+- [Architecture](#architecture)
+- [Quickstart](#quickstart)
+- [Evaluation methodology](#evaluation-methodology)
+- [Results](#results)
+  - [Retrieval quality](#retrieval-quality)
+  - [Debugging the Graph](#debugging-the-graph)
+  - [Embedder sensitivity](#embedder-sensitivity)
+  - [By query type](#by-query-type)
+  - [Reranking](#reranking)
+  - [From retrieval to answers](#from-retrieval-to-answers)
+    - [What moves answer quality](#what-moves-answer-quality)
+  - [Performance and systems](#performance-and-systems)
+  - [Serving on AWS (pre-audit)](#serving-on-aws-pre-audit)
+- [Audit (2026-09)](#audit-2026-09)
+- [Tests and CI](#tests-and-ci)
+- [Security and limitations](#security-and-limitations)
+- [Roadmap](#roadmap)
+- [Data](#data)
+- [License](#license)
+
+## Key results
+
+- **Retrieval (SciFact, NFCorpus, HotpotQA; human relevance judgments, no LLM).**
+  Hybrid — BM25 and dense retrieval fused by RRF — has the best nDCG@10 on all three
+  corpora and beats Vector significantly on each. → [Retrieval quality](#retrieval-quality)
+- **The Graph was held back twice by scoring bugs:** entity-rich hub documents swamped its
+  boost, then chunks reached only through the graph were scored with a cosine of 0. Fixed,
+  it beats Vector on multi-hop HotpotQA (level with Hybrid there) and narrowly on
+  NFCorpus, but not on SciFact. → [Debugging the Graph](#debugging-the-graph)
+- **Reranking: replace or fuse? It depends on the data.** Letting the cross-encoder's
+  ranking replace the retriever's wins on HotpotQA for every stack; on SciFact it hurts
+  Hybrid and fusing is the safe mode; on NFCorpus the two modes tie. → [Reranking](#reranking)
+- **With a short-answer prompt, better retrieval shows up in the Llama models' answers.**
+  Under that prompt, Hybrid — which most often puts both supporting paragraphs in the
+  context — beats Vector on answer F1 with both Llama models (not with Qwen); the Graph,
+  whose retrieval on that sample matches Vector's, answers like Vector.
+  → [From retrieval to answers](#from-retrieval-to-answers)
+- **The prompt is part of the system.** Asked for the shortest span, llama3.2:3b's answers
+  shrink from 13.4 to 1.7 tokens and its F1 moves from 0.134–0.184 to 0.495–0.599. Part
+  of that is scoring: token-F1 penalizes correct but verbose answers. Part is behavior:
+  the default prompt's "not enough information" escape hatch makes the Llama models refuse
+  many questions whose supporting paragraphs they had in context.
+  → [What moves answer quality](#what-moves-answer-quality)
+- **A smaller reader can read better.** In free-form answers Qwen2.5-1.5B contains the
+  gold more often than llama3.2:3b, though not in terse ones.
+  → [What moves answer quality](#what-moves-answer-quality)
+- **The Graph costs ~5× Vector to build**, most of it spaCy NER, and Hybrid is the
+  slowest to query. Extra threads help the Graph most, and no stack gains beyond 4.
+  → [Performance and systems](#performance-and-systems)
+- **vLLM on one A10G: 38.6× the tokens/s from 1 to 64 concurrent requests**
+  (Qwen2.5-7B-Instruct), for +0.4 s of median latency, split about evenly between time to
+  first token and slower decoding. Measured before the audit, and unaffected by it.
+  → [Serving on AWS](#serving-on-aws-pre-audit)
+- **A self-audit (2026-09)** closed the public demo's API-key exposure and multi-user
+  state leaks, fixed five retrieval bugs, and rebuilt the evaluation around CIs, paired
+  tests, provenance and a regression guard that can actually fail. → [Audit](#audit-2026-09)
+
+## Live demo
+
+**[Try it on Hugging Face Spaces](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph)**
+(free CPU Space, generation by Qwen2.5-1.5B-Instruct):
+
+- **Live chat** — one question goes to all three stacks; each column keeps its own thread
+  and shows the answer, latency and retrieved sources.
+- **Evaluation** — a dashboard over the committed snapshots in [`eval/reference/`](eval/reference):
+  retrieval quality, reranking, systems and answer quality, with CIs and paired tests where
+  the snapshot has them. Captions are computed from the data, not written by hand. Two
+  light evals run live — the regression guard and retrieval by question type. The live
+  RAGAS tab is disabled on the public Space.
+
+Every visitor shares one process, so the Space runs in public-demo mode: the LLM backend
+is fixed by the server ([Security and limitations](#security-and-limitations)). To deploy
+your own, see [docs/DEPLOY-HF.md](docs/DEPLOY-HF.md).
 
 ## Architecture
 
-<img src="docs/architecture.svg" alt="Architecture" width="100%">
+<img src="docs/architecture.svg" alt="Architecture: shared corpus, chunking, embeddings and FAISS index; three retrievers; shared prompt and LLM" width="100%">
 
-Only the **retriever** differs between stacks; chunking, embeddings, FAISS index,
-prompt and LLM are shared. `pipeline.build_stacks()` is the single source of truth
-used by both the app and the benchmark.
+| Stack | Retrieval | What it adds |
+|---|---|---|
+| **Vector** | FAISS exact inner product over L2-normalized MiniLM embeddings (cosine) | semantic similarity |
+| **Hybrid** | vector top-20 and BM25 top-20 (only chunks containing a query term), fused by RRF (k = 60) | exact tokens: names, dates, codes |
+| **Graph** | 20 vector seeds + chunks linked to the query's spaCy entities (MENTIONS, 1-hop RELATED_TO); score = cosine + 0.3 × IDF-weighted entity overlap ÷ the chunk's entity count | named-entity links |
 
-An **optional cross-encoder reranking stage** plugs in without touching the stacks:
-set `RERANK_MODE=replace` (or `fusion`) and every retriever is wrapped in a
-`RerankedRetriever` decorator (retrieve a wider top-N → rerank → top-k). It is **off
-by default** — the [reranking eval](#reranking--does-it-help-and-how-should-you-do-it)
-shows the benefit is dataset-dependent, so the *eval decides* and the *pipeline integrates*.
-
-## A RAG answer has two stages
-
-A wrong answer can come from **retrieval** (the right chunk never reaches the
-context) *or* from **generation** (the chunk is there but the model misreads it).
-Both must succeed — the matrix below shows why raising `k` alone or upgrading the
-model alone is not enough:
-
-<img src="docs/retrieval-vs-generation.svg" alt="Retrieval × Generation" width="100%">
-
-## Project structure
+Chunking, embeddings, the FAISS index, the prompt and the LLM are shared;
+`pipeline.assemble_stacks()` builds the three stacks for the app and the evals (the perf
+bench instantiates the same retrievers itself, to time each build step).
+An optional cross-encoder stage wraps any retriever (top-30 → rerank → top-k): set
+`RERANK_MODE=replace` or `fusion`. It is **off by default**, because its benefit depends
+on the data ([Reranking](#reranking)).
 
 ```
-rag-vector-hybrid-graph/
-├── src/
-│   ├── shared/
-│   ├── stack1_traditional/
-│   ├── stack2_hybrid/
-│   ├── stack3_graphrag/
-│   └── pipeline.py
-├── eval/
-├── app/
-├── tests/
-└── docs/
+src/
+  shared/              chunking, embeddings, FAISS index, LLM backends, prompt, metrics, reranker
+  stack1_traditional/  Vector
+  stack2_hybrid/       Hybrid (BM25 tokenizer, RRF)
+  stack3_graphrag/     Graph (spaCy NER, entity graph, local search)
+  pipeline.py          builds the three stacks
+eval/                  eval scripts, question sets, golden corpus, reference/ snapshots
+app/                   Streamlit app and evaluation dashboard
+tests/                 pytest suite
+docs/                  figures, deployment guide
 ```
-
-`src/` is the library (shared core + the 3 stacks + `pipeline`), `eval/` the
-benchmark, `app/` the Streamlit dashboard.
 
 ## Quickstart
 
@@ -111,366 +147,782 @@ benchmark, `app/` the Streamlit dashboard.
 
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate
-pip install -e .                 # core: library + Streamlit app
-pip install -e ".[eval]"         # + RAGAS benchmark
-pip install -e ".[dev]"          # + pytest / ruff
-python -m spacy download en_core_web_sm   # NER model used by the graph stack
+pip install -e ".[dev]"                   # library + app + pytest/ruff
+pip install -e ".[notebooks]"             # + matplotlib, to regenerate the figures
+pip install -e ".[eval]"                  # + RAGAS (optional)
+python -m spacy download en_core_web_sm   # NER model used by the Graph
 ```
 
-### 2. Pick an LLM backend
+### 2. Choose an LLM backend
 
-Generation needs an LLM, selected by `LLM_PROVIDER` (copy `.env.example` → `.env`):
+Generation needs an LLM, chosen by `LLM_PROVIDER`. Copy `.env.example` to `.env`: the app
+and the RAGAS benchmark load it; the other eval scripts read the shell environment.
 
-| Provider | Env vars | Model type | When |
+| `LLM_PROVIDER` | Settings | Model | Use |
 |---|---|---|---|
-| `ollama` *(default)* | `OLLAMA_URL`, `OLLAMA_MODEL` | decoder LLM (llama3.2…) | local dev |
-| `openai` | `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL` | decoder LLM | OpenAI **or a vLLM server** |
-| `huggingface` | `HF_MODEL` | seq2seq (flan-t5) **or** instruct decoder (Qwen2.5…), auto-detected | self-contained, no server |
+| `ollama` (default) | `OLLAMA_URL`, `OLLAMA_MODEL` | decoder LLM, e.g. `llama3.2:3b` | local development, answer eval |
+| `openai` | `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_MODEL` | any OpenAI-compatible endpoint | OpenAI, or a vLLM server |
+| `huggingface` | `HF_MODEL` | seq2seq (flan-t5) or instruct decoder (Qwen2.5…), auto-detected | no server; the hosted demo |
 
 ```bash
-ollama pull llama3.2:3b          # set OLLAMA_MODEL=llama3.2:3b
+ollama pull llama3.2:3b
 ```
 
-> `OPENAI_API_KEY` is also the **RAGAS** judge for the benchmark, whatever the
-> generation backend.
+Other settings: `RERANK_MODE` (`replace` | `fusion`, off by default), `DEMO_ARTICLES`
+(app corpus size, default 500), `LLM_TIMEOUT` (seconds, default 120), `PUBLIC_DEMO`
+([Security and limitations](#security-and-limitations)). `OPENAI_API_KEY` also
+authenticates the RAGAS judge, whatever the generation backend.
 
 ### 3. Run the app
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
-- **💬 Chat** — one question to the 3 architectures side by side, each with its own
-  thread, latency and sources.
-- **🧪 Évaluation** — an in-app dashboard: retrieval (BEIR), reranking, systems and
-  answer-quality results as tables + charts, from committed snapshots in
-  [`eval/reference/`](eval/reference). Heavy evals run from the CLI (§4) and the dashboard
-  *visualises* their output — like MLflow / W&B. The two **fast** evals (the regression
-  guard, the toy-corpus retrieval) and the RAGAS benchmark also **run live** in-app.
 
-> **🔗 Live demo** — [**try it on Hugging Face Spaces**](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph):
-> the full dashboard + a working Chat (Qwen2.5-1.5B-Instruct on free CPU). Deploy your own with
-> [docs/DEPLOY-HF.md](docs/DEPLOY-HF.md).
+The first chat or live eval builds the index (cached afterwards); the dashboard itself
+only reads JSON and loads immediately.
 
 ### 4. Reproduce the evaluation
 
-Retrieval quality on standard IR benchmarks — **no LLM**, human relevance judgments:
+Each command writes its committed snapshot under `eval/reference/`, the files this README,
+the dashboard and the plot scripts read. Without `--output`, a script writes a gitignored
+scratch file under `eval/` that neither the dashboard nor the plots read; the one
+exception is the RAGAS benchmark's `eval/results.json`, which the app's RAGAS tab shows.
+Datasets download from Hugging Face on first use.
 
 ```bash
-python -m eval.beir_eval --dataset scifact --output eval/beir_results.json                                 # single-hop
-python -m eval.beir_eval --dataset hotpotqa-distractor --max-queries 500 --output eval/beir_hotpot.json     # multi-hop
-python -m eval.beir_eval --dataset nfcorpus --output eval/beir_nfcorpus.json                               # medical IR (hard)
-python -m eval.beir_eval --dataset scifact --embedder BAAI/bge-small-en-v1.5 --output eval/beir_scifact_bge.json  # embedder swap
-python -m eval.retrieval_eval                                                                              # toy corpus + per-type
-python -m eval.sweep_entity_norm                                                                           # held-out tuning of the graph normalization
-python -m eval.perf_bench --dataset scifact --n-queries 200                                                # systems: build cost, latency, throughput
-python -m eval.plot_benchmark                                                                              # → docs/benchmark-results.svg
-python -m eval.plot_perf                                                                                   # → docs/perf-pareto.svg
-python -m eval.rerank_eval --dataset scifact --candidates 30 --max-queries 100                             # rerank replace vs fuse (also: nfcorpus, hotpotqa-distractor)
+# Retrieval quality: SciFact, NFCorpus, HotpotQA distractor (no LLM)
+python -m eval.beir_eval --dataset scifact  --output eval/reference/beir_scifact.json
+python -m eval.beir_eval --dataset nfcorpus --output eval/reference/beir_nfcorpus.json
+python -m eval.beir_eval --dataset hotpotqa-distractor --max-queries 500 --output eval/reference/beir_hotpotqa.json
+python -m eval.beir_eval --dataset scifact --embedder BAAI/bge-small-en-v1.5 --output eval/reference/beir_scifact_bge.json
+
+# Graph entity normalization, selected on held-out splits
+python -m eval.sweep_entity_norm --output eval/reference/sweep_entity_norm.json
+
+# Reranking, replace vs fuse (first 100 test queries each; HotpotQA on the 500-question corpus)
+python -m eval.rerank_eval --dataset scifact  --candidates 30 --max-queries 100 --output eval/reference/rerank_scifact.json
+python -m eval.rerank_eval --dataset nfcorpus --candidates 30 --max-queries 100 --output eval/reference/rerank_nfcorpus.json
+python -m eval.rerank_eval --dataset hotpotqa-distractor --candidates 30 --max-queries 100 \
+    --corpus-questions 500 --output eval/reference/rerank_hotpotqa.json
+
+# Retrieval by question type (toy Wikipedia set, MiniLM and bge-small)
+python -m eval.retrieval_eval --articles 100 --output eval/reference/retrieval_results.json
+
+# Systems: build cost, latency, throughput (no LLM; use a quiet machine)
+python -m eval.perf_bench --dataset scifact --n-queries 200 --output eval/reference/perf_scifact.json
 ```
 
-Answer quality end-to-end (EM/F1 on HotpotQA gold) — needs Ollama, deterministic (temperature 0):
+Answer quality needs Ollama (`LLM_PROVIDER=ollama`; `--model` sets `OLLAMA_MODEL`) with
+`llama3.2:1b`, `llama3.2:3b` and `qwen2.5:1.5b` pulled:
 
 ```bash
-python -m eval.answer_eval --max-queries 50 --model llama3.2:1b
-python -m eval.answer_eval --max-queries 50 --model llama3.2:3b
+python -m eval.answer_eval --max-queries 100 --model llama3.2:1b  --prompt default --output eval/reference/answer_1b.json
+python -m eval.answer_eval --max-queries 100 --model llama3.2:1b  --prompt short   --output eval/reference/answer_1b_short.json
+python -m eval.answer_eval --max-queries 100 --model llama3.2:3b  --prompt default --output eval/reference/answer_3b.json
+python -m eval.answer_eval --max-queries 100 --model llama3.2:3b  --prompt short   --output eval/reference/answer_3b_short.json
+python -m eval.answer_eval --max-queries 100 --model qwen2.5:1.5b --prompt default --output eval/reference/answer_qwen1.5b.json
+python -m eval.answer_eval --max-queries 100 --model qwen2.5:1.5b --prompt short   --output eval/reference/answer_qwen1.5b_short.json
 ```
 
-Generation quality (RAGAS) — needs `OPENAI_API_KEY` as the judge:
+The script reports each run's metrics and its stack-vs-stack tests. Refusal rates and the
+comparisons across runs (model against model, prompt against prompt) are computed from
+the saved generations, paired per question and averaged over the three stacks, for
+example:
+
+```python
+import json
+from eval.stats import paired_bootstrap
+
+def pooled(run, score):  # one value per question, averaged over the three stacks
+    rows = json.load(open(f"eval/reference/answer_{run}.json"))["per_query"]
+    return [sum(score(q["stacks"][s]) for s in ("Vector", "Hybrid", "Graph")) / 3 for q in rows]
+
+def refused(r):  # the refusal rule of "From retrieval to answers"
+    a = r["answer"].strip().lower()
+    return float("enough information" in a or a.startswith("unknown"))
+
+contains = lambda r: r["contains"]
+paired_bootstrap(pooled("qwen1.5b", contains), pooled("3b", contains))  # Qwen − 3B, default prompt
+sum(pooled("3b", refused)) / 100  # llama3.2:3b's refusal rate, default prompt
+```
+
+The supporting-paragraph shares also need HotpotQA's `supporting_facts`, from the
+dataset itself.
+
+GPU serving, against any OpenAI-compatible endpoint (to run the answer eval there too,
+set `LLM_PROVIDER=openai`, `OPENAI_BASE_URL` and `OPENAI_MODEL`):
 
 ```bash
-python -m eval.benchmark --questions 15
+python -m eval.serving_bench --base-url http://<host>:8000/v1 --model Qwen/Qwen2.5-7B-Instruct \
+    --n-prompts 64 --max-tokens 96 --output eval/reference/serving_aws.json
 ```
 
-## Evaluation
+Figures, replotted from the snapshots:
 
-**Retrieval is evaluated without an LLM** — we measure whether each architecture
-*retrieves the relevant documents*, using human relevance judgments (qrels) from
-standard IR benchmarks. This isolates the retriever (immune to the LLM's memory),
-is deterministic, and needs no API key. Metrics are pure, unit-tested functions
-(`shared/ir_metrics.py`):
+```bash
+python -m eval.plot_benchmark    # beir_{scifact,hotpotqa,nfcorpus}.json → docs/benchmark-results.svg
+python -m eval.plot_perf         # perf_scifact.json → docs/perf-pareto.svg
+python -m eval.plot_categories   # retrieval_results.json → docs/per-category.svg
+python -m eval.plot_retrieval    # retrieval_results.json → docs/retrieval-embedders.svg
+```
 
-- **recall@k** — fraction of relevant docs found in the top-k.
-- **nDCG@10** — top-10 ranking quality (rewards relevant docs ranked higher); the standard BEIR metric.
-- **MRR** — 1 / rank of the first relevant doc.
+Optional RAGAS benchmark (needs `OPENAI_API_KEY` as the judge; writes `eval/results.json`,
+which the app's RAGAS tab shows):
 
-**Datasets** (loaded from HuggingFace, each with its own human qrels):
+```bash
+python -m eval.benchmark
+```
 
-- **BEIR** — a standard suite of information-retrieval benchmarks (each = a corpus + queries + relevance judgments).
-- **SciFact** — scientific *claim verification*: ~5k abstracts, 300 queries; **single-hop** (the answer lives in one document).
-- **HotpotQA** (distractor) — **multi-hop** QA: each question needs **≥2 documents combined**; we rank the supporting paragraphs among distractors.
-- **NFCorpus** — a **medical/nutrition** IR benchmark (~3.6k docs) with many graded-relevant docs per query; a known-*hard* dataset where absolute scores are low for every retriever.
-- **qrels** — the human *relevance judgments*: for each query, which documents count as relevant. Metrics score the retrieved ranking against them.
+> On macOS, if faiss and torch abort over duplicate OpenMP runtimes, run the evals with
+> `KMP_DUPLICATE_LIB_OK=TRUE` (the test suite sets it for itself).
 
-### Results — nDCG@10 (human qrels)
+## Evaluation methodology
 
-<img src="docs/benchmark-results.svg" alt="Benchmark results" width="100%">
+**Retrieval is evaluated without an LLM.** Each stack ranks documents, and the ranking is
+scored against human relevance judgments (qrels). This isolates the retriever from the
+model's memory, is deterministic, and needs no API key.
 
-| nDCG@10 (MiniLM) | SciFact (single-hop) | HotpotQA (multi-hop) | NFCorpus (medical IR) |
-|---|---|---|---|
-| **Hybrid** (BM25 + dense + RRF) | **0.711** | **0.778** | **0.343** |
-| Vector (FAISS, MiniLM) | 0.648 | 0.749 | 0.318 |
-| Graph (spaCy + local-search) | 0.643 | 0.748 | 0.323 |
+| Dataset | Corpus | Queries | Relevant | Role |
+|---|---|---|---|---|
+| **SciFact** (BEIR) | 5,183 abstracts | 300 (test) | abstracts supporting the claim | single-hop |
+| **NFCorpus** (BEIR) | 3,633 documents | 323 (test) | many, graded | medical; hard for every retriever |
+| **HotpotQA** distractor (validation) | 4,937 paragraphs: the 10 of each of the first 500 questions | 500 | the 2 gold paragraphs | multi-hop |
+| **Simple English Wikipedia** | 100 articles, 500-character chunks | 27 hand-written: 16 factoid, 11 keyword | a gold phrase in the source article | behavior by question type |
+| **Golden corpus** | 40 documents | 18: 8 easy, 5 lexical probes, 5 entity probes | hand-labeled | CI regression guard |
 
-**Takeaway:** the **hybrid** retriever is the robust winner on *all three* corpora —
-consistent with the BEIR literature (MiniLM ≈ 0.64, BM25 ≈ 0.665; RRF fusion lifts
-to 0.711). NFCorpus is a deliberately hard benchmark (many graded-relevant docs per
-query → low absolute nDCG for everyone), yet the ranking holds. The entity-graph
-trails — but *why* it trailed turned out to be a fixable bug, not a fundamental
-limit (next section).
+On BEIR and HotpotQA each document is one retrieval unit (no chunking).
 
-Reproduce with [Quickstart §4](#4-reproduce-the-evaluation).
+**Metrics.** nDCG@10 is the primary retrieval metric (the BEIR standard), with recall@k
+and MRR alongside; the toy set reports hit@k and MRR; the guard uses nDCG@5. Answers are
+scored against gold answers without an LLM judge: EM and F1 (SQuAD-style), *contains*,
+mean answer length and refusal rate ([From retrieval to answers](#from-retrieval-to-answers)).
+Systems: latency percentiles and throughput; serving: requests/s, tokens/s, TTFT, TPOT.
 
-### Diagnosing and fixing the graph's failure at scale
+**Uncertainty.** The retrieval (BEIR and HotpotQA), per-type, reranking and answer evals
+report means with a 95% percentile bootstrap CI (10,000 resamples of the queries, fixed
+seed, so reruns reproduce the interval exactly). All but the per-type eval also keep their
+per-query scores, so two stacks are compared on the *same* queries with a paired test: a
+bootstrap CI of the mean per-query difference and a two-sided sign-flip permutation
+p-value ([`eval/stats.py`](eval/stats.py)). Pairing cancels out query difficulty, so it
+detects gaps that two overlapping CIs would hide. The sweep and perf snapshots have
+neither CIs nor per-query scores. Tables show `mean [lo, hi]`; paired differences show
+`Δ [lo, hi], p`.
 
-The entity-graph first scored **0.484 on HotpotQA** — far below the others. Instead of
-leaving it a strawman, I traced *why*: the score added an **unnormalized** sum of
-entity-overlap IDF, so **hub documents** accumulated a huge boost and displaced focused
-on-topic chunks. Concretely, on *"capital of Afghanistan?"* (500-article corpus) the
-top result was the *"June"* calendar page — **53 entities, zero semantic similarity** —
-because it cites dozens of countries that all sit in Afghanistan's entity neighborhood.
-The noise grows with the corpus, exactly where GraphRAG should help.
+**Provenance.** Each snapshot records, under `config.provenance`, the git SHA at the start
+of the run, whether the checkout was dirty (with the changed files and a fingerprint of the
+diff), start and finish times, Python and platform, and the versions of every library that
+can move a score (faiss, sentence-transformers, torch, transformers, spaCy and its model,
+rank-bm25, numpy, networkx, datasets). `code_changed_during_run` flags a checkout that
+moved mid-run. Snapshots without provenance predate the audit, and the dashboard says so.
 
-The fix is one principled idea — **normalize the entity boost by the chunk's entity
-richness** (BM25-style length normalization, [retriever.py](src/stack3_graphrag/retriever.py)):
-a focused chunk beats a promiscuous hub, and vector similarity breaks ties. After the fix,
-the *"Afghanistan"* query retrieves **5/5 on-topic** documents (was 2/5).
+**Held-out selection.** The only tuned knob — the Graph's entity normalization — is chosen
+on validation splits (SciFact-train, NFCorpus-validation); test splits are reported, never
+used to choose. HotpotQA's public labels stop at its validation split, which therefore
+serves only as a test set. The other constants were not tuned: 20 vector seeds, graph
+weight 0.3 and RELATED_TO discount 0.5 in the Graph, fusion depth 20 and RRF k = 60 in the
+Hybrid.
 
-**Choosing the exact formula — without cheating.** Dividing by `n^p` (entities per chunk)
-leaves one knob, `p`. I swept it (`none, log, 0.25, 0.5, 0.75, 1.0`) on a **held-out
-validation split** (SciFact-train + NFCorpus-validation) and report on the **untouched
-test split** — the test set never selects the formula
-([sweep_entity_norm.py](eval/sweep_entity_norm.py)). My intuition (a *softer* penalty) was
-**wrong**: a *stronger* one, `p=0.75`, won validation (mean nDCG 0.486 — but only *just* ahead
-of linear `p=1.0` at 0.485, then √ 0.481, log 0.479, unnormalized bug 0.453). The margin over
-linear is thin, and linear even edges `p=0.75` on the HotpotQA *test* split (0.763 vs 0.748) —
-which is *exactly* why the formula stays locked on the held-out split and never on test. That's
-the point of measuring instead of guessing.
+**Determinism and snapshots.** Generation is greedy (temperature 0). Results live in
+[`eval/reference/`](eval/reference); the figures are replotted from those files and the
+dashboard computes its captions from them, so a rerun cannot leave a stale conclusion
+behind.
 
-| nDCG@10 (Graph), test split | before (bug) | **after (p=0.75)** | Δ |
-|---|---|---|---|
-| SciFact | 0.591 | **0.643** | +0.052 |
-| HotpotQA (multi-hop) | 0.484 | **0.748** | **+0.264** |
-| NFCorpus | 0.310 | **0.323** | +0.013 |
+## Results
 
-Vector and Hybrid are **byte-for-byte unchanged** (only the graph retriever was touched — a
-clean regression check). The graph is now competitive, with the biggest gain on multi-hop
-where hub noise hurt most. **Honest caveat:** at 0.748 the graph nearly *matches* the plain
-vector retriever (0.749) — the strong normalization mostly stops it harming itself rather
-than making it cleverer; its own edge stays on exact named-entity queries. A true GraphRAG
-advantage would need LLM-extracted typed relations + community summaries (out of scope). For
-fairness: the graph's other constants (`_VEC_SEEDS`, `_GRAPH_WEIGHT`, `_RELATED_DISCOUNT`)
-were **not** tuned — only `p`, and only on held-out data.
+### Retrieval quality
+
+<img src="docs/benchmark-results.svg" alt="nDCG@10 by corpus and architecture, with 95% bootstrap CIs" width="100%">
+
+| nDCG@10 [95% CI] | SciFact (single-hop) | NFCorpus (medical) | HotpotQA (multi-hop) |
+|---|--:|--:|--:|
+| **Vector** | 0.648 [0.603, 0.694] | 0.318 [0.284, 0.352] | 0.749 [0.729, 0.770] |
+| **Hybrid** | **0.710** [0.666, 0.752] | **0.346** [0.311, 0.381] | **0.778** [0.759, 0.796] |
+| **Graph** | 0.643 [0.598, 0.687] | 0.323 [0.289, 0.358] | 0.771 [0.752, 0.789] |
+
+Paired differences on the same queries (Δ nDCG@10 [95% CI], sign-flip p):
+
+| | SciFact | NFCorpus | HotpotQA |
+|---|--:|--:|--:|
+| Hybrid − Vector | +0.061 [0.040, 0.083], p < 0.001 | +0.028 [0.015, 0.042], p < 0.001 | +0.029 [0.015, 0.042], p < 0.001 |
+| Graph − Vector | −0.005 [−0.020, 0.009], p = 0.47 | +0.005 [0.001, 0.010], p = 0.020 | +0.021 [0.011, 0.032], p < 0.001 |
+| Graph − Hybrid | −0.067 [−0.088, −0.045], p < 0.001 | −0.023 [−0.036, −0.010], p < 0.001 | −0.007 [−0.021, 0.007], p = 0.30 |
+
+Hybrid leads on all three corpora, and its lead over Vector is significant on each. The
+Graph is not distinguishable from Vector on SciFact, slightly but significantly ahead on
+NFCorpus, and clearly ahead on HotpotQA; it stays significantly below Hybrid on SciFact
+and NFCorpus, and is within noise of it on HotpotQA.
+For reference, BEIR's published BM25 baseline on SciFact is 0.665 (Thakur et al., 2021).
+NFCorpus is hard by design: many graded-relevant documents per query keep absolute nDCG
+low for every retriever.
+
+> **Why HotpotQA numbers differ between sections.** HotpotQA distractor has no fixed
+> corpus: each eval builds one from the 10 paragraphs (2 gold, 8 distractors) of the
+> questions it samples. It is not BEIR's HotpotQA, so these scores are not comparable with
+> published BEIR ones. This table uses the first 500 questions (4,937 paragraphs). The
+> reranking eval scores the first 100 of those questions on the same corpus, so its
+> baseline is a subsample of this one (Vector 0.747 on those 100, 0.749 on all 500), as it
+> is on the other corpora ([Reranking](#reranking)). The answer eval builds its own corpus
+> from its 100 questions (991 paragraphs): far fewer distractors, so its nDCG@10 is higher
+> (Vector 0.789) and not comparable with this table.
+
+### Debugging the Graph
+
+The Graph started as the weakest stack. Twice, the cause was a bug in how it scored
+chunks rather than a limit of the idea.
+
+**Chapter 1 — hub documents.** The first Graph scored 0.484† nDCG@10 on HotpotQA, far
+below the others. Its score added an *unnormalized* sum of entity-overlap IDF, so
+entity-rich "hub" documents collected a huge boost. On *"capital of Afghanistan?"*
+(500-article Wikipedia corpus), the top hit was the *June* calendar page — 53 entities†
+and zero similarity to the query, tied to Afghanistan through the dozens of countries it
+cites. That noise grows with the corpus, which is exactly where a graph should help.
+
+The fix divides the entity boost by f(n), where n is the chunk's number of entities — the
+idea behind BM25's length normalization: a focused chunk beats a promiscuous hub. f is the
+one knob, chosen on held-out splits; n^0.75 ("p75") won validation, 0.001† ahead of
+linear.
+
+| Graph nDCG@10, test split | no normalization† | p75† |
+|---|--:|--:|
+| SciFact | 0.591 | 0.643 |
+| NFCorpus | 0.310 | 0.323 |
+| HotpotQA | 0.484 | 0.748 |
+
+**Chapter 2 — the audit's scoring bug.** Only the top-20 vector seeds had a cosine similarity.
+A chunk reached *only* through the graph scored 0 + 0.3 × boost, so the graph signal
+could rarely lift a chunk into the top-k, and the top-10 changed with k. (The June page's
+"zero similarity" in chapter 1 was almost certainly this placeholder 0, not a measured
+cosine.) Every candidate now gets its real cosine plus the boost, so the result is the
+exact top-k of one score over the whole corpus, stable in k.
+
+That changes what the normalization has to correct, so the held-out sweep was re-run
+([`sweep_entity_norm.py`](eval/sweep_entity_norm.py)). Selection uses the first column
+only:
+
+| f(n) | validation mean nDCG@10 (SciFact-train, NFCorpus-validation) | SciFact test | NFCorpus test | HotpotQA |
+|---|--:|--:|--:|--:|
+| none (1) | 0.4449 | 0.5745 | 0.3087 | 0.4813 |
+| p25 (n^0.25) | 0.4564 | 0.5969 | 0.3099 | 0.5283 |
+| log (1 + ln n) | 0.4757 | 0.6218 | 0.3156 | 0.6133 |
+| sqrt (n^0.5) | 0.4771 | 0.6221 | 0.3157 | 0.6639 |
+| p75 (n^0.75) | 0.4881 | 0.6430 | 0.3212 | 0.7561 |
+| **linear (n)** — chosen | **0.4884** | **0.6429** | **0.3233** | **0.7705** |
+
+Linear leads p75 by 0.0003 on validation — a tie in practice — but the rule is "best
+validation mean", so the default moved from p75 to linear. The test columns agree without
+having been consulted: the two tie on SciFact, and linear leads on NFCorpus and HotpotQA.
+On HotpotQA the Graph went from 0.7481† (p75, with the bug) to 0.7705: +0.008 from the
+scoring fix alone (p75: 0.7561), +0.014 from the switch to linear. SciFact (0.6426† →
+0.6429) and NFCorpus (0.3226† → 0.3233) barely moved: the fix matters where the graph
+reaches chunks the vector seeds miss, which is multi-hop HotpotQA. Normalization still
+matters as much as in chapter 1: without it, HotpotQA falls to 0.4813.
+
+**What the Graph still is not.** It leads on no corpus
+([Retrieval quality](#retrieval-quality)). Its one clear gain over Vector (+0.021) is on
+multi-hop HotpotQA, the corpus where the chapter 2 fix mattered. That is consistent with
+entity links reaching a second paragraph the vector seeds miss, but no ablation here
+isolates it. On single-hop SciFact it matches Vector at a much higher build cost
+([Performance and systems](#performance-and-systems)). A real GraphRAG advantage would
+need LLM-extracted typed relations and community summaries, which are out of scope.
 
 ### Embedder sensitivity
 
-The retriever isn't tied to one embedder. Swapping MiniLM → **bge-small-en-v1.5** on SciFact:
+SciFact with `all-MiniLM-L6-v2` replaced by `BAAI/bge-small-en-v1.5`, everything else fixed:
 
 | nDCG@10 (SciFact) | MiniLM | bge-small | Δ |
-|---|---|---|---|
-| Vector | 0.648 | 0.706 | +0.058 |
-| **Hybrid** | **0.711** | **0.726** | +0.015 |
-| Graph | 0.643 | 0.646 | +0.003 |
+|---|--:|--:|--:|
+| **Vector** | 0.648 | 0.706 [0.662, 0.749] | +0.057 |
+| **Hybrid** | 0.710 | 0.725 [0.682, 0.766] | +0.015 |
+| **Graph** | 0.643 | 0.690 [0.646, 0.733] | +0.047 |
 
-A stronger dense model helps — but unevenly. Pure **Vector** gains most (+0.058); **Hybrid**
-moves little (+0.015, BM25 already carried the lexical signal the better embedder adds); the
-**Graph** barely budges (+0.003) — its heavy entity-normalization makes the ranking less
-sensitive to the embedder. Hybrid still wins: the embedder is a knob, not the verdict.
+Paired on the same queries, bge-small lifts Vector (p < 0.001) and the Graph (p < 0.001)
+significantly, and Hybrid only within noise (p = 0.14). The order is unchanged (Hybrid,
+Vector, Graph), but the gaps close: with bge-small, Hybrid's lead over Vector
+(+0.019 [−0.002, 0.039], p = 0.076) and the Graph's deficit to Vector (−0.016, p = 0.14)
+are no longer significant; the Graph stays below Hybrid (−0.035, p = 0.0098). One
+plausible reading, untested: a stronger dense retriever already finds much of what BM25
+added.
 
-<img src="docs/retrieval-embedders.svg" alt="Retrieval by embedder: MRR by architecture, and Vector hit@k" width="100%">
+<img src="docs/retrieval-embedders.svg" alt="MRR by embedder and architecture, and Vector hit@k by embedder, on the toy Wikipedia set" width="100%">
 
-> Demo corpus (indicative of *character*, not a ranking -- the rigorous verdict is the SciFact
-> table above): every architecture lifts with the stronger embedder (left), and the embedder
-> shifts Vector's whole hit@k curve (right).
+> The figure uses the toy Wikipedia set (27 questions, 100 articles): MRR by embedder and
+> stack (left) and Vector's hit@k curve per embedder (right). Unlike on SciFact,
+> bge-small scores slightly lower there for every stack (MRR −0.06 to −0.07), but with 27
+> questions the CIs are wide and overlap; read it as character, not as a ranking.
 
-### By query type — where each architecture shines
+### By query type
 
-On a tagged set (factoid = paraphrased semantic, keyword = exact token), each
-architecture shows a distinct character (toy corpus, MRR):
+The 27 hand-written questions are tagged **factoid** (paraphrased, so they need semantic
+matching) or **keyword** (they hinge on an exact token). MiniLM, 100 articles:
 
-<img src="docs/per-category.svg" alt="Per-query-type MRR" width="100%">
+| MRR [95% CI] | factoid (n = 16) | keyword (n = 11) |
+|---|--:|--:|
+| **Vector** | 0.885 [0.760, 1.000] | 0.511 [0.239, 0.784] |
+| **Hybrid** | 0.875 [0.734, 1.000] | 0.766 [0.527, 1.000] |
+| **Graph** | 0.885 [0.760, 1.000] | 0.693 [0.432, 0.920] |
 
-| MRR | factoid (semantic) | keyword (exact token) |
-|---|---|---|
-| **Vector** | **0.885** | 0.602 |
-| **Hybrid** | 0.875 | **0.845** |
-| **Graph** (after fix) | **0.885** | 0.739 |
+Factoid questions do not separate the stacks: all three score 0.875–0.885 with
+near-identical intervals. On keyword questions Vector drops to 0.511 while Hybrid and the
+Graph hold up better, the direction expected when BM25 or entity links can match the exact
+token. The three keyword intervals overlap widely, though (see the caveats below).
 
-- **Vector** — *semantic specialist*: best on factoid, but collapses on keyword (no lexical matching).
-- **Hybrid** — *robust generalist*: wins keyword, near-best on factoid (why it tops the aggregate).
-- **Graph** — after the hub fix: now ties Vector on factoid (0.885) and still beats it on exact tokens via spaCy NER (0.739 vs 0.602). The entity-richness normalization trimmed its keyword edge (was 0.830) — an honest cost of the same fix that lifts the rigorous benchmarks.
+<img src="docs/per-category.svg" alt="MRR by question type and architecture" width="100%">
 
-> Small/easy corpus → indicative of *character*, not a ranking; the rigorous
-> ranking is the BEIR table above.
+**The hit rule.** A retrieved chunk is a hit only if it comes from the question's source
+article *and* contains the gold answer as whole words (case-insensitive). Before the
+audit, any chunk containing the gold as a substring counted, from any article: for keyword
+questions whose gold is the question's own entity, every chunk that merely mentioned it
+scored, and "Wright" matched "playwright". `python -m eval.retrieval_eval --check-golds`
+verifies that every gold is findable in its article.
 
-### Retrieval → answer (end-to-end)
+**Caveats.** The rule is stricter than before, so these numbers are not comparable with
+pre-audit ones. It can also be too strict: a chunk from another article that genuinely
+answers the question counts as a miss. With 16 factoid and 11 keyword questions the CIs
+are wide, and the snapshot keeps no per-question ranks for a paired test, so this profile
+is indicative only: it supports no claim that one stack beats another on exact tokens. The
+rigorous ranking is the [retrieval table](#retrieval-quality). The app's *Retrieval by
+type (live)* tab applies the same rule to the app's corpus (500 articles by default), so
+its numbers differ from this snapshot.
 
-Does *better retrieval* yield *better answers*? Running the full pipeline (retrieve + generate)
-and scoring the output against HotpotQA's gold answers with **Exact-Match / F1** (SQuAD-style,
-deterministic at temperature 0, **no judge**) — 50 questions, `llama3.2` 1b vs 3b:
+### Reranking
 
-| | nDCG@10 | F1 (1b) | F1 (3b) |
-|---|---|---|---|
-| Vector | 0.803 | 0.079 | 0.158 |
-| **Hybrid** | **0.812** | 0.059 | 0.165 |
-| Graph | 0.779 | 0.067 | **0.209** |
+Each retriever returns a top-30; a cross-encoder (`cross-encoder/ms-marco-MiniLM-L-6-v2`)
+scores every (query, document) pair and keeps a top-10. Its scores can **replace** the
+base ranking, or be **fused** with it by RRF. Each eval scores the first 100 test queries
+of its dataset ([`rerank_eval.py`](eval/rerank_eval.py)), so its no-rerank baselines are
+a subsample of the retrieval table and differ from it (SciFact Hybrid: 0.777 on these 100,
+0.710 on all 300):
 
-Honest reading:
-- **Model capability dominates** — the 3b roughly **2.5× the F1** of the 1b. That's the clear signal.
-- **The per-architecture answer gaps are within noise** at n=50 (Graph's higher 3b-F1 despite the lowest nDCG is ~2 questions out of 50 — not a real win).
-- So *better retrieval → better answer* **doesn't surface cleanly here**: with small local models on hard multi-hop QA, the **generator is the bottleneck** — good retrieval is necessary but not sufficient without a capable enough reader.
-- Absolute EM/F1 are low by construction (small models; verbose answers vs 1–3-word gold, harsh on Exact-Match; multi-hop needs combining two documents).
+| Δ nDCG@10 vs no reranking (paired p) | SciFact | NFCorpus | HotpotQA |
+|---|--:|--:|--:|
+| Vector · replace | +0.029 (p = 0.27) | +0.027 (p = 0.037) | +0.078 (p < 0.001) |
+| Vector · fuse | **+0.039** (p = 0.024) | +0.023 (p = 0.0074) | +0.046 (p < 0.001) |
+| Hybrid · replace | **−0.051** (p = 0.019) | +0.024 (p = 0.038) | +0.080 (p < 0.001) |
+| Hybrid · fuse | −0.009 (p = 0.48) | +0.019 (p = 0.0080) | +0.047 (p < 0.001) |
+| Graph · replace | +0.031 (p = 0.20) | +0.023 (p = 0.067) | **+0.091** (p < 0.001) |
+| Graph · fuse | +0.028 (p = 0.088) | +0.021 (p = 0.011) | +0.058 (p < 0.001) |
 
-**Scope note — deliberately local at this stage.** This ran ~300 generations (~20 min) on a laptop with **no batched serving**: fine for a one-off baseline, not for scale. The next stage — **vLLM + Ray** ([Roadmap](#roadmap)) — batches on GPU, making this eval fast *and* unlocking a larger, more capable reader (the setting where the retrieval→answer link should sharpen). Read the table as a current-stage baseline, not the last word.
+Replace against fuse, head to head on the same queries:
 
-> **Reader quality beats reader size (shown live).** On a distractor question — *"When did the
-> Titanic sink?"*, with both the sink date **and** the *launch* date in the retrieved context —
-> `llama3.2:3b` confidently returned the **launch** date, while a *smaller but newer*
-> **`Qwen2.5-1.5B-Instruct`** answered correctly. For RAG *reading*, model **quality/recency beats
-> raw size** — try it on the [live demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph).
-> (Reranking doesn't fix it: the right chunk was already #1; the generator simply misread it.)
+- **SciFact: fusing is the safe mode.** Replacing lowers Hybrid significantly, and fuse
+  beats replace on Hybrid (+0.042, p = 0.0052); on Vector and the Graph the two modes are
+  not distinguishable (p ≥ 0.53), and only Vector · fuse is a significant gain. The replace
+  scores show why: they converge on the cross-encoder's own quality (0.725–0.731 for all
+  three stacks), above Vector's and the Graph's baseline (0.700–0.701) but below Hybrid's
+  (0.777).
+- **NFCorpus: a tie.** Both modes add about +0.02 on every stack, and they are not
+  distinguishable from each other (p ≥ 0.47).
+- **HotpotQA: replace wins on every stack**, by +0.031 to +0.033 over fuse (p ≤ 0.0026).
 
-### Performance & systems
+So the winner is shared by all three stacks on HotpotQA, but on SciFact it depends on how
+good the base ranking already is.
 
-Retrieval is a *systems* question too, not only a quality one. Measured **without any LLM**
-(deterministic; latency and throughput are warmup + repeated → median) on SciFact
-(5,183 docs, 200 queries, k=10) — [perf_bench.py](eval/perf_bench.py):
+The trade-off itself is general. *Replace* follows the cross-encoder: it gains most when
+the cross-encoder out-ranks the retriever, and loses when it does not. *Fuse* keeps part
+of the base ranking, which caps both the loss and the gain. Which one wins is a property
+of the data, so the pipeline keeps reranking off by default; when enabled,
+`CrossEncoderReranker.rerank` defaults to `mode="replace"`.
 
-<img src="docs/perf-pareto.svg" alt="Quality × latency Pareto and throughput" width="100%">
+Reranking is not free: the cross-encoder pass costs 338–576 ms per query on CPU, against
+7.8–15.6 ms median for retrieval alone.
 
-| | nDCG@10 | build (s) | latency med / p95 / p99 (ms) | throughput @8 (q/s) |
-|---|---|---|---|---|
-| **Vector** | 0.648 | 45 | **8.7** / 12 / 15 | **129** |
-| **Hybrid** | **0.711** | 63 | 16.8 / 24 / 27 | 58 |
-| **Graph** | 0.643 | **225** | 13.2 / 18 / 23 | 82 |
+> A larger cross-encoder (MiniLM L-6 → L-12) barely moved SciFact while latency roughly
+> doubled (754 → 1,373 ms per query†). A domain-specific (biomedical) reranker might do
+> better; that is untested.
 
-- **Build cost** — the entity-graph is **~5× costlier to build**: its spaCy NER pass alone is **~180 s** vs FAISS's near-zero. The quality tables never showed this half.
-- **Latency** — Vector is fastest (8.7 ms median); Hybrid slowest (BM25 + dense + RRF fusion); Graph between.
-- **Scaling** — only **Vector scales with concurrency** (93 → 129 q/s, 1 → 8 threads): FAISS releases the GIL, so its native search runs across threads. The BM25 (`rank_bm25`) and graph (`networkx`) retrievers are pure-Python CPU-bound, so the GIL serialises them and they plateau — a runtime limit of *this* shared single-process shape, **not an algorithmic verdict** (a multiprocess server would scale them too; a contended host also flattens the curve, so the sweep needs a quiet machine).
-- **Memory** — the FAISS vector store is ~8 MB (exact resident size); the process peaks at ~600 MB — a monotonic high-water mark (what you'd provision for, *not* the resting footprint) — dominated by the embedding model + spaCy. At this scale the per-index memory is dwarfed by the model runtime, so **memory isn't the differentiator here — build time is**. The networkx graph grows with entity count, so it would surface at larger scale.
-- **Pareto verdict** — **Vector** (efficiency) and **Hybrid** (quality) sit on the frontier; pick by your latency budget. **Graph is dominated** on standard IR — lower nDCG than Vector, higher latency, far costlier to build. Its niche is elsewhere (named-entity robustness, interpretable `shared_entities`), not this trade-off.
+### From retrieval to answers
 
-Single-machine, in-process numbers. The **batched/GPU serving** side is measured for real below.
+A RAG answer fails at one of two stages: **retrieval** (the right chunk never reaches the
+context) or **generation** (it is there, but the model misreads it). The illustration
+below (one question, pre-audit) shows the two stages. Its "1b weak reader" panel predates
+the short prompt: the 1B's "not enough info" is the default prompt's escape hatch, which it
+overuses (70% of its answers, mostly with both supporting paragraphs in context), not by
+itself proof of a weak reader ([What moves answer quality](#what-moves-answer-quality)).
 
-### Serving & observability (deployed on AWS)
+<img src="docs/retrieval-vs-generation.svg" alt="Retrieval × generation: an answer is correct only if the chunk is retrieved and the model reads it correctly" width="100%">
 
-The deployed, GPU half of the systems story. The pipeline's `openai` provider points at a real
-vLLM server — provisioned by **Terraform** on a single **AWS g5.xlarge (NVIDIA A10G, 24 GB)**,
-serving **Qwen2.5-7B-Instruct**, with **Prometheus + Grafana + DCGM** for observability (single-IP
-security group; `terraform apply` -> run the load -> `terraform destroy`, a few dollars). IaC:
-[`infra/` on the `dev` branch](https://github.com/GYOM15/rag-vector-hybrid-graph/tree/dev/infra).
+**Setup.** The first 100 HotpotQA distractor questions through the full pipeline:
+retrieve k = 10 from a corpus built from those questions' own paragraphs (991), then
+generate with greedy decoding. Three small models through Ollama — `llama3.2:1b`,
+`llama3.2:3b` and `qwen2.5:1.5b` (the live demo's model, as packaged by Ollama) — and two
+prompts: **default** (the app's) and **short** (eval-only: reply with the shortest possible
+answer, or "unknown"). Retrieval depends on neither the model nor the prompt, so all six
+runs read identical contexts. Scored against HotpotQA's gold answers, with no LLM judge:
 
-**Serving throughput -- the inverse of the GIL-bound retrievers.** Sweeping request concurrency
-(1 -> 64) with [`serving_bench.py`](eval/serving_bench.py), which **streams** each request to
-separate **TTFT** (time-to-first-token) and **TPOT** (time-per-output-token) from total latency:
+- **EM / F1** — SQuAD-style exact match and token overlap with the gold.
+- **contains** — the normalized gold appears in the answer as whole tokens. Guards: a
+  yes/no answer must open with the gold word, a gold named in the question must lead the
+  reply, and a gold next to *or*, *nor* or *vs* earns nothing. Limit: longer answers have
+  more chances to contain the gold, and a list of candidates still does, so read it
+  together with answer length.
+- **answer tokens** — mean answer length.
+- **refusal rate** — share of answers that contain "enough information" (the default
+  prompt's escape phrase) or start with "unknown" (the short prompt's). It is computed from
+  the saved generations; the eval script does not report it.
 
-| concurrency | req/s | tokens/s | latency p50 | TTFT p50 | TPOT |
-|---|--:|--:|--:|--:|--:|
-| 1 | 0.6 | 29 | 1.7 s | 84 ms | 33 ms |
-| 16 | 8.0 | 393 | 1.8 s | 137 ms | 34 ms |
-| 32 | 14.7 | 731 | 1.8 s | 189 ms | 34 ms |
-| **64** | **22.6** | **1138** | 2.1 s | 271 ms | 36 ms |
+Every generation is saved in the snapshot (`per_query`), so every figure below can be
+re-derived from it ([Quickstart](#4-reproduce-the-evaluation) shows how).
+nDCG@10 on this sample: Vector 0.789, Hybrid 0.806, Graph 0.786.
 
-- **Throughput scales ~38x** (0.6 -> 22.6 req/s, 29 -> 1138 tokens/s) from 1 to 64 concurrent
-  requests on **one GPU** -- vLLM's **continuous batching** packing requests together. The
-  *opposite* of the CPU retrievers, whose BM25/graph throughput plateaus under the GIL.
-- **Latency is flat to ~32, then a saturation knee**: p50 holds ~1.8-2.1 s, but **TTFT climbs
-  137 -> 271 ms** and the **p99 tail rises to ~8 s** as requests wait to be batched -- the classic
-  latency/throughput trade-off, visible *only* because we measure TTFT/TPOT.
-- Grafana under load: **GPU util pegged at 100%** (~260 W); **VRAM 15 GB (weights) -> 21 GB** as
-  the KV-cache grows to fill the A10G; the batching queue with **running up to 24, waiting ~= 0**
-  -- the engine kept up with headroom.
+| Run | Stack | EM | F1 [95% CI] | contains [95% CI] | answer tokens |
+|---|---|--:|--:|--:|--:|
+| Llama 1B · default | Vector | 0.020 | 0.080 [0.047, 0.118] | 0.210 [0.130, 0.290] | 16.9 |
+| | Hybrid | 0.030 | 0.089 [0.052, 0.133] | 0.190 [0.120, 0.270] | 18.0 |
+| | Graph | 0.010 | 0.056 [0.031, 0.087] | 0.170 [0.100, 0.250] | 18.9 |
+| Llama 1B · short | Vector | 0.320 | 0.412 [0.325, 0.503] | 0.350 [0.260, 0.440] | 1.8 |
+| | Hybrid | 0.410 | 0.504 [0.413, 0.594] | 0.460 [0.360, 0.560] | 1.9 |
+| | Graph | 0.340 | 0.428 [0.339, 0.520] | 0.380 [0.280, 0.480] | 2.0 |
+| Llama 3B · default | Vector | 0.050 | 0.143 [0.097, 0.193] | 0.360 [0.270, 0.450] | 13.4 |
+| | Hybrid | 0.090 | 0.184 [0.126, 0.246] | 0.340 [0.250, 0.430] | 12.4 |
+| | Graph | 0.030 | 0.134 [0.092, 0.181] | 0.340 [0.250, 0.430] | 14.2 |
+| Llama 3B · short | Vector | 0.410 | 0.495 [0.405, 0.588] | 0.430 [0.340, 0.530] | 1.7 |
+| | Hybrid | 0.470 | 0.599 [0.509, 0.687] | 0.490 [0.390, 0.590] | 1.8 |
+| | Graph | 0.420 | 0.506 [0.414, 0.600] | 0.430 [0.330, 0.530] | 1.7 |
+| Qwen 1.5B · default | Vector | 0.020 | 0.155 [0.122, 0.191] | 0.540 [0.440, 0.640] | 23.5 |
+| | Hybrid | 0.020 | 0.163 [0.131, 0.199] | 0.560 [0.460, 0.660] | 23.9 |
+| | Graph | 0.020 | 0.155 [0.121, 0.193] | 0.500 [0.400, 0.600] | 23.9 |
+| Qwen 1.5B · short | Vector | 0.400 | 0.479 [0.388, 0.571] | 0.420 [0.330, 0.520] | 1.9 |
+| | Hybrid | 0.410 | 0.499 [0.407, 0.592] | 0.440 [0.340, 0.540] | 2.0 |
+| | Graph | 0.380 | 0.474 [0.383, 0.567] | 0.400 [0.310, 0.500] | 1.9 |
 
-![Serving dashboards under load: throughput, batching queue, latency, GPU util](docs/serving-dashboard.png)
-![GPU memory: weights + KV-cache](docs/gpu-memory.png)
+**Does better retrieval give better answers?** Paired F1 differences (3B, short prompt):
+Hybrid − Vector +0.104 [0.031, 0.182], p = 0.0082; Graph − Vector +0.011 [−0.030, 0.056],
+p = 0.62; Graph − Hybrid −0.093 [−0.173, −0.018], p = 0.022.
 
-**Answer quality with a capable reader -- a metric caveat, not a model win.** Running the pipeline
-end-to-end through the 7B (`answer_eval`, 50 HotpotQA questions) *lowered* EM/F1 vs the local 3B
-(F1 ~ 0.11 vs 0.16-0.21, EM = 0). Not because the 7B is worse -- it answers **correctly but
-verbosely** (*"Barack Obama was born on August 4, 1961, in Honolulu, Hawaii"* vs the gold `1961`),
-and token-overlap F1 against 1-3-word gold **penalises verbosity**. Retrieval was identical (nDCG
-unchanged), isolating a **metric artifact**: judge-free surface metrics conflate correctness with
-format-conformity -- the same length bias documented in the GraphRAG-evaluation literature. A
-bigger reader needs a terser prompt (or a semantic metric) to *show* its edge on this benchmark.
+- **Hybrid's edge carries into the answers.** On this sample its nDCG@10 lead over Vector
+  is within noise (+0.017, p = 0.25), but it puts both supporting paragraphs in the top-10
+  more often (89% of questions against 80%, p = 0.035, from the saved titles and
+  HotpotQA's supporting facts). Under the short prompt its F1 beats Vector's with both
+  Llama models (1B: +0.091 [0.019, 0.164], p = 0.018); on *contains* the gain is
+  significant for 1B (+0.110, p = 0.012), not for 3B (+0.060, p = 0.15).
+- **The Graph retrieves like Vector here, and answers like it** (short prompt, F1
+  p ≥ 0.57 against Vector with either Llama model).
+- **The default prompt blurs the signal.** Hybrid's F1 lead over Vector shrinks: borderline
+  for the 3B (+0.041 [0.002, 0.086], p = 0.060: the CI excludes 0, the permutation test
+  misses 0.05) and within noise for the 1B (+0.010, p = 0.35). The significant gaps put the
+  Graph below the others (1B: −0.024 against Vector, p = 0.0089, and −0.033 against
+  Hybrid, p = 0.024; 3B: −0.050 against Hybrid, p = 0.026), on F1 values under 0.2.
+- **With Qwen, no stack gap is significant** under either prompt (F1, p ≥ 0.32).
 
-### Reranking — does it help, and *how* should you do it?
+**RAGAS (optional).** `eval.benchmark` scores faithfulness, answer relevancy and context
+precision/recall on the 27-question toy set with an OpenAI judge. No RAGAS results are
+reported here.
 
-A two-stage variant: each retriever returns a wider **top-30**, then a **cross-encoder**
-(`ms-marco-MiniLM-L-6-v2`) re-scores every `(query, document)` pair jointly to pick the
-**top-10**. Reranking helps almost everywhere — the open question is *how* to use its scores:
-**replace** the base ranking with the cross-encoder's, or **fuse** the two rankings (RRF).
-And the answer **does not generalize** — [`rerank_eval.py`](eval/rerank_eval.py), 100 queries each:
+#### What moves answer quality
 
-| mean ΔnDCG@10 | replace (cross-encoder only) | fuse (RRF) | winner |
-|---|--:|--:|:--|
-| **SciFact** (single-hop) | +0.002 | **+0.020** | **fuse** |
-| **NFCorpus** (medical, hard) | **+0.028** | +0.022 | replace |
-| **HotpotQA** (multi-hop) | **+0.069** | +0.033 | replace |
+The same contexts, three readers, two prompts. Averaged over the three stacks:
 
-The split is clean — each winner takes all three stacks — and it turns on **one thing: is the
-cross-encoder better than the retriever on this data?**
+| Run | F1 | contains | answer tokens | refusals |
+|---|--:|--:|--:|--:|
+| Llama 1B · default | 0.075 | 0.190 | 18.0 | 70% |
+| Llama 1B · short | 0.448 | 0.397 | 1.9 | 4% |
+| Llama 3B · default | 0.154 | 0.347 | 13.4 | 45% |
+| Llama 3B · short | 0.533 | 0.450 | 1.7 | 3% |
+| Qwen 1.5B · default | 0.158 | 0.533 | 23.7 | 1% |
+| Qwen 1.5B · short | 0.484 | 0.420 | 1.9 | 7% |
 
-- **When the cross-encoder clearly out-ranks the retriever** (NFCorpus, and especially HotpotQA where `replace` adds **+0.05 to +0.09**), following it alone (**replace**) captures the full gain — **fusing dilutes it** with a weaker base ranking.
-- **When it only ties or loses** to an already-strong retriever (SciFact, where `replace` actually *drops* the strong Hybrid by **−0.051**), **fuse** is the safety net: it keeps the good base ranking (Hybrid −0.010 ≈ noise) and avoids the loss.
+Model and prompt comparisons below are paired per question, averaged over the three
+stacks.
 
-So **fusion is a hedge** — it caps both ends (protects against a weak reranker, brakes the upside of a strong one); **replace is high-variance** (big wins when the reranker is strong, losses when it is weak). **There is no universal winner — you have to measure it on your data.** The library defaults to `mode="replace"` (it wins 2 of 3 here, by larger margins); `mode="fusion"` is one argument away when your retriever is already strong.
+- **Part of the F1 jump is measurement.** EM and F1 compare the whole generation with a
+  gold of one to three words, so a correct answer given as a full sentence gets EM 0 and a
+  low F1. The short prompt cuts answers to about two tokens, and F1 rises ×3.1 for Qwen,
+  ×3.5 for the 3B and ×6.0 for the 1B. For Qwen that is almost all scoring, not reading:
+  its F1 triples while its *contains* falls (−0.113 [−0.187, −0.040], p = 0.0043).
+- **For the Llama models, part of it is behavior.** The default prompt offers an escape
+  hatch ("say 'I don't have enough information'"), and the Llama models overuse it: both
+  supporting paragraphs were in the context for 80% (1B) and 75% (3B) of their refusals.
+  The short prompt's "unknown" is rarely used (3–4%), and *contains* rises with it
+  (1B +0.207, p < 0.001; 3B +0.103, p = 0.0057), consistent with answers the models could
+  give but had declined. The (question, stack) pairs the default prompt had refused carry
+  all of that *contains* gain, about three quarters of the 1B's F1 gain and 40% of the
+  3B's: the 1B's ×6 comes mostly from questions it had declined, the 3B's ×3.5 about 60%
+  from answers it had already given.
+- **Qwen's terse answers lose correctness.** It refuses little under the default prompt
+  (1%) and more under the short one (7%, above both Llamas; +0.057 [0.010, 0.107],
+  p = 0.034). Of the 48 stack-answers that lose the gold under the short prompt (14 gain
+  it), 10 are these new "unknown" replies and 38 are wrong or too-terse answers, plausibly
+  because a multi-hop question needs the intermediate step Qwen writes out in free form
+  (hypothesis).
+- **3B against 1B.** With the default prompt the 3B leads on F1 (+0.078 [0.032, 0.129],
+  p = 0.0011) and *contains* (+0.157 [0.070, 0.247], p = 0.0013), along with fewer
+  refusals. Once the short prompt removes most refusals, the F1 lead is at the α = 0.05
+  boundary (+0.085 [0.001, 0.167], p = 0.050) and the *contains* lead is within noise
+  (+0.053 [−0.030, 0.140], p = 0.27).
+- **Reader against size, free form: Qwen2.5-1.5B against llama3.2:3b.** With the default
+  prompt, Qwen contains the gold far more often: +0.187 [0.107, 0.267], p < 0.001
+  (+0.180 / +0.220 / +0.160 on Vector / Hybrid / Graph, p ≤ 0.0021), at equal F1 (+0.004,
+  p = 0.87) and with about 10 more tokens per answer. Because *contains* favors longer
+  answers, the gap was checked on Hybrid. On 26 questions only Qwen's answer contains the
+  gold (4 go the other way), and 18 of the 3B's 26 answers there are refusals by the
+  string rule. A manual reading of 12 of those 26 (not recorded in the repository) found
+  11 of Qwen's answers genuinely correct (one hedges between two timeframes). The 3B's
+  misses also include misreadings of a context that holds the answer: asked *"Who is
+  older, Annie Morton or Terry Richardson?"*, with both birth dates (1970 and 1965) in
+  Hybrid's context, it concluded that Annie Morton is older; Qwen answered Terry
+  Richardson.
+- **Reader against size, terse answers.** With the short prompt the 3B is slightly ahead
+  (F1 −0.049 [−0.122, 0.024], p = 0.20; significant only on Hybrid, −0.100
+  [−0.190, −0.011], p = 0.031), and Qwen is not distinguishable from the Llama 1B
+  (F1 +0.036, p = 0.39; *contains* +0.023, p = 0.65).
 
-Reranking is never free on latency either: ~750 ms/query on **CPU** for the cross-encoder pass (≈ 50–100× the retrieval; a GPU cuts this sharply).
+A smaller, better-trained reader can beat a larger one at free-form reading, then, but
+the ranking depends on the answer format. And the prompt is part of the system under
+test: swapping it cut the Llama models' refusal rates from 45% and 70% to 3–4%. The two
+prompts differ in two instructions, the request for the shortest answer and the wording
+of the escape clause, which were not ablated separately. Report F1, *contains* and
+refusal rate together: F1 punishes verbosity, *contains* is somewhat length-biased, and
+the refusal rate is neither.
 
-> **Stress test — does a bigger reranker help?** Doubling the cross-encoder (MiniLM **L-6 → L-12**) barely moved SciFact (fuse still wins) while latency **~doubled** (754 → 1373 ms/query). The winner is set by the reranker's **domain-fit, not its size**: a *generic* MS-MARCO cross-encoder does not out-rank a tuned BM25 + dense fusion on scientific-claim verification *at any size* — a *biomedical* reranker might (untested hypothesis).
+### Performance and systems
 
-### Generation quality (optional)
+Retrieval measured as a system, without any LLM ([`perf_bench.py`](eval/perf_bench.py)):
+SciFact (5,183 documents), k = 10, latency over 200 queries × 3 repeats after a warm-up,
+throughput as the median of 3 repeats per thread count. One process on one macOS machine,
+one run, no CIs.
 
-`eval/questions.json` (40 questions tagged factoid / keyword / multi) drives a RAGAS
-benchmark of answer quality (faithfulness, relevancy, context precision/recall) —
-in the app's Benchmark tab or via `python -m eval.benchmark`. RAGAS uses an OpenAI
-judge → needs `OPENAI_API_KEY`; without it only latencies are reported.
+<img src="docs/perf-pareto.svg" alt="Quality × latency Pareto and throughput by thread count" width="100%">
 
-## Roadmap
+| | nDCG@10 | build (s) | latency median / p95 / p99 (ms) | queries/s at 1 · 2 · 4 · 8 threads |
+|---|--:|--:|--:|--:|
+| **Vector** | 0.6484 | 43.04 | **7.83** / 8.65 / 9.21 | **124.1 · 131.3 · 137.9 · 137.0** |
+| **Hybrid** | **0.7095** | 61.66 | 15.61 / 21.84 / 24.08 | 61.8 · 66.3 · 67.6 · 64.0 |
+| **Graph** | 0.6429 | 222.22 | 11.84 / 16.34 / 18.13 | 77.3 · 97.7 · 102.3 · 70.6 |
 
-Planned, not yet implemented:
+- **Build cost.** Embedding the corpus (43.02 s) is shared by all three. BM25 adds
+  18.63 s; the Graph's spaCy NER pass adds 179.13 s, more than four times the embedding
+  itself. The quality tables never show this half.
+- **Latency.** Vector is fastest; Hybrid, which runs two retrievals and a fusion, takes
+  twice as long; the Graph sits between them.
+- **Threads.** From 1 to 4 threads, Graph throughput rises 32%, Vector 11%, Hybrid 9%; at
+  8 threads all three are flat or lower (Graph falls below its single-thread rate).
+  Each query mixes native code that releases the GIL (query encoding, FAISS) with Python
+  (BM25 scoring, graph walk), and how much of it overlaps is a property of this
+  single-process setup, not of the algorithms; a multi-process server would behave
+  differently. Why the Graph gains most is not isolated by this benchmark.
+- **Memory.** The FAISS vectors take 8.0 MB. The process peaked at 571.2 MB, a
+  high-water mark set during the embedding pass (+372.7 MB); the BM25 and graph builds
+  stayed below it. At this scale memory does not separate the stacks; build time does.
+- **Pareto.** Vector (speed) and Hybrid (quality) are on the frontier: pick by latency
+  budget. On SciFact the Graph is dominated: no better nDCG@10 than Vector, slower, and
+  costlier to build. Its case rests elsewhere: multi-hop corpora such as HotpotQA, and the
+  interpretable `shared_entities` it returns with each hit.
 
-- **Serving at scale** — a backend-agnostic serving benchmark ([`eval/serving_bench.py`](eval/serving_bench.py): req/s, tokens/s, p50/p95/p99 under a concurrency sweep), and a **vLLM + Ray Serve** deployment (PagedAttention, continuous batching, autoscaling) reachable via the existing `openai` provider with **no pipeline code change**. The single-GPU run is **done** (see [Serving & observability](#serving--observability-deployed-on-aws)); remaining: **Ray Serve autoscaling** across multiple GPUs and a multi-node serving Pareto.
-- **Full-quality hosted generation** — the [live HF Spaces demo](https://huggingface.co/spaces/gyom15/rag-vector-hybrid-graph) already serves the dashboard + a Qwen2.5-1.5B Chat on free CPU; pointing it at the vLLM endpoint above (the `openai` provider) swaps in a 7B+ model for full-quality answers.
-- **Breadth** — more datasets (e.g. FiQA) and embedders (e.g. e5) on top of the current SciFact / HotpotQA / NFCorpus × MiniLM / bge coverage.
+### Serving on AWS (pre-audit)
 
-## Tests
+The GPU half of the systems story. Terraform provisions one **g5.xlarge (NVIDIA A10G,
+24 GB)** serving **Qwen2.5-7B-Instruct** with **vLLM**, plus Prometheus, Grafana and DCGM;
+the pipeline reaches it through its `openai` provider
+([`infra/` on the `dev` branch](https://github.com/GYOM15/rag-vector-hybrid-graph/tree/dev/infra)).
+[`serving_bench.py`](eval/serving_bench.py) sends 64 distinct prompts (at most 96 output
+tokens) at rising concurrency and streams each response, to separate time to first token
+(TTFT) from time per output token (TPOT):
+
+| concurrency | requests/s | tokens/s | latency p50 | latency p99 | TTFT p50 | TPOT |
+|--:|--:|--:|--:|--:|--:|--:|
+| 1 | 0.6 | 29.5 | 1.69 s | 2.28 s | 84 ms | 32.7 ms |
+| 16 | 8.0 | 392.9 | 1.77 s | 2.46 s | 137 ms | 33.8 ms |
+| 32 | 14.7 | 731.0 | 1.80 s | 2.36 s | 189 ms | 33.5 ms |
+| **64** | **22.6** | **1,138.2** | 2.09 s | 2.69 s | 271 ms | 36.4 ms |
+
+- **Decoding barely slows under continuous batching.** At 64 concurrent requests each one
+  still streams at 36.4 ms per output token (32.7 ms alone): requests/s climbs from 0.6 to
+  22.6 while p50 latency only goes from 1.69 to 2.09 s, and p99 from 2.28 to 2.69 s.
+- **The first token slows most in relative terms:** TTFT p50 more than triples, from 84 to
+  271 ms, while per-token decoding slows 11%. In absolute terms the two add about the same
+  to the +0.40 s of median latency: +187 ms of TTFT, and 3.7 ms × ~50 output tokens per
+  request ≈ +180 ms of decoding.
+
+![Grafana during the serving session: throughput, batching queue, latency, GPU utilization](docs/serving-dashboard.png)
+![GPU memory: model weights, then the KV cache allocated at startup](docs/gpu-memory.png)
+
+> The panels are Prometheus rates over a scrape window, so they smooth a sweep whose
+> concurrency levels last seconds: they peak near 300 tokens/s where the client measured
+> 1,138. The ~9 s p99 plateau after 02:00 belongs to a later, low-throughput workload, not
+> to the sweep. GPU memory holds ~15 GB of weights, then ~21 GB once vLLM pre-allocates its
+> KV cache — before any load. (Values read off the screenshots.)
+
+**Why pre-audit data stands here, and where it does not.**
+
+- **The serving numbers stand.** `serving_bench` talks only to the LLM endpoint — no
+  retriever, no answer metric — and the audit changed neither vLLM nor how the benchmark
+  measures. The snapshot simply predates provenance.
+- **The 7B answer row does not.** It ran the pre-fix retrievers on 50 questions with the
+  default prompt only, before *contains* existed and without saving generations; its
+  snapshot does not even record the model name. It is kept as history — EM 0.00 for every
+  stack, F1 0.114 / 0.109 / 0.113 for Vector / Hybrid / Graph† — and not compared with the
+  table above. At the time, hand inspection suggested the 7B answered correctly but in
+  full sentences; that observation led to the short prompt and the *contains* metric.
+  Re-running it needs the AWS setup again ([Roadmap](#roadmap)).
+
+## Audit (2026-09)
+
+Before re-running every eval, the project was audited end to end. What was wrong, and
+what changed.
+
+**Public demo security** — [PR #37](https://github.com/GYOM15/rag-vector-hybrid-graph/pull/37)
+- The server's `OPENAI_API_KEY` prefilled the password widgets, so it reached every
+  visitor's browser.
+- A visitor's backend settings were written to the process-wide `os.environ`, switching
+  the backend, and the key, of every other visitor.
+- A visitor could set the base URL to their own server and receive the server's key.
+- Visitors could make the Space download any Hugging Face model.
+- flan-t5's 512-token truncation cut off the question at the end of the prompt.
+- Nothing bounded the work a single request could trigger.
+
+→ Current safeguards: [Security and limitations](#security-and-limitations).
+
+**Retrieval bugs** — [PR #38](https://github.com/GYOM15/rag-vector-hybrid-graph/pull/38)
+- Graph: chunks reached only through entities scored a cosine of 0, so the graph signal
+  was structurally cut and the top-10 changed with k. → Real cosine + boost
+  ([chapter 2](#debugging-the-graph)).
+- Hybrid: the BM25 list was padded with chunks containing no query term, and RRF credited
+  them as lexical hits. → Only chunks with a query term.
+- Hybrid: the candidate pool was capped at 20 + 20, so large k returned too few results
+  and the top-k depended on k. → Fixed-depth fusion plus vector backfill; the top-k is
+  stable in k.
+- RRF used 0-based ranks. → Standard 1-based ranks.
+- The BM25 tokenizer split non-ASCII words ("café" → "caf"). → Unicode-aware.
+- Net effect on SciFact nDCG@10: Vector 0.6484† → 0.6484, Hybrid 0.7108† → 0.7095,
+  Graph 0.6426† → 0.6430 (0.6429 after the p75 → linear re-selection below). Hybrid
+  elsewhere: NFCorpus 0.3433† → 0.3460, HotpotQA 0.7778† → 0.7777.
+
+**Evaluation methodology** — [PR #39](https://github.com/GYOM15/rag-vector-hybrid-graph/pull/39)
+- Stacks were ranked on means alone. → Per-query scores, bootstrap 95% CIs, paired
+  sign-flip tests.
+- Snapshots could not be tied to the code that produced them. → Provenance in every
+  snapshot.
+- The answer eval reported EM/F1 only, with the default prompt, on 50 questions, and
+  discarded the generations. → Short prompt, *contains*, answer length, saved
+  generations (from which refusals are counted), 100 questions, provider and model
+  recorded, and a third reader (Qwen2.5-1.5B).
+- The per-type hit rule credited any chunk mentioning the question's own entity, and
+  substring matches ("Wright" in "playwright"). → Source article and whole-word gold.
+- The regression guard was saturated: every stack scored 1.000 on the golden corpus, so
+  removing BM25 or the entity boost still passed. → A new golden corpus (40 documents,
+  18 queries) with lexical and entity probes, per-stack baselines below 1.0, a per-query
+  check, and `--self-test` ablations run in CI ([Tests and CI](#tests-and-ci)).
+- Figure titles and dashboard captions were written by hand and went stale. → Figures
+  replot from `eval/reference/`; captions are computed from the snapshots.
+- After the Graph fix, the entity normalization was re-selected on held-out data: p75 →
+  linear.
+
+**Claims this README no longer makes:**
+
+- *Model capability dominates answer quality.* Now: the 3B-to-1B F1 ratio came from
+  scores deflated by verbose answers and refusals.
+- *Better retrieval does not surface in answers.* Now: under the short prompt, Hybrid's
+  does, with both Llama models.
+- *Normalization mostly stops the Graph harming itself.* Now: it beats Vector on HotpotQA
+  and NFCorpus.
+- *Vector alone scales with threads.* Now: the Graph gains most.
+- *The serving p99 rises to ~8 s.* Now: that figure was read off the ~9 s plateau of
+  another workload; the sweep's p99 is 2.69 s.
+- *The KV cache grows to fill the GPU under load.* Now: vLLM allocates it at startup.
+- *The per-type question set's old size and third category.* Now: 27 questions,
+  16 factoid and 11 keyword.
+
+## Tests and CI
 
 ```bash
 pytest -q
+python -m eval.check_regression              # the CI gate
+python -m eval.check_regression --self-test  # proves each stack's own component is guarded
+python -m eval.check_regression --update     # regenerate eval/baselines.json after an intended change
 ```
-Cover the pure logic (chunking, RRF fusion, BM25 tokenizer, IR metrics) with only
-light deps (snowballstemmer, spaCy) — no torch/faiss — keeping CI fast.
 
-**Retrieval regression guard** — a second CI job builds the 3 stacks on a tiny, fixed
-*golden corpus* ([`golden_corpus.json`](eval/golden_corpus.json)) and **fails the build**
-if any architecture's nDCG@5 drops below its committed baseline
-([`baselines.json`](eval/baselines.json)). A change that silently breaks retrieval is
-caught automatically, not by eye:
+GitHub Actions runs two jobs:
 
-```bash
-python -m eval.check_regression           # compare to baseline (the CI gate)
-python -m eval.check_regression --update   # regenerate the baseline after an intended change
-```
+- **test** — `pytest`, plus `ruff` (reported, not blocking). The suite covers the pure
+  logic (chunker, tokenizer, RRF, IR and answer metrics, bootstrap and paired statistics,
+  provenance, dashboard captions) and the retrievers themselves, including top-k
+  stability across k, with a fake embedding model: numpy, faiss-cpu, rank-bm25, networkx
+  and spaCy, but no torch, so the job stays fast.
+- **regression-guard** — builds the three stacks with the real MiniLM on the fixed golden
+  corpus (40 documents, 18 queries: [`golden_corpus.json`](eval/golden_corpus.json)) and
+  fails if a stack's mean nDCG@5 drops more than 0.05 below its baseline ([`baselines.json`](eval/baselines.json):
+  Vector 0.7513, Hybrid 0.8829, Graph 0.8684), or if any single query drops more than
+  0.05. Besides 8 easy queries, the corpus holds 5 lexical probes (a rare exact token among
+  near-duplicates: only BM25 ranks it first) and 5 entity probes (same-surname
+  distractors: only the entity boost ranks it first), so each stack has its own baseline
+  below 1.0 and removing its component costs it points. The job then runs `--self-test`,
+  which breaks each stack's own component at query time and fails unless the guard flags
+  that stack: first entirely (BM25 returns nothing, the query yields no entities, Vector's
+  query embedding is scrambled), then for a single query (one lexical probe loses BM25,
+  one entity probe its entities, one easy Vector query slips from rank 1 to 2).
+
+## Security and limitations
+
+**The public demo is multi-user.** Every visitor of the Space shares one Python process
+and the cached indexes. Since the audit:
+
+- **`PUBLIC_DEMO`** locks the LLM backend to the server's configuration. The sidebar is
+  read-only (no provider, model, URL or key inputs), so visitors cannot redirect the
+  endpoint or trigger model downloads, and the live RAGAS tab is disabled. It is switched
+  on automatically on a Hugging Face Space (detected through `SPACE_ID`); `PUBLIC_DEMO=0`
+  opts out, which is safe only for a single user (next point).
+- **Per-session backend.** Outside public-demo mode, each session's backend lives in
+  `st.session_state` and reaches the LLM call as arguments; the LLM backend and its key
+  are never written to `os.environ`. One exception: the local RAGAS tab (disabled in
+  public-demo mode) puts a typed judge key into the process environment, where RAGAS
+  reads it, so every later session of that process would use it.
+- **Key scoping.** The server's `OPENAI_API_KEY` is never sent to the browser, and is only
+  ever sent to the server-configured `OPENAI_BASE_URL`; any other URL only gets a key typed
+  in that session. Base URLs must be http(s).
+- **Bounded work per request.** Questions are capped at 500 characters on the server;
+  local model inputs are fitted to the model's limit without cutting the question; remote
+  calls time out (`LLM_TIMEOUT`); one Hugging Face model stays in memory and generation is
+  serialized under a lock.
+
+**Still missing** — acceptable for a demo over a fixed public corpus, required before a
+paid endpoint goes behind a public page:
+
+- **Rate limiting and quotas.** Nothing limits requests per visitor, and since local
+  generation is serialized, one heavy user delays everyone.
+- **Authentication and abuse monitoring.**
+- **Content moderation** of questions and answers.
+- **Prompt-injection defenses.** Low risk while the corpus is fixed and trusted; it would
+  matter as soon as users can add documents.
+- **Enforced grounding.** The prompt tells the model to answer only from the retrieved
+  context and to say when it cannot; small models do not always comply.
+
+**Research limitations.** Retrieval covers two BEIR corpora (SciFact, NFCorpus) plus
+HotpotQA distractor, and two small embedders; answers use three small local models
+(1B to 3B) on 100 HotpotQA questions, and refusals are detected by a string rule; the
+per-type set has 27 questions; CPU numbers come from one machine and one process, without
+CIs; serving is one GPU and one model. The Graph links spaCy entities by co-occurrence,
+without LLM-extracted relations or community summaries.
+
+## Roadmap
+
+- **Re-run the GPU evals on post-audit code:** the 7B answer eval (both prompts,
+  100 questions) and the serving sweep with provenance, on the same AWS setup.
+- **Multi-GPU autoscaling with Ray Serve.** A Ray Serve layer over vLLM — autoscaling
+  replicas behind one OpenAI-compatible endpoint, a Terraform switch between plain vLLM
+  and Ray, and a Grafana autoscaling dashboard — lives on the
+  [`dev-ray`](https://github.com/GYOM15/rag-vector-hybrid-graph/tree/dev-ray) branch. It was
+  proposed in [PR #17](https://github.com/GYOM15/rag-vector-hybrid-graph/pull/17) and closed
+  unmerged: it passed syntax checks (`terraform validate`, `docker compose config`) but
+  has never run on GPUs. Next: deploy it on a multi-GPU instance (e.g. g5.12xlarge,
+  4 × A10G) and measure the scaling.
+- **Rate limiting, then a stronger hosted reader.** The Space could use a 7B+ model through
+  the `openai` provider; `PUBLIC_DEMO` already keeps the key on the server.
+- **Breadth.** More datasets (e.g. FiQA) and embedders (e.g. e5), and a domain-specific
+  reranker for SciFact and NFCorpus.
+- **A stronger Graph:** LLM-extracted typed relations and community summaries, i.e.
+  GraphRAG proper.
 
 ## Data
 
-[Simple English Wikipedia](https://huggingface.co/datasets/wikimedia/wikipedia)
-(`20231101.simple`), first 500 articles by default (`--articles` to change).
-
-## Security & limitations
-
-This is a **research / demo** project, scoped accordingly — there is **no security layer**:
-no content moderation, input validation, rate limiting, or prompt-injection defence. That
-is deliberate and appropriate for a local, single-user demo over a *fixed, public* corpus
-(Simple English Wikipedia). Answers are **grounded** in the retrieved context — a
-*faithfulness* measure, not a guardrail — so an out-of-corpus question returns no answer
-rather than a hallucination.
-
-For a **public deployment** wired to a real LLM endpoint, the things worth adding:
-**rate limiting** (cost / abuse), **input validation & length limits**, **content
-moderation**, and **prompt-injection awareness** (low risk here — the corpus is fixed and
-trusted; it would matter if user-supplied documents were ingested).
+- **Simple English Wikipedia** ([`wikimedia/wikipedia`](https://huggingface.co/datasets/wikimedia/wikipedia),
+  `20231101.simple`): the first 500 articles for the app (`DEMO_ARTICLES`), the first 100
+  for the per-type eval (`--articles`), split into 500-character chunks with a
+  50-character overlap.
+- **BEIR** SciFact and NFCorpus (`BeIR/*` on Hugging Face) with their qrels, and
+  **HotpotQA** distractor (`hotpotqa/hotpot_qa`, validation split). All loaded through
+  `datasets`; no dataset is stored in the repository.
 
 ## License
 
-[MIT](LICENSE) — see the `LICENSE` file.
+[MIT](LICENSE)
