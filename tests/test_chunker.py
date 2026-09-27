@@ -165,6 +165,31 @@ def test_custom_separators_are_honoured():
         assert token in joined
 
 
+@pytest.mark.parametrize("separators", [[""], ["\n", ""], [" ", ""]])
+def test_empty_separator_keeps_spaces(separators):
+    """The empty separator ("cut anywhere") used to strip every single character,
+    deleting all spaces ("hello world" -> "helloworld")."""
+    text = "hello world foo bar baz qux"
+    chunks = recursive_chunk(text, max_size=10, overlap=0, separators=separators)
+
+    assert all(len(c.text) <= 10 for c in chunks)
+    assert all(c.text in text for c in chunks)  # verbatim slices: nothing glued
+    assert "".join(c.text for c in chunks).replace(" ", "") == text.replace(" ", "")
+
+
+def test_empty_separator_cuts_character_windows_with_overlap():
+    text = "hello world foo bar baz qux"
+    chunks = recursive_chunk(text, max_size=10, overlap=3, separators=[""])
+    assert [c.text for c in chunks] == ["hello worl", "orld foo b", "o bar baz", "az qux"]
+
+
+def test_empty_separator_emits_no_redundant_trailing_chunk():
+    """Each chunk brings new characters: plain character windows kept going until
+    the last start offset and added "opq", already inside "hijklmnopq"."""
+    chunks = recursive_chunk("abcdefghijklmnopq", max_size=10, overlap=3, separators=[""])
+    assert [c.text for c in chunks] == ["abcdefghij", "hijklmnopq"]
+
+
 # ---------------------------------------------------------------------------
 # Indexing
 # ---------------------------------------------------------------------------

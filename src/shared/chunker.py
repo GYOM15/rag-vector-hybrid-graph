@@ -32,9 +32,10 @@ def _make_chunk(text: str, index: int, metadata: dict | None) -> Chunk:
 
 
 def _split_by_separator(text: str, separator: str) -> list[str]:
-    """Split `text` on `separator`, ignoring empty fragments."""
-    if separator == "":
-        return list(text)  # last resort: character by character
+    """Split `text` on a non-empty `separator`, ignoring blank fragments.
+
+    The empty separator is handled by `_split_characters`.
+    """
     return [part for part in text.split(separator) if part.strip()]
 
 
@@ -109,6 +110,23 @@ def _build_chunks_with_overlap(
     return chunks
 
 
+def _split_characters(
+    text: str,
+    size: int,
+    overlap: int,
+    metadata: dict | None,
+) -> list[Chunk]:
+    """Last resort, "cut anywhere" (empty separator): one segment per character.
+
+    The characters are assembled like any other separator's segments (same
+    overlap), spaces included: stripping each single character would delete every
+    space (words glued together). Only the assembled chunks are stripped.
+    """
+    assembled = _build_chunks_with_overlap(list(text), size, overlap, "", None)
+    texts = [stripped for chunk in assembled if (stripped := chunk.text.strip())]
+    return [_make_chunk(chunk_text, idx, metadata) for idx, chunk_text in enumerate(texts)]
+
+
 def _recursive_split(
     text: str,
     size: int,
@@ -122,6 +140,8 @@ def _recursive_split(
         return [_make_chunk(stripped, 0, metadata)] if stripped else []
 
     for i, sep in enumerate(separators):
+        if sep == "":
+            return _split_characters(text, size, overlap, metadata)
         segments = _split_by_separator(text, sep)
         if len(segments) <= 1:
             continue  # this separator splits nothing: move on to the next one

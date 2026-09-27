@@ -1,19 +1,29 @@
-"""Embedding provider based on sentence-transformers."""
+"""Embedding provider based on sentence-transformers.
+
+sentence-transformers (and torch) is imported lazily, in EmbeddingModel.__init__:
+every retriever imports this module for its type hints, and that must stay light.
+"""
+
+import re
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+
+_NAME_TOKEN_SEP = re.compile(r"[-_/.]")
 
 
 def _infer_prefixes(model_name: str) -> tuple[str, str]:
     """Prefixes (query, document) expected by certain model families.
 
     e5 requires "query: " / "passage: "; bge recommends an instruction on the
-    query side. The others (MiniLM, gte...) do not use any.
+    query side. The others (MiniLM, gte...) do not use any. The family is matched
+    on whole tokens of the model basename ("intfloat/e5-base-v2" -> {e5, base, v2}),
+    not substrings, to avoid false positives.
     """
-    name = model_name.lower()
-    if "e5" in name:
+    basename = model_name.lower().rstrip("/").rsplit("/", 1)[-1]
+    tokens = set(_NAME_TOKEN_SEP.split(basename))
+    if "e5" in tokens:
         return "query: ", "passage: "
-    if "bge" in name:
+    if "bge" in tokens:
         return "Represent this sentence for searching relevant passages: ", ""
     return "", ""
 
@@ -31,6 +41,8 @@ class EmbeddingModel:
         query_prefix: str | None = None,
         doc_prefix: str | None = None,
     ):
+        from sentence_transformers import SentenceTransformer
+
         self.model = SentenceTransformer(model_name)
         inferred_q, inferred_d = _infer_prefixes(model_name)
         self.query_prefix = inferred_q if query_prefix is None else query_prefix
