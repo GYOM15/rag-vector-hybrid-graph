@@ -13,9 +13,9 @@ Running example used below: HF user `gyom15`, Space `rag-vector-hybrid-graph`
 |---|---|
 | Dashboard — BEIR / Reranking / Systems / Answer quality | ✅ full (reads committed `eval/reference/*.json`), **loads instantly** |
 | Live Guard / Retrieval by type | ✅ builds the 3 stacks on first click (~1–3 min, then cached) |
-| Chat (3 architectures side by side) | ✅ retrieves + generates with **flan-t5-base** (CPU) — works for any visitor, no setup; basic answers |
-| LLM backend (sidebar) | 🔒 read-only with `PUBLIC_DEMO=1` (Step 8): visitors use the server's backend |
-| RAGAS (live) tab | ⚠️ disabled with `PUBLIC_DEMO=1` (and `ragas` isn't in the hosted requirements) → explanatory message + last results; run locally |
+| Chat (3 architectures side by side) | ✅ retrieves + generates with the Space's model (**flan-t5-base** by default, CPU) — works for any visitor, no setup |
+| LLM backend (sidebar) | ✅ restricted choices with `PUBLIC_DEMO=1` (Step 8): the Space's backend (default), a hosted API with the **visitor's own key** (OpenAI, OpenRouter, Groq, Together, Mistral), or an allow-listed small local model — no custom URL, no Ollama |
+| RAGAS (live) tab | ✅ generation by the visitor's chosen backend, judged by OpenAI with the **visitor's own OpenAI key**; ≤ 10 questions, one run at a time, results kept in the visitor's session (JSON download) |
 
 The Streamlit app's `get_stacks()` is `@st.cache_resource`, and it's only called on the
 first Chat/retrieval interaction — so the **initial page load is fast** (the dashboard is
@@ -121,16 +121,20 @@ Space → **Settings** → **Variables and secrets** → **New variable** (a *Va
 | `LLM_PROVIDER` | `huggingface` | the Chat generates locally (no Ollama on the Space) |
 | `HF_MODEL` | `Qwen/Qwen2.5-1.5B-Instruct` | a small *instruct* model — **correct** answers (a measured win over flan-t5, see Notes); slower on CPU. Omit to use the lighter/faster `google/flan-t5-base` default |
 | `DEMO_ARTICLES` | `200` | smaller corpus = faster first build |
-| `PUBLIC_DEMO` | `1` | **required for a public Space.** All visitors share one Python process: this locks the LLM backend to the one configured here (the sidebar becomes read-only — no provider/model/URL/key inputs, so no arbitrary model downloads) and disables the live RAGAS benchmark. Already the default on a Space (the app detects HF's `SPACE_ID`), so a forgotten variable fails closed — set it anyway to be explicit; `0` turns it off (e.g. a private Space) |
+| `PUBLIC_DEMO` | `1` | **required for a public Space.** All visitors share one Python process: this restricts the sidebar to choices that can't be turned against the server — the backend configured here (the default), a preset hosted API (OpenAI, OpenRouter, Groq, Together, Mistral) with the visitor's **own** key (never the server's), or a small local model from `HF_PUBLIC_MODELS` — with no free-form URL (the Space would call any host a visitor names) and no arbitrary model download. The live RAGAS tab needs the visitor's own OpenAI key, is capped at 10 questions and keeps results in the visitor's session. Already the default on a Space (the app detects HF's `SPACE_ID`), so a forgotten variable fails closed — set it anyway to be explicit; `0` turns it off (e.g. a private Space) |
+| `HF_PUBLIC_MODELS` | *(optional)* e.g. `Qwen/Qwen2.5-0.5B-Instruct,Qwen/Qwen2.5-1.5B-Instruct` | comma-separated allow-list of the local models visitors may pick (each is a download + a load on first use; one model stays in memory). Unset: Qwen2.5-0.5B-Instruct, Qwen2.5-1.5B-Instruct, flan-t5-base |
+| `RAGAS_DO_NOT_TRACK` | `true` | opts out of ragas' anonymous usage telemetry (on by default in ragas) |
 
 Adding variables restarts the Space.
 
 > 🔒 **Using a paid/remote endpoint safely.** With `PUBLIC_DEMO=1`, the owner can switch the
-> Chat to an OpenAI-compatible endpoint (e.g. the AWS/vLLM server): Variables
-> `LLM_PROVIDER=openai`, `OPENAI_BASE_URL=…`, `OPENAI_MODEL=…`, and the key as a **Secret**
-> (*New secret* → `OPENAI_API_KEY`) — never a Variable, which is shown publicly on the Space.
-> This is safe because visitors can't change the endpoint: the app only ever sends the
-> server's key to the server-configured `OPENAI_BASE_URL`, and never puts it in a widget.
+> Space's default backend to an OpenAI-compatible endpoint (e.g. the AWS/vLLM server):
+> Variables `LLM_PROVIDER=openai`, `OPENAI_BASE_URL=…`, `OPENAI_MODEL=…`, and the key as a
+> **Secret** (*New secret* → `OPENAI_API_KEY`) — never a Variable, which is shown publicly on
+> the Space. This is safe because visitors can't redirect it: the app only ever sends the
+> server's key to the server-configured `OPENAI_BASE_URL` (the "Demo default" choice), never
+> puts it in a widget, and never lends it to a visitor's own choice or to the RAGAS judge —
+> those use the key the visitor typed, even when the preset is the same endpoint.
 > Optional: `LLM_TIMEOUT` (seconds, default 120) bounds each remote call.
 
 ## Step 9 — Watch it build, then run
@@ -146,14 +150,14 @@ Adding variables restarts the Space.
 **`ModuleNotFoundError: No module named 'X'` at startup** (we hit this with `snowballstemmer`).
 The hosted install comes only from `requirements.txt`. Make sure it lists every runtime
 import — for this app: `streamlit, sentence-transformers, transformers, faiss-cpu,
-rank-bm25, snowballstemmer, networkx, spacy, numpy, python-dotenv, datasets` + the spaCy
-model wheel. Fix and re-push:
+rank-bm25, snowballstemmer, networkx, spacy, numpy, python-dotenv, datasets, ragas,
+langchain-openai` + the spaCy model wheel. Fix and re-push:
 ```bash
 echo "the-missing-package" >> requirements.txt
 git add requirements.txt && git commit -m "Add missing dependency" && git push
 ```
-(`ollama` and `ragas` are intentionally absent — they're lazy-imported and not needed for
-the default hosted path.)
+(`ollama` is intentionally absent — it's lazy-imported, and Ollama is not offered on a
+public Space.)
 
 **Build error (red) / runtime error.** Open the **Logs** tab; the traceback's bottom line is
 the cause. Most failures are a missing dependency (fix as above) or a wrong `app_file`.
