@@ -1,8 +1,9 @@
 # Dependencies for the Hugging Face Spaces deployment (Streamlit SDK installs from
 # this file). Mirrors the core `pyproject.toml` deps + the spaCy NER model + the
-# Streamlit/Altair/pandas stack the app renders with. RAGAS is intentionally left out
-# to keep the Space light — the RAGAS tab degrades gracefully (it needs an OpenAI key
-# anyway). Local dev still uses `pip install -e ".[eval,dev]"`.
+# Streamlit/Altair/pandas stack the app renders with + the `[eval]` extra (RAGAS and
+# its OpenAI-compatible judge), so visitors can run the live RAGAS tab with their own
+# key. ragas and langchain-openai are pinned: the judge code is written against their
+# API (verified with these versions). Local dev still uses `pip install -e ".[eval,dev]"`.
 streamlit>=1.40
 sentence-transformers>=2.0
 transformers>=4.40
@@ -16,4 +17,6 @@ altair
 pandas
 python-dotenv
 datasets
+ragas==0.4.3
+langchain-openai==0.3.35
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
