@@ -7,7 +7,7 @@
     "corpus": "HotpotQA distractor (validation): union of the 10 paragraphs of the first 500 questions",
     "ci": "95% percentile bootstrap over queries (10k resamples, seed 0)",
     "provenance": {
-      "git_sha": "5d4cce983f45a48727fc1b99ddfcaaca427540c7",
+      "git_sha": "bf6974528a6d80f06f27eea66f9098c346f3382a",
       "git_dirty": false,
       "dirty_files": [],
       "diff_sha": null,

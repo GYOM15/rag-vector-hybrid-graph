@@ -13,7 +13,7 @@
     "contains_rule": "normalized gold as a contiguous whole-token run of the normalized answer, not next to 'or'/'nor'/'vs'; yes/no golds: the reply opens with the gold word alone and its first sentence lacks the opposite; golds named in the question: the reply opens with the gold, not followed by 'or'/'and'",
     "ci": "95% percentile bootstrap over questions (10k resamples, seed 0)",
     "provenance": {
-      "git_sha": "1ad9654ed5c0906b264dc947becbe3822d822b61",
+      "git_sha": "0686a53a376aad7af83a5d8d0d8d9243cb5e25b6",
       "git_dirty": false,
       "dirty_files": [],
       "diff_sha": null,
