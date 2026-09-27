@@ -3,8 +3,8 @@
 Two tabs:
   - "Live chat": 3 chats side by side (one per architecture). The same question
     goes to all three; each keeps its own thread.
-  - "Evaluation": runs the evaluation (RAGAS + latencies) and visualizes it, or
-    shows the last `eval/results.json`.
+  - "Evaluation": the dashboard over the committed snapshots, plus a live RAGAS
+    benchmark (generation + judging) with the session's backend and judge key.
 
 Note: the RAG has no conversational memory — each question is handled
 independently (comparative chat log, not contextual multi-turn).
@@ -13,8 +13,8 @@ Multi-user: all sessions share this process (and the cached stacks), so a sessio
 LLM backend and keys are kept in `st.session_state` and passed per call — never written
 to `os.environ`. `PUBLIC_DEMO=1` (the default on a Hugging Face Space) restricts the
 choices to ones that can't be turned against the server — the server's backend, preset
-hosted APIs with the visitor's own key, allow-listed small local models; see
-`backend_config.py`.
+hosted APIs with the visitor's own key, allow-listed small local models — and keeps
+RAGAS results in the session; see `backend_config.py`.
 
 Run:  streamlit run app/streamlit_app.py
 """
@@ -25,6 +25,7 @@ import json
 import os
 import sys
 import tempfile
+import threading
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -37,11 +38,15 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 load_dotenv(PROJECT_ROOT / ".env")
 
 from pipeline import STACK_NAMES, build_stacks  # noqa: E402
+# light: the evaluator imports ragas itself only when it runs
+from shared.evaluator import JudgeConfig, check_judge, evaluate_stacks  # noqa: E402
 from shared.llm import call_llm, default_model  # noqa: E402
 
 from backend_config import (  # noqa: E402
-    API_PRESETS, PROVIDERS, PUBLIC_CHOICES, SERVER, BackendChoice, demo_articles,
-    is_public_demo, llm_kwargs, public_hf_models, server_base_url, server_choice,
+    API_PRESETS, DEFAULT_JUDGE_EMBEDDINGS, DEFAULT_JUDGE_MODEL, PROVIDERS, PUBLIC_CHOICES,
+    RAGAS_DEFAULT_QUESTIONS, SERVER, BackendChoice, demo_articles, is_public_demo,
+    judge_base_url, judge_settings, llm_kwargs, preset_for_url, public_hf_models,
+    ragas_max_questions, ragas_questions, server_base_url, server_choice,
 )
 from eval_dashboard import (  # noqa: E402
     _grouped_bar, render_answer, render_beir, render_regression_guard,
@@ -256,11 +261,18 @@ def _write_json_atomic(path: Path, payload: dict) -> None:
         raise
 
 
-def run_benchmark(n_questions: int, k: int, backend: dict) -> None:
-    """Evaluates the 3 stacks (generation with this session's `backend` + RAGAS + latencies)
-    and writes results.json."""
-    from shared.evaluator import evaluate_stacks  # light: ragas itself is imported lazily
+@st.cache_resource
+def _ragas_slot() -> threading.Lock:
+    """Shared by every session (unlike a module global, which each rerun re-creates): on
+    the public demo one live RAGAS run at a time, since each holds the CPU for minutes."""
+    return threading.Lock()
 
+
+def run_benchmark(n_questions: int, k: int, backend: dict, judge: JudgeConfig,
+                  public: bool) -> None:
+    """Evaluates the 3 stacks (generation with this session's `backend`, RAGAS judged by
+    `judge`, latencies). Public demo: the results stay in this session (a download is
+    offered); locally: written to results.json."""
     data = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))[:n_questions]
     questions = [d["question"] for d in data]
     ground_truths = [d.get("ground_truth") or d.get("answer") or "" for d in data]
@@ -269,18 +281,27 @@ def run_benchmark(n_questions: int, k: int, backend: dict) -> None:
         with st.spinner(f"Benchmark on {len(questions)} questions (generation + RAGAS)… "
                         "this can take a few minutes."):
             metrics = evaluate_stacks(get_stacks(), questions, ground_truths, k=k, types=types,
-                                      llm_fn=functools.partial(call_llm, **backend))
+                                      llm_fn=functools.partial(call_llm, **backend),
+                                      judge=judge)
+        llm = {"provider": backend["provider"],
+               "model": backend["model"] or default_model(backend["provider"])}
+        api = preset_for_url(backend.get("base_url", ""))
+        if api:
+            llm["api"] = api
         payload = {
             "config": {
                 "n_articles": demo_articles(), "k": k, "n_questions": len(questions),
-                # which generator produced the answers (never the endpoint or the key)
-                "llm": {"provider": backend["provider"],
-                        "model": backend["model"] or default_model(backend["provider"])},
+                # which generator and judge were used (never an endpoint or a key)
+                "llm": llm,
+                "judge": {"model": judge.model, "embeddings": judge.embedding_model},
                 "generated_at": datetime.now().isoformat(timespec="seconds"),
             },
             "stacks": metrics,
         }
-        _write_json_atomic(RESULTS_PATH, payload)
+        if public:
+            st.session_state.ragas_results = payload  # this visitor's only: no shared file
+        else:
+            _write_json_atomic(RESULTS_PATH, payload)
         st.success("Benchmark done.")
     except Exception as exc:
         st.error(f"Benchmark failed: {exc}")
@@ -298,20 +319,19 @@ _LATENCY_LABELS = {
     "avg_generation_ms": "Generation",
     "avg_latency_ms": "Total",
 }
-def render_benchmark_results(can_run: bool = True) -> None:
-    """Shows the last results.json: comparison table + charts. `can_run`: whether the
-    benchmark form is offered above (else don't point to it)."""
-    if not RESULTS_PATH.exists():
-        st.info("No results yet. Run a benchmark above." if can_run
-                else "No benchmark results in this deployment.")
+def render_benchmark_results(data: dict | None, empty_message: str) -> None:
+    """Shows benchmark results (a results.json payload): comparison table + charts."""
+    if not data:
+        st.info(empty_message)
         return
 
     import pandas as pd
 
-    data = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
     cfg = data.get("config", {})
+    llm, judge = cfg.get("llm") or {}, cfg.get("judge") or {}
     st.caption(
         f"{cfg.get('n_questions', '?')} questions · {cfg.get('n_articles', '?')} articles "
+        f"· generator `{llm.get('model', '?')}` · judge `{judge.get('model', '?')}` "
         f"· generated on {cfg.get('generated_at', '?')}"
     )
 
@@ -322,19 +342,19 @@ def render_benchmark_results(can_run: bool = True) -> None:
     ragas = [m for m in _RAGAS_LABELS if m in df.index]
     if ragas:
         st.subheader("Quality — RAGAS (higher = better, 0–1 score)")
-        _grouped_bar(df.loc[ragas].rename(index=_RAGAS_LABELS),
+        _grouped_bar(df.loc[ragas].astype(float).rename(index=_RAGAS_LABELS),
                      "Metric", "Score", "Quality by metric", ".2f")
     else:
         errors = sorted({m["ragas_error"] for m in data["stacks"].values() if m.get("ragas_error")})
         if errors:
             st.warning("RAGAS failed — only latencies are shown: " + " · ".join(errors))
         else:
-            st.warning("No RAGAS metrics (missing OpenAI key?). Only latencies are shown.")
+            st.warning("No RAGAS metrics (no judge key?). Only latencies are shown.")
 
     latency = [m for m in _LATENCY_LABELS if m in df.index]
     if latency:
         st.subheader("Mean latencies (lower = better)")
-        _grouped_bar(df.loc[latency].rename(index=_LATENCY_LABELS),
+        _grouped_bar(df.loc[latency].astype(float).rename(index=_LATENCY_LABELS),
                      "Step", "Milliseconds", "Latency by step", ".0f")
 
     _render_by_type(data["stacks"], pd)
@@ -371,40 +391,94 @@ def _render_by_type(stacks: dict, pd) -> None:
                      "Mean latency by category (lower = better)", ".0f")
 
 
-def render_ragas_tab(backend: dict) -> None:
-    """Live RAGAS benchmark (local only) + the last results.json."""
-    st.subheader("RAGAS benchmark (generation + judging)")
-    can_run = False
-    if is_public_demo():
-        st.info("The live RAGAS benchmark is disabled on the public demo: its judge needs an "
-                "OpenAI key, and a shared demo neither asks visitors for one nor lends the "
-                "server's. Run it locally (README §4).", icon=":material/lock:")
-    elif importlib.util.find_spec("ragas") is None:
-        st.info("RAGAS isn't installed in this deployment — run the benchmark locally "
-                "(see README §4).")
-    else:
-        can_run = True
-        with st.form("bench_form"):
-            c1, c2 = st.columns(2)
-            n_q = c1.number_input("Number of questions", 1, 50, 5)
-            k_b = c2.number_input("k (retrieved chunks)", 1, 10, 5)
-            # Never prefilled with the server's key: a widget's value is sent to the browser.
+def _ragas_form(backend: dict | None, public: bool) -> None:
+    """The live benchmark form. The judge key is the visitor's own (public demo: required,
+    judge fixed to OpenAI); it only reaches the judge objects, never `os.environ`."""
+    cap = ragas_max_questions()
+    st.caption(f"Generates the answers with **this session's backend** (sidebar), then an "
+               f"OpenAI judge scores them. Up to {cap} questions, 3 answers each."
+               + (" Results stay in your session." if public else ""))
+    with st.form("bench_form"):
+        c1, c2 = st.columns(2)
+        n_q = c1.number_input("Number of questions", 1, cap, min(RAGAS_DEFAULT_QUESTIONS, cap))
+        k_b = c2.number_input("k (retrieved chunks)", 1, 10, 5)
+        # Never prefilled with the server's key: a widget's value is sent to the browser.
+        if public:
+            hint = _KEY_PLACEHOLDER
+        else:
             hint = ("Server key set (.env) — leave empty to use it"
                     if os.getenv("OPENAI_API_KEY") else "")
-            key = st.text_input("OpenAI key for RAGAS", "", type="password", placeholder=hint)
-            go = st.form_submit_button("Run the benchmark", type="primary", icon=":material/play_arrow:")
-        if go:
-            if key.strip():
-                # RAGAS reads its judge's key from the env only. Acceptable here and ONLY
-                # here: this branch never runs in public-demo mode (PUBLIC_DEMO / HF Space),
-                # i.e. a local, single-user app — on a shared server it would hand this key
-                # to every other visitor.
-                os.environ["OPENAI_API_KEY"] = key.strip()
-            if not os.getenv("OPENAI_API_KEY"):
-                st.warning("No OpenAI key → only latencies will be computed (RAGAS skipped).")
-            run_benchmark(int(n_q), int(k_b), backend)
+        key = st.text_input("OpenAI API key (judge)", "", type="password", placeholder=hint,
+                            key="ragas_judge_key")
+        with st.expander("Judge settings"):
+            j1, j2 = st.columns(2)
+            judge_model = j1.text_input("Judge model", DEFAULT_JUDGE_MODEL)
+            judge_embeddings = j2.text_input("Embedding model", DEFAULT_JUDGE_EMBEDDINGS)
+            judge_url = "" if public else st.text_input(
+                "Judge base URL", "", placeholder=judge_base_url(),
+                help="Any OpenAI-compatible endpoint, e.g. Ollama: http://localhost:11434/v1")
+        go = st.form_submit_button("Run the benchmark", type="primary",
+                                   icon=":material/play_arrow:")
+    if not go:
+        return
+    if backend is None:
+        st.error("Finish the LLM backend setup in the sidebar first: it generates the answers.")
+        return
+    try:
+        judge = JudgeConfig(**judge_settings(key, judge_model, judge_embeddings, judge_url))
+    except ValueError as exc:
+        st.error(str(exc))
+        return
+    if judge.api_key:
+        from openai import OpenAIError  # installed with langchain-openai
+
+        try:
+            with st.spinner("Checking the judge…"):
+                check_judge(judge)
+        except (OpenAIError, ValueError) as exc:  # API/network errors, rejected settings
+            st.error(f"The RAGAS judge doesn't answer ({type(exc).__name__}): {exc}")
+            return
+    else:
+        st.warning("No judge key → only latencies will be computed (RAGAS skipped).")
+    n_questions, k = ragas_questions(n_q), max(1, min(int(k_b), 10))  # re-checked here
+    if not public:
+        run_benchmark(n_questions, k, backend, judge, public)
+        return
+    slot = _ragas_slot()
+    if not slot.acquire(blocking=False):
+        st.warning("Another visitor's benchmark is running — try again in a few minutes.")
+        return
+    try:
+        run_benchmark(n_questions, k, backend, judge, public)
+    finally:
+        slot.release()
+
+
+def render_ragas_tab(backend: dict | None) -> None:
+    """Live RAGAS benchmark + its results (public demo: this session's; locally: the last
+    results.json)."""
+    st.subheader("RAGAS benchmark (generation + judging)")
+    public = is_public_demo()
+    installed = all(importlib.util.find_spec(m) for m in ("ragas", "langchain_openai"))
+    if installed:
+        _ragas_form(backend, public)
+    else:
+        st.info("RAGAS isn't installed in this deployment — `pip install -e \".[eval]\"` "
+                "(README §4).")
     st.divider()
-    render_benchmark_results(can_run)
+    if public:
+        data = st.session_state.get("ragas_results")
+        if data:
+            st.download_button("Download the results (JSON)",
+                               json.dumps(data, indent=2, ensure_ascii=False),
+                               file_name="ragas_results.json", mime="application/json",
+                               icon=":material/download:")
+        render_benchmark_results(data, "No results in this session yet. Run a benchmark above.")
+    else:
+        data = (json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
+                if RESULTS_PATH.exists() else None)
+        render_benchmark_results(data, "No results yet. Run a benchmark above." if installed
+                                 else "No benchmark results in this deployment.")
 
 
 st.set_page_config(page_title="RAG comparison", layout="wide")

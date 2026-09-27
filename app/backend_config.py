@@ -58,6 +58,7 @@ API_PRESETS: dict[str, ApiPreset] = {
                           "meta-llama/Llama-3.3-70B-Instruct-Turbo"),
     "Mistral": ApiPreset("https://api.mistral.ai/v1", "mistral-small-latest"),
 }
+OPENAI_API_URL = API_PRESETS["OpenAI"].base_url  # the RAGAS judge's endpoint on the demo
 
 # Small enough for a free CPU Space; each one is a download + a load on first use.
 DEFAULT_HF_PUBLIC_MODELS = (
@@ -65,6 +66,13 @@ DEFAULT_HF_PUBLIC_MODELS = (
     "Qwen/Qwen2.5-1.5B-Instruct",
     "google/flan-t5-base",
 )
+
+# Live RAGAS benchmark: each question costs 3 generations (one per stack) + judge calls.
+RAGAS_DEFAULT_QUESTIONS = 5
+RAGAS_MAX_QUESTIONS_PUBLIC = 10
+RAGAS_MAX_QUESTIONS_LOCAL = 50
+DEFAULT_JUDGE_MODEL = "gpt-4o-mini"
+DEFAULT_JUDGE_EMBEDDINGS = "text-embedding-3-small"
 
 _MAX_NAME_CHARS = 200   # a model id, not a document
 _MAX_KEY_CHARS = 1024   # real keys are < 200 chars; anything longer is not a key
@@ -231,3 +239,62 @@ def llm_kwargs(choice: BackendChoice | None, env: Mapping[str, str] | None = Non
         return _public_kwargs(choice, env)
     return _local_kwargs(choice, env)
 
+
+# ---------------------------------------------------------------------------
+# Live RAGAS benchmark
+# ---------------------------------------------------------------------------
+
+def ragas_max_questions(env: Mapping[str, str] | None = None) -> int:
+    """Question cap of one live RAGAS run: small on the public demo, where one run
+    holds the shared CPU (3 generations per question) for everyone."""
+    return RAGAS_MAX_QUESTIONS_PUBLIC if is_public_demo(env) else RAGAS_MAX_QUESTIONS_LOCAL
+
+
+def ragas_questions(requested: int, env: Mapping[str, str] | None = None) -> int:
+    """`requested` clamped to [1, cap]. Enforced on the server: a widget's min/max only
+    bind the browser, and a crafted client can send any number."""
+    return max(1, min(int(requested), ragas_max_questions(env)))
+
+
+def judge_base_url(env: Mapping[str, str] | None = None) -> str:
+    """Endpoint of the RAGAS judge the server's key belongs to (local mode): the
+    configured OPENAI_BASE_URL, else OpenAI — as the command-line benchmark does."""
+    return _env(env).get("OPENAI_BASE_URL") or OPENAI_API_URL
+
+
+def judge_settings(
+    api_key: str,
+    model: str = "",
+    embedding_model: str = "",
+    base_url: str = "",
+    env: Mapping[str, str] | None = None,
+) -> dict:
+    """Keyword arguments of the RAGAS judge (`shared.evaluator.JudgeConfig`) for a session.
+
+    Public demo: the visitor's own OpenAI key is required and the endpoint is fixed to
+    OpenAI (a URL outside it raises ValueError) — the server's key is never lent.
+    Local mode: optional endpoint (e.g. Ollama or vLLM for tests; "" -> `judge_base_url`);
+    the key typed in the session, else the server's key but only for `judge_base_url`,
+    else "EMPTY" for another endpoint (a key-less local server) or "" (no key: the
+    benchmark then reports RAGAS as failed and keeps the latencies).
+    """
+    env = _env(env)
+    model = model.strip() or DEFAULT_JUDGE_MODEL
+    embedding_model = embedding_model.strip() or DEFAULT_JUDGE_EMBEDDINGS
+    if is_public_demo(env):
+        if base_url.strip() and not _same_endpoint(base_url, OPENAI_API_URL):
+            raise ValueError("On the public demo, the RAGAS judge can only be OpenAI.")
+        return {"api_key": _check_visitor_key(api_key, "OpenAI"),
+                "model": _check_name(model, "judge model name"),
+                "embedding_model": _check_name(embedding_model, "embedding model name"),
+                "base_url": OPENAI_API_URL}
+
+    base_url = base_url.strip() or judge_base_url(env)
+    if api_key.strip():
+        key = api_key.strip()
+    elif _same_endpoint(base_url, judge_base_url(env)):
+        key = env.get("OPENAI_API_KEY", "")
+    else:
+        key = "EMPTY"
+    return {"api_key": key, "model": model, "embedding_model": embedding_model,
+            "base_url": base_url}

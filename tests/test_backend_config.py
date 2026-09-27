@@ -20,13 +20,17 @@ sys.path[:0] = [str(_ROOT / "app"), str(_ROOT / "src")]
 from backend_config import (  # noqa: E402
     API_PRESETS,
     DEFAULT_HF_PUBLIC_MODELS,
+    OPENAI_API_URL,
     SERVER,
     BackendChoice,
     demo_articles,
     is_public_demo,
+    judge_settings,
     llm_kwargs,
     preset_for_url,
     public_hf_models,
+    ragas_max_questions,
+    ragas_questions,
     resolve_api_key,
     server_base_url,
 )
@@ -318,9 +322,52 @@ def test_choices_never_touch_os_environ(monkeypatch):
     before = dict(os.environ)
     llm_kwargs(BackendChoice("openai", "m", _OPENAI, "sk-visitor"))
     llm_kwargs(BackendChoice("huggingface", DEFAULT_HF_PUBLIC_MODELS[1]))
+    judge_settings("sk-visitor")
     with pytest.raises(ValueError):
         llm_kwargs(BackendChoice("openai", "m", _OPENAI, ""))
     assert dict(os.environ) == before
+
+
+# ---------------------------------------------------------------------------
+# Live RAGAS benchmark: caps and judge settings
+# ---------------------------------------------------------------------------
+
+def test_ragas_question_caps():
+    assert ragas_max_questions(_PUBLIC) == 10
+    assert ragas_max_questions({}) == 50
+    assert [ragas_questions(n, _PUBLIC) for n in (-3, 0, 1, 5, 10, 11, 10**9)] == \
+        [1, 1, 1, 5, 10, 10, 10]
+    assert [ragas_questions(n, {}) for n in (0, 30, 51)] == [1, 30, 50]
+
+
+def test_public_judge_needs_the_visitors_key_and_is_openai():
+    env = {**_PUBLIC, "OPENAI_BASE_URL": "http://vllm.internal:8000/v1"}
+    with pytest.raises(ValueError, match="Enter your OpenAI API key") as err:
+        judge_settings("", env=env)
+    assert "server-secret" not in str(err.value)
+    assert judge_settings(" sk-visitor ", env=env) == {
+        "api_key": "sk-visitor", "model": "gpt-4o-mini",
+        "embedding_model": "text-embedding-3-small", "base_url": OPENAI_API_URL}
+    with pytest.raises(ValueError, match="can only be OpenAI"):
+        judge_settings("sk-visitor", base_url="http://localhost:11434/v1", env=env)
+    with pytest.raises(ValueError, match="judge model name"):
+        judge_settings("sk-visitor", model="gpt 4", env=env)
+
+
+def test_local_judge_key_scoping():
+    env = {"OPENAI_API_KEY": "server-secret"}  # judge endpoint: OpenAI (no OPENAI_BASE_URL)
+    assert judge_settings("", env=env)["api_key"] == "server-secret"
+    assert judge_settings("", env=env)["base_url"] == OPENAI_API_URL
+    assert judge_settings("sk-typed", env=env)["api_key"] == "sk-typed"
+    ollama = judge_settings("", "qwen2.5:1.5b", "nomic-embed-text", "http://localhost:11434/v1",
+                            env=env)
+    assert ollama == {"api_key": "EMPTY", "model": "qwen2.5:1.5b",
+                      "embedding_model": "nomic-embed-text",
+                      "base_url": "http://localhost:11434/v1"}
+    assert judge_settings("", env={})["api_key"] == ""  # no key: RAGAS reported as failed
+    vllm = {**env, "OPENAI_BASE_URL": "http://vllm.internal:8000/v1"}
+    assert judge_settings("", env=vllm)["base_url"] == "http://vllm.internal:8000/v1"
+    assert judge_settings("", base_url=OPENAI_API_URL, env=vllm)["api_key"] == "EMPTY"
 
 
 # ---------------------------------------------------------------------------
