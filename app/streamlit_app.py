@@ -3,16 +3,18 @@
 Two tabs:
   - "Live chat": 3 chats side by side (one per architecture). The same question
     goes to all three; each keeps its own thread.
-  - "Evaluation": runs the evaluation (RAGAS + latencies) and visualizes it, or
-    shows the last `eval/results.json`.
+  - "Evaluation": the dashboard over the committed snapshots, plus a live RAGAS
+    benchmark (generation + judging) with the session's backend and judge key.
 
 Note: the RAG has no conversational memory — each question is handled
 independently (comparative chat log, not contextual multi-turn).
 
 Multi-user: all sessions share this process (and the cached stacks), so a session's
-LLM backend is kept in `st.session_state` and passed per call — never written to
-`os.environ`. `PUBLIC_DEMO=1` (the default on a Hugging Face Space) locks the backend to
-the server's; see `backend_config.py`.
+LLM backend and keys are kept in `st.session_state` and passed per call — never written
+to `os.environ`. `PUBLIC_DEMO=1` (the default on a Hugging Face Space) restricts the
+choices to ones that can't be turned against the server — the server's backend, preset
+hosted APIs with the visitor's own key, allow-listed small local models — and keeps
+RAGAS results in the session; see `backend_config.py`.
 
 Run:  streamlit run app/streamlit_app.py
 """
@@ -23,6 +25,7 @@ import json
 import os
 import sys
 import tempfile
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -34,11 +37,15 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 load_dotenv(PROJECT_ROOT / ".env")
 
 from pipeline import STACK_NAMES, build_stacks  # noqa: E402
+# light: the evaluator imports ragas itself only when it runs
+from shared.evaluator import JudgeConfig, check_judge, evaluate_stacks  # noqa: E402
 from shared.llm import call_llm, default_model  # noqa: E402
 
 from backend_config import (  # noqa: E402
-    PROVIDERS, BackendChoice, demo_articles, is_public_demo, llm_kwargs, server_base_url,
-    server_choice,
+    API_PRESETS, DEFAULT_JUDGE_EMBEDDINGS, DEFAULT_JUDGE_MODEL, PROVIDERS, PUBLIC_CHOICES,
+    RAGAS_DEFAULT_QUESTIONS, RAGAS_RUN_LOCK, SERVER, BackendChoice, demo_articles,
+    is_public_demo, judge_base_url, judge_settings, llm_kwargs, preset_for_url,
+    public_hf_models, ragas_max_questions, ragas_questions, server_base_url, server_choice,
 )
 from eval_dashboard import (  # noqa: E402
     _grouped_bar, render_answer, render_beir, render_regression_guard,
@@ -75,29 +82,54 @@ def get_stacks() -> dict:
     return build_stacks(n_articles=demo_articles())
 
 
-def select_backend() -> dict:
-    """LLM backend selector (sidebar) -> the `call_llm` kwargs of this session.
+_CUSTOM_URL = "Custom URL"
+_KEY_PLACEHOLDER = "Used for this session only; never stored or shared"
 
-    The choice lives in `st.session_state` (widget keys) and is passed per call, NEVER
-    written to `os.environ`: all sessions share this process, so that would switch the
-    backend (and leak the key) of every visitor. Switching backend does not rebuild the
-    index (cached and independent of the LLM). With `PUBLIC_DEMO`, the server's backend
-    is shown read-only: no endpoint, model id or key to type.
-    """
-    st.sidebar.header(":material/settings: LLM backend")
-    if is_public_demo():
-        backend = llm_kwargs(None)
-        st.sidebar.markdown(f"**{backend['provider']}** · `{backend['model']}`")
-        st.sidebar.caption("Public demo: the backend is set by the server and can't be "
-                           "changed here. Run the app locally to try other models.")
-        return backend
 
+def _public_backend_widgets() -> BackendChoice:
+    """Public demo: the server's backend, a preset hosted API with the visitor's own key,
+    or an allow-listed small local model. The key field is never prefilled (a widget's
+    value is sent to the browser) and there is one per API, so switching APIs never
+    sends a key typed for one provider to another."""
+    server = server_choice()
+    labels = {SERVER: "Demo default", "openai": "Hosted API (your key)",
+              "huggingface": "Small local model"}
+    kind = st.sidebar.radio(
+        "Generator", PUBLIC_CHOICES, format_func=labels.get, key="llm_public_kind",
+        captions=[f"{server.provider} · {server.model}", ", ".join(API_PRESETS),
+                  "runs on this Space's CPU"],
+    )
+    if kind == SERVER:
+        return BackendChoice(SERVER)
+    if kind == "openai":
+        name = st.sidebar.selectbox("API", tuple(API_PRESETS), key="llm_api_preset")
+        preset = API_PRESETS[name]
+        model = st.sidebar.text_input("Model", preset.default_model, key=f"llm_api_model_{name}")
+        api_key = st.sidebar.text_input(f"{name} API key", "", type="password",
+                                        placeholder=_KEY_PLACEHOLDER, key=f"llm_api_key_{name}")
+        st.sidebar.caption(f":material/lock: Your key is sent only to {name} "
+                           f"(`{preset.base_url}`), kept in memory for this session only, "
+                           "never written to disk nor shown to other visitors.")
+        return BackendChoice("openai", model, preset.base_url, api_key)
+    models = public_hf_models()
+    default = server.model if server.provider == "huggingface" and server.model in models else None
+    model = st.sidebar.selectbox("Model", models,
+                                 index=models.index(default) if default else 0,
+                                 key="llm_hf_model")
+    st.sidebar.caption("Downloaded and loaded on first use (can take a minute). The Space "
+                       "keeps one model in memory, so switching models reloads it.")
+    return BackendChoice("huggingface", model)
+
+
+def _local_backend_widgets() -> BackendChoice:
+    """Local mode: free provider, model and endpoint (the hosted-API presets are a
+    shortcut). The server's key is never prefilled, and only goes to the server's URL."""
     server = server_choice()  # defaults of the widgets (a hosted demo sets huggingface)
     provider = st.sidebar.selectbox(
         "Provider", PROVIDERS,
         index=PROVIDERS.index(server.provider) if server.provider in PROVIDERS else 0,
-        help="ollama = local · openai = OpenAI/vLLM-compatible endpoint · "
-             "huggingface = local flan-t5",
+        help="ollama = local · openai = OpenAI-compatible endpoint (hosted API, vLLM…) · "
+             "huggingface = local model (flan-t5, Qwen…)",
         key="llm_provider",
     )
     base_url = api_key = ""
@@ -105,23 +137,53 @@ def select_backend() -> dict:
         model = st.sidebar.text_input("Ollama model", default_model("ollama"),
                                       key="llm_model_ollama")
     elif provider == "openai":
-        base_url = st.sidebar.text_input("Base URL (vLLM / OpenAI)", server_base_url(),
-                                         key="llm_openai_base_url")
-        model = st.sidebar.text_input("Model", default_model("openai"), key="llm_model_openai")
-        # Never prefilled with the server's key: a widget's value is sent to the browser.
+        endpoint = st.sidebar.selectbox("Endpoint", (_CUSTOM_URL, *API_PRESETS),
+                                        key="llm_openai_endpoint")
+        if endpoint == _CUSTOM_URL:
+            base_url = st.sidebar.text_input("Base URL (vLLM / OpenAI)", server_base_url(),
+                                             key="llm_openai_base_url")
+            model = st.sidebar.text_input("Model", default_model("openai"),
+                                          key="llm_model_openai")
+        else:
+            preset = API_PRESETS[endpoint]
+            base_url = preset.base_url
+            st.sidebar.caption(f"`{base_url}`")
+            model = st.sidebar.text_input("Model", preset.default_model,
+                                          key=f"llm_model_openai_{endpoint}")
         hint = ("Server key set — used only with the server's base URL"
                 if os.getenv("OPENAI_API_KEY") else "")
         api_key = st.sidebar.text_input("API key", "", type="password", placeholder=hint,
-                                        key="llm_openai_api_key")
+                                        key=f"llm_openai_api_key_{endpoint}")
     else:
         model = st.sidebar.text_input("HF model", default_model("huggingface"),
                                       key="llm_model_huggingface")
     st.sidebar.caption(f"Active backend: **{provider}**")
-    return llm_kwargs(BackendChoice(provider, model, base_url, api_key))
+    return BackendChoice(provider, model, base_url, api_key)
 
 
-def render_chat_tab(llm_fn) -> None:
-    """3 chats side by side; one shared question goes to the 3 architectures."""
+def select_backend() -> dict | None:
+    """LLM backend selector (sidebar) -> the `call_llm` kwargs of this session, or None
+    when the choice is not usable (the reason is shown; nothing is sent).
+
+    The choice lives in `st.session_state` (widget keys) and is passed per call, NEVER
+    written to `os.environ`: all sessions share this process, so that would switch the
+    backend (and leak the key) of every visitor. Switching backend does not rebuild the
+    index (cached and independent of the LLM). With `PUBLIC_DEMO`, only the choices of
+    `backend_config` are offered, and `llm_kwargs` re-checks them on the server.
+    """
+    st.sidebar.header(":material/settings: LLM backend")
+    public = is_public_demo()
+    choice = _public_backend_widgets() if public else _local_backend_widgets()
+    try:
+        return llm_kwargs(choice)
+    except ValueError as exc:
+        st.sidebar.error(str(exc), icon=":material/error:")
+        return None
+
+
+def render_chat_tab(llm_fn: Callable[[str], str] | None) -> None:
+    """3 chats side by side; one shared question goes to the 3 architectures.
+    `llm_fn` None: the session's backend is not usable — the chat is disabled."""
     st.caption("The same question is sent to the 3 architectures; each keeps its own thread. "
                "(No conversational memory: each question is independent.)")
     st.info(f"**Corpus:** {demo_articles()} Simple-English Wikipedia articles (countries, "
@@ -138,11 +200,18 @@ def render_chat_tab(llm_fn) -> None:
     if "chat" not in st.session_state:
         st.session_state.chat = {name: [] for name in STACK_NAMES.values()}
 
-    prompt = st.chat_input("Ask the 3 architectures a question…", max_chars=_MAX_QUESTION_CHARS)
-    # `max_chars` is only enforced by the browser: Streamlit hands the server whatever the
-    # websocket sent, so a crafted client could push megabytes through the 3 stacks.
+    if llm_fn is None:
+        st.warning("Finish the LLM backend setup in the sidebar to chat.",
+                   icon=":material/key:")
+    prompt = st.chat_input("Ask the 3 architectures a question…", max_chars=_MAX_QUESTION_CHARS,
+                           disabled=llm_fn is None)
+    # `max_chars` (and `disabled`) are only enforced by the browser: Streamlit hands the
+    # server whatever the websocket sent, so a crafted client could push megabytes through
+    # the 3 stacks, or a question with no usable backend.
     if prompt and len(prompt) > _MAX_QUESTION_CHARS:
         st.error(f"Question too long (max {_MAX_QUESTION_CHARS} characters).")
+        prompt = None
+    if prompt and llm_fn is None:
         prompt = None
     if prompt:
         stacks = get_stacks()
@@ -191,11 +260,11 @@ def _write_json_atomic(path: Path, payload: dict) -> None:
         raise
 
 
-def run_benchmark(n_questions: int, k: int, backend: dict) -> None:
-    """Evaluates the 3 stacks (generation with this session's `backend` + RAGAS + latencies)
-    and writes results.json."""
-    from shared.evaluator import evaluate_stacks  # light: ragas itself is imported lazily
-
+def run_benchmark(n_questions: int, k: int, backend: dict, judge: JudgeConfig,
+                  public: bool) -> None:
+    """Evaluates the 3 stacks (generation with this session's `backend`, RAGAS judged by
+    `judge`, latencies). Public demo: the results stay in this session (a download is
+    offered); locally: written to results.json."""
     data = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))[:n_questions]
     questions = [d["question"] for d in data]
     ground_truths = [d.get("ground_truth") or d.get("answer") or "" for d in data]
@@ -204,18 +273,27 @@ def run_benchmark(n_questions: int, k: int, backend: dict) -> None:
         with st.spinner(f"Benchmark on {len(questions)} questions (generation + RAGAS)… "
                         "this can take a few minutes."):
             metrics = evaluate_stacks(get_stacks(), questions, ground_truths, k=k, types=types,
-                                      llm_fn=functools.partial(call_llm, **backend))
+                                      llm_fn=functools.partial(call_llm, **backend),
+                                      judge=judge)
+        llm = {"provider": backend["provider"],
+               "model": backend["model"] or default_model(backend["provider"])}
+        api = preset_for_url(backend.get("base_url", ""))
+        if api:
+            llm["api"] = api
         payload = {
             "config": {
                 "n_articles": demo_articles(), "k": k, "n_questions": len(questions),
-                # which generator produced the answers (never the endpoint or the key)
-                "llm": {"provider": backend["provider"],
-                        "model": backend["model"] or default_model(backend["provider"])},
+                # which generator and judge were used (never an endpoint or a key)
+                "llm": llm,
+                "judge": {"model": judge.model, "embeddings": judge.embedding_model},
                 "generated_at": datetime.now().isoformat(timespec="seconds"),
             },
             "stacks": metrics,
         }
-        _write_json_atomic(RESULTS_PATH, payload)
+        if public:
+            st.session_state.ragas_results = payload  # this visitor's only: no shared file
+        else:
+            _write_json_atomic(RESULTS_PATH, payload)
         st.success("Benchmark done.")
     except Exception as exc:
         st.error(f"Benchmark failed: {exc}")
@@ -233,20 +311,19 @@ _LATENCY_LABELS = {
     "avg_generation_ms": "Generation",
     "avg_latency_ms": "Total",
 }
-def render_benchmark_results(can_run: bool = True) -> None:
-    """Shows the last results.json: comparison table + charts. `can_run`: whether the
-    benchmark form is offered above (else don't point to it)."""
-    if not RESULTS_PATH.exists():
-        st.info("No results yet. Run a benchmark above." if can_run
-                else "No benchmark results in this deployment.")
+def render_benchmark_results(data: dict | None, empty_message: str) -> None:
+    """Shows benchmark results (a results.json payload): comparison table + charts."""
+    if not data:
+        st.info(empty_message)
         return
 
     import pandas as pd
 
-    data = json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
     cfg = data.get("config", {})
+    llm, judge = cfg.get("llm") or {}, cfg.get("judge") or {}
     st.caption(
         f"{cfg.get('n_questions', '?')} questions · {cfg.get('n_articles', '?')} articles "
+        f"· generator `{llm.get('model', '?')}` · judge `{judge.get('model', '?')}` "
         f"· generated on {cfg.get('generated_at', '?')}"
     )
 
@@ -257,19 +334,19 @@ def render_benchmark_results(can_run: bool = True) -> None:
     ragas = [m for m in _RAGAS_LABELS if m in df.index]
     if ragas:
         st.subheader("Quality — RAGAS (higher = better, 0–1 score)")
-        _grouped_bar(df.loc[ragas].rename(index=_RAGAS_LABELS),
+        _grouped_bar(df.loc[ragas].astype(float).rename(index=_RAGAS_LABELS),
                      "Metric", "Score", "Quality by metric", ".2f")
     else:
         errors = sorted({m["ragas_error"] for m in data["stacks"].values() if m.get("ragas_error")})
         if errors:
             st.warning("RAGAS failed — only latencies are shown: " + " · ".join(errors))
         else:
-            st.warning("No RAGAS metrics (missing OpenAI key?). Only latencies are shown.")
+            st.warning("No RAGAS metrics (no judge key?). Only latencies are shown.")
 
     latency = [m for m in _LATENCY_LABELS if m in df.index]
     if latency:
         st.subheader("Mean latencies (lower = better)")
-        _grouped_bar(df.loc[latency].rename(index=_LATENCY_LABELS),
+        _grouped_bar(df.loc[latency].astype(float).rename(index=_LATENCY_LABELS),
                      "Step", "Milliseconds", "Latency by step", ".0f")
 
     _render_by_type(data["stacks"], pd)
@@ -306,40 +383,93 @@ def _render_by_type(stacks: dict, pd) -> None:
                      "Mean latency by category (lower = better)", ".0f")
 
 
-def render_ragas_tab(backend: dict) -> None:
-    """Live RAGAS benchmark (local only) + the last results.json."""
-    st.subheader("RAGAS benchmark (generation + judging)")
-    can_run = False
-    if is_public_demo():
-        st.info("The live RAGAS benchmark is disabled on the public demo: its judge needs an "
-                "OpenAI key, and a shared demo neither asks visitors for one nor lends the "
-                "server's. Run it locally (README §4).", icon=":material/lock:")
-    elif importlib.util.find_spec("ragas") is None:
-        st.info("RAGAS isn't installed in this deployment — run the benchmark locally "
-                "(see README §4).")
-    else:
-        can_run = True
-        with st.form("bench_form"):
-            c1, c2 = st.columns(2)
-            n_q = c1.number_input("Number of questions", 1, 50, 5)
-            k_b = c2.number_input("k (retrieved chunks)", 1, 10, 5)
-            # Never prefilled with the server's key: a widget's value is sent to the browser.
+def _ragas_form(backend: dict | None, public: bool) -> None:
+    """The live benchmark form. The judge key is the visitor's own (public demo: required,
+    judge fixed to OpenAI); it only reaches the judge objects, never `os.environ`."""
+    cap = ragas_max_questions()
+    st.caption(f"Generates the answers with **this session's backend** (sidebar), then an "
+               f"OpenAI judge scores them. Up to {cap} questions, 3 answers each."
+               + (" Results stay in your session." if public else ""))
+    with st.form("bench_form"):
+        c1, c2 = st.columns(2)
+        n_q = c1.number_input("Number of questions", 1, cap, min(RAGAS_DEFAULT_QUESTIONS, cap))
+        k_b = c2.number_input("k (retrieved chunks)", 1, 10, 5)
+        # Never prefilled with the server's key: a widget's value is sent to the browser.
+        if public:
+            hint = _KEY_PLACEHOLDER
+        else:
             hint = ("Server key set (.env) — leave empty to use it"
                     if os.getenv("OPENAI_API_KEY") else "")
-            key = st.text_input("OpenAI key for RAGAS", "", type="password", placeholder=hint)
-            go = st.form_submit_button("Run the benchmark", type="primary", icon=":material/play_arrow:")
-        if go:
-            if key.strip():
-                # RAGAS reads its judge's key from the env only. Acceptable here and ONLY
-                # here: this branch never runs in public-demo mode (PUBLIC_DEMO / HF Space),
-                # i.e. a local, single-user app — on a shared server it would hand this key
-                # to every other visitor.
-                os.environ["OPENAI_API_KEY"] = key.strip()
-            if not os.getenv("OPENAI_API_KEY"):
-                st.warning("No OpenAI key → only latencies will be computed (RAGAS skipped).")
-            run_benchmark(int(n_q), int(k_b), backend)
+        key = st.text_input("OpenAI API key (judge)", "", type="password", placeholder=hint,
+                            key="ragas_judge_key")
+        with st.expander("Judge settings"):
+            j1, j2 = st.columns(2)
+            judge_model = j1.text_input("Judge model", DEFAULT_JUDGE_MODEL)
+            judge_embeddings = j2.text_input("Embedding model", DEFAULT_JUDGE_EMBEDDINGS)
+            judge_url = "" if public else st.text_input(
+                "Judge base URL", "", placeholder=judge_base_url(),
+                help="Any OpenAI-compatible endpoint, e.g. Ollama: http://localhost:11434/v1")
+        go = st.form_submit_button("Run the benchmark", type="primary",
+                                   icon=":material/play_arrow:")
+    if not go:
+        return
+    if backend is None:
+        st.error("Finish the LLM backend setup in the sidebar first: it generates the answers.")
+        return
+    try:
+        judge = JudgeConfig(**judge_settings(key, judge_model, judge_embeddings, judge_url))
+    except ValueError as exc:
+        st.error(str(exc))
+        return
+    if judge.api_key:
+        from openai import OpenAIError  # installed with langchain-openai
+
+        try:
+            with st.spinner("Checking the judge…"):
+                check_judge(judge)
+        except (OpenAIError, ValueError) as exc:  # API/network errors, rejected settings
+            st.error(f"The RAGAS judge doesn't answer ({type(exc).__name__}): {exc}")
+            return
+    else:
+        st.warning("No judge key → only latencies will be computed (RAGAS skipped).")
+    n_questions, k = ragas_questions(n_q), max(1, min(int(k_b), 10))  # re-checked here
+    if not public:
+        run_benchmark(n_questions, k, backend, judge, public)
+        return
+    if not RAGAS_RUN_LOCK.acquire(blocking=False):  # shared by all sessions of the process
+        st.warning("Another visitor's benchmark is running — try again in a few minutes.")
+        return
+    try:
+        run_benchmark(n_questions, k, backend, judge, public)
+    finally:
+        RAGAS_RUN_LOCK.release()
+
+
+def render_ragas_tab(backend: dict | None) -> None:
+    """Live RAGAS benchmark + its results (public demo: this session's; locally: the last
+    results.json)."""
+    st.subheader("RAGAS benchmark (generation + judging)")
+    public = is_public_demo()
+    installed = all(importlib.util.find_spec(m) for m in ("ragas", "langchain_openai"))
+    if installed:
+        _ragas_form(backend, public)
+    else:
+        st.info("RAGAS isn't installed in this deployment — `pip install -e \".[eval]\"` "
+                "(README §4).")
     st.divider()
-    render_benchmark_results(can_run)
+    if public:
+        data = st.session_state.get("ragas_results")
+        if data:
+            st.download_button("Download the results (JSON)",
+                               json.dumps(data, indent=2, ensure_ascii=False),
+                               file_name="ragas_results.json", mime="application/json",
+                               icon=":material/download:")
+        render_benchmark_results(data, "No results in this session yet. Run a benchmark above.")
+    else:
+        data = (json.loads(RESULTS_PATH.read_text(encoding="utf-8"))
+                if RESULTS_PATH.exists() else None)
+        render_benchmark_results(data, "No results yet. Run a benchmark above." if installed
+                                 else "No benchmark results in this deployment.")
 
 
 st.set_page_config(page_title="RAG comparison", layout="wide")
@@ -351,7 +481,7 @@ backend = select_backend()  # this session's call_llm kwargs
 tab_chat, tab_eval = st.tabs([":material/forum: Live chat", ":material/analytics: Evaluation"])
 
 with tab_chat:
-    render_chat_tab(functools.partial(call_llm, **backend))
+    render_chat_tab(functools.partial(call_llm, **backend) if backend else None)
 
 with tab_eval:
     st.caption("Evaluation results (reference snapshots in `eval/reference/`) + the live "

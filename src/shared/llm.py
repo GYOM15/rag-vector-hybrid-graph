@@ -23,6 +23,9 @@ from collections.abc import Callable, Mapping
 from .prompts import QUESTION_MARKER
 
 DEFAULT_OPENAI_BASE_URL = "http://localhost:8000/v1"  # the vLLM server
+# Sent instead of urllib's default "Python-urllib/3.x", which some hosted APIs (Groq,
+# Together) reject at their CDN with a 403 before the key is even checked.
+_USER_AGENT = "rag-vector-hybrid-graph/1.0"
 _DEFAULT_TIMEOUT_S = 120.0
 # flan-t5 was trained on 512-token inputs; also the cap when a tokenizer reports no limit.
 _SEQ2SEQ_MAX_INPUT = 512
@@ -148,7 +151,8 @@ def _call_openai(
         f"{base_url}/chat/completions",
         data=payload,
         headers={"Content-Type": "application/json",
-                 "Authorization": f"Bearer {api_key or 'EMPTY'}"},
+                 "Authorization": f"Bearer {api_key or 'EMPTY'}",
+                 "User-Agent": _USER_AGENT},
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=_timeout()) as response:

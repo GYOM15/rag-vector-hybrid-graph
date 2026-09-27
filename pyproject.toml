@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-eval = ["ragas>=0.1"]                       # benchmark RAGAS
+eval = ["ragas>=0.2,<0.5", "langchain-openai>=0.2,<1"]  # RAGAS benchmark + its judge
 notebooks = ["jupyter>=1.0", "matplotlib>=3.5"]  # série / exploration
 dev = ["pytest>=8.0", "ruff>=0.8"]
 
