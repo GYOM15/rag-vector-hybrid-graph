@@ -25,6 +25,7 @@ rejected, never silently widened.
 """
 
 import os
+import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
 
@@ -73,6 +74,12 @@ RAGAS_MAX_QUESTIONS_PUBLIC = 10
 RAGAS_MAX_QUESTIONS_LOCAL = 50
 DEFAULT_JUDGE_MODEL = "gpt-4o-mini"
 DEFAULT_JUDGE_EMBEDDINGS = "text-embedding-3-small"
+# On the public demo, one live RAGAS run at a time (each holds the shared CPU for minutes).
+# A module global, not an `st.cache_resource`: any browser can send Streamlit's
+# `clear_cache` message, which empties every cached resource for all sessions and would
+# hand out a new, free lock while a run still holds the old one. An imported module stays
+# in `sys.modules` across reruns and cache clears (the Space runs without the file watcher).
+RAGAS_RUN_LOCK = threading.Lock()
 
 _MAX_NAME_CHARS = 200   # a model id, not a document
 _MAX_KEY_CHARS = 1024   # real keys are < 200 chars; anything longer is not a key

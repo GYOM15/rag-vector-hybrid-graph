@@ -25,7 +25,6 @@ import json
 import os
 import sys
 import tempfile
-import threading
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -44,9 +43,9 @@ from shared.llm import call_llm, default_model  # noqa: E402
 
 from backend_config import (  # noqa: E402
     API_PRESETS, DEFAULT_JUDGE_EMBEDDINGS, DEFAULT_JUDGE_MODEL, PROVIDERS, PUBLIC_CHOICES,
-    RAGAS_DEFAULT_QUESTIONS, SERVER, BackendChoice, demo_articles, is_public_demo,
-    judge_base_url, judge_settings, llm_kwargs, preset_for_url, public_hf_models,
-    ragas_max_questions, ragas_questions, server_base_url, server_choice,
+    RAGAS_DEFAULT_QUESTIONS, RAGAS_RUN_LOCK, SERVER, BackendChoice, demo_articles,
+    is_public_demo, judge_base_url, judge_settings, llm_kwargs, preset_for_url,
+    public_hf_models, ragas_max_questions, ragas_questions, server_base_url, server_choice,
 )
 from eval_dashboard import (  # noqa: E402
     _grouped_bar, render_answer, render_beir, render_regression_guard,
@@ -261,13 +260,6 @@ def _write_json_atomic(path: Path, payload: dict) -> None:
         raise
 
 
-@st.cache_resource
-def _ragas_slot() -> threading.Lock:
-    """Shared by every session (unlike a module global, which each rerun re-creates): on
-    the public demo one live RAGAS run at a time, since each holds the CPU for minutes."""
-    return threading.Lock()
-
-
 def run_benchmark(n_questions: int, k: int, backend: dict, judge: JudgeConfig,
                   public: bool) -> None:
     """Evaluates the 3 stacks (generation with this session's `backend`, RAGAS judged by
@@ -444,14 +436,13 @@ def _ragas_form(backend: dict | None, public: bool) -> None:
     if not public:
         run_benchmark(n_questions, k, backend, judge, public)
         return
-    slot = _ragas_slot()
-    if not slot.acquire(blocking=False):
+    if not RAGAS_RUN_LOCK.acquire(blocking=False):  # shared by all sessions of the process
         st.warning("Another visitor's benchmark is running — try again in a few minutes.")
         return
     try:
         run_benchmark(n_questions, k, backend, judge, public)
     finally:
-        slot.release()
+        RAGAS_RUN_LOCK.release()
 
 
 def render_ragas_tab(backend: dict | None) -> None:
