@@ -218,6 +218,16 @@ def _ensure_root_on_path() -> None:
         sys.path.insert(0, str(_ROOT))
 
 
+@st.cache_data(show_spinner=False)
+def _guard_scores() -> dict[str, float]:
+    """Golden-corpus nDCG@5 (`check_regression.measure`). Deterministic, so measured once per
+    process: without the cache, every click (by any visitor) rebuilt the 3 stacks."""
+    _ensure_root_on_path()
+    from eval.check_regression import measure
+
+    return measure()
+
+
 def render_regression_guard() -> None:
     st.markdown("**Regression guard** — nDCG@5 of the 3 stacks on the fixed *golden* corpus, "
                 "the same check as in CI. Fails if a stack drops below `baseline − tolerance`.")
@@ -226,10 +236,10 @@ def render_regression_guard() -> None:
     _ensure_root_on_path()
     import pandas as pd
 
-    from eval.check_regression import BASELINES, check, measure
+    from eval.check_regression import BASELINES, check
 
     with st.spinner("Building the 3 stacks on the golden corpus + nDCG@5… (~10 s)"):
-        scores = measure()
+        scores = _guard_scores()
     baseline = json.loads(BASELINES.read_text("utf-8"))
     failures = check(scores, baseline)
 

@@ -14,7 +14,8 @@ Running example used below: HF user `gyom15`, Space `rag-vector-hybrid-graph`
 | Dashboard — BEIR / Reranking / Systems / Answer quality | ✅ full (reads committed `eval/reference/*.json`), **loads instantly** |
 | Live Guard / Retrieval by type | ✅ builds the 3 stacks on first click (~1–3 min, then cached) |
 | Chat (3 architectures side by side) | ✅ retrieves + generates with **flan-t5-base** (CPU) — works for any visitor, no setup; basic answers |
-| RAGAS (live) tab | ⚠️ needs `ragas` + an OpenAI key (not in the hosted requirements) → graceful message; run locally |
+| LLM backend (sidebar) | 🔒 read-only with `PUBLIC_DEMO=1` (Step 8): visitors use the server's backend |
+| RAGAS (live) tab | ⚠️ disabled with `PUBLIC_DEMO=1` (and `ragas` isn't in the hosted requirements) → explanatory message + last results; run locally |
 
 The Streamlit app's `get_stacks()` is `@st.cache_resource`, and it's only called on the
 first Chat/retrieval interaction — so the **initial page load is fast** (the dashboard is
@@ -57,12 +58,24 @@ cd rag-vector-hybrid-graph
 > the clone returns `Repository not found`.
 
 ## Step 5 — Copy the project files into the Space repo
+> ⚠️ **Run this from INSIDE the Space clone** (Step 4's `cd`): the `cp` target is `.`, the
+> current directory. Run from anywhere else, it copies into the wrong repo (possibly your
+> project itself) and the Space gets nothing. Check with `pwd` first.
+
 ```bash
+cd ~/rag-vector-hybrid-graph                      # the Space clone, NOT your project
 SRC="/absolute/path/to/rag-vector-hybrid-graph"   # your project's path
 cp -R "$SRC/src" "$SRC/app" "$SRC/eval" "$SRC/docs" "$SRC/.streamlit" \
       "$SRC/requirements.txt" "$SRC/.gitignore" .
-rm -f app.py   # remove HF's starter demo app at the root; ours is app/streamlit_app.py
+# Remove HF's template leftovers — ours is app/streamlit_app.py:
+rm -f app.py Dockerfile src/streamlit_app.py
 ```
+> ⚠️ **Template leftovers:** depending on the template HF used, the fresh Space contains a
+> starter `app.py`, or a `Dockerfile` + `src/streamlit_app.py`. Delete them (last line above;
+> `git status` should then list them as deleted): they aren't part of this app — a stray
+> `Dockerfile` can take over the build, and the template's `src/streamlit_app.py` would ship
+> inside our `src/` package.
+
 > Copying `.gitignore` matters: the scratch `eval/*.json` outputs stay uncommitted, but the
 > committed `eval/reference/*.json` (the dashboard's numbers) **are** included. `cp` printing
 > nothing means success.
@@ -108,8 +121,17 @@ Space → **Settings** → **Variables and secrets** → **New variable** (a *Va
 | `LLM_PROVIDER` | `huggingface` | the Chat generates locally (no Ollama on the Space) |
 | `HF_MODEL` | `Qwen/Qwen2.5-1.5B-Instruct` | a small *instruct* model — **correct** answers (a measured win over flan-t5, see Notes); slower on CPU. Omit to use the lighter/faster `google/flan-t5-base` default |
 | `DEMO_ARTICLES` | `200` | smaller corpus = faster first build |
+| `PUBLIC_DEMO` | `1` | **required for a public Space.** All visitors share one Python process: this locks the LLM backend to the one configured here (the sidebar becomes read-only — no provider/model/URL/key inputs, so no arbitrary model downloads) and disables the live RAGAS benchmark. Already the default on a Space (the app detects HF's `SPACE_ID`), so a forgotten variable fails closed — set it anyway to be explicit; `0` turns it off (e.g. a private Space) |
 
 Adding variables restarts the Space.
+
+> 🔒 **Using a paid/remote endpoint safely.** With `PUBLIC_DEMO=1`, the owner can switch the
+> Chat to an OpenAI-compatible endpoint (e.g. the AWS/vLLM server): Variables
+> `LLM_PROVIDER=openai`, `OPENAI_BASE_URL=…`, `OPENAI_MODEL=…`, and the key as a **Secret**
+> (*New secret* → `OPENAI_API_KEY`) — never a Variable, which is shown publicly on the Space.
+> This is safe because visitors can't change the endpoint: the app only ever sends the
+> server's key to the server-configured `OPENAI_BASE_URL`, and never puts it in a widget.
+> Optional: `LLM_TIMEOUT` (seconds, default 120) bounds each remote call.
 
 ## Step 9 — Watch it build, then run
 - Top of the page: **Building** (installs torch/faiss/transformers/spaCy — a few minutes) →
@@ -146,7 +168,7 @@ them (~1–4 min rebuild). For an always-on demo, upgrade the Space hardware (pa
   at the cost of slower CPU generation. `google/flan-t5-base` is the faster-but-weaker
   default. The full-quality, batched generation is the AWS/vLLM endpoint (see
   [`infra/DEPLOY.md`](../infra/DEPLOY.md)); point the Space at it with `LLM_PROVIDER=openai`
-  + `OPENAI_BASE_URL`.
+  + `OPENAI_BASE_URL` (+ `OPENAI_API_KEY` as a Secret), with `PUBLIC_DEMO=1` (Step 8).
 - **Updating the Space later**: re-copy the changed files into the Space clone and
   `git add -A && git commit && git push`, or link the Space to GitHub for auto-sync.
 - **Credentials**: creating the Space, the token, and pushing all use *your* HF account —
