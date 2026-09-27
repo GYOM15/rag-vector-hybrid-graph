@@ -892,9 +892,11 @@ and the cached indexes. Since the audit:
   fields start empty, and there is one per provider, so a key typed for one API is never
   sent to another. A hosted-API choice never falls back to the server's key, even when the
   preset is the server's own endpoint: an empty key is an error, and nothing is sent.
-- **Key scoping.** The server's `OPENAI_API_KEY` is never sent to the browser, and is only
-  ever sent to the server-configured `OPENAI_BASE_URL` (the "server" choice); in local
-  mode, any other URL only gets a key typed in that session. Base URLs must be http(s).
+- **Key scoping.** The server's `OPENAI_API_KEY` is never sent to the browser. It is only
+  ever sent to the server-configured `OPENAI_BASE_URL` (the "server" choice) and, in local
+  mode only, to the RAGAS judge's default endpoint (`OPENAI_BASE_URL` if set, else
+  OpenAI); on the public demo the judge uses the visitor's key. In local mode, any other
+  URL only gets a key typed in that session. Base URLs must be http(s).
 - **RAGAS on the demo.** The judge is OpenAI with the visitor's own key, checked with one
   tiny call before anything runs. A run is capped at 10 questions (50 locally), only one
   runs at a time on the Space, and its results stay in the visitor's session

@@ -7,8 +7,10 @@ of Streamlit) so they are unit-tested:
     written to `os.environ`, which would switch the backend — and leak the key — of
     every other visitor;
   - the server's OPENAI_API_KEY is only ever sent to the server-configured
-    OPENAI_BASE_URL. A session pointed at another URL only gets a key typed in that
-    session: otherwise a visitor could aim the app at their own server and collect
+    OPENAI_BASE_URL and, in local mode only, to the RAGAS judge's default endpoint
+    (`judge_base_url`: OPENAI_BASE_URL, else OpenAI); on the public demo the judge
+    takes the visitor's key. A session pointed at another URL only gets a key typed in
+    that session: otherwise a visitor could aim the app at their own server and collect
     the owner's secret.
 
 With `PUBLIC_DEMO` on (the default on a Hugging Face Space), visitors still pick their
@@ -112,7 +114,8 @@ def demo_articles(env: Mapping[str, str] | None = None) -> int:
 
 
 def server_base_url(env: Mapping[str, str] | None = None) -> str:
-    """The server-configured OpenAI-compatible endpoint — the only one its key goes to."""
+    """The server-configured OpenAI-compatible endpoint, the one the "server" choice sends
+    the server's key to (the only one on the public demo; see `judge_base_url`)."""
     return _env(env).get("OPENAI_BASE_URL") or DEFAULT_OPENAI_BASE_URL
 
 
